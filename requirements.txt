@@ -1,0 +1,5 @@
+# v0.1 依赖（从简）。
+# Agent loop（Claude Agent SDK / Anthropic SDK）与 FastAPI 待选型确认后加入。
+
+PyYAML>=6.0
+pytest>=7.0

@@ -1,0 +1,45 @@
+# Thesis Watch 配置示例（v0.1）。复制为 config.yaml 后改值。
+# 红线阈值与文案用户可调；黑名单只能扩展、不可缩水到低于红线要求。
+
+# Layer 2 通用红线默认包阈值（用户可调）
+redline:
+  thresholds:
+    large_fine:
+      amount_usd: 100000000      # 大额罚单阈值（美元）；调小则更敏感
+    exec_change:
+      roles: ["CEO", "CFO"]      # 监控的高管角色
+      lookback_days: 30          # 回看窗口
+    restatement:
+      forms: ["20-F", "10-K", "10-Q", "6-K"]   # 触发重述检测的表单
+  # R3 文案黑名单扩展（叠加在默认之上，默认见 src/thesis_watch/redline.py）
+  extra_forbidden_phrases: []
+
+# 数据源（仅限 SEC EDGAR 官方接口 + 公开新闻标题 RSS；v1 不含价格类警报）
+data_sources:
+  sec_edgar:
+    base_url: "https://www.sec.gov/cgi-bin/browse-edgar"
+    # 外国发行人（20-F/6-K 申报方）以 6-K 为主渠道，不得沿用「6-K 降级」规则
+    foreign_filer_primary_form: "6-K"
+  news_rss:
+    yahoo_headline: "https://feeds.finance.yahoo.com/rss/2.0/headline"
+
+# 触达（仅邮件；命中当天单独发，未命中合并进每日简报）
+email_sink:
+  smtp_host: "smtp.gmail.com"
+  smtp_port: 587
+  sender: ""              # 作者 Gmail 地址
+  app_password: ""        # Gmail 应用专用密码，勿提交
+  # 命中邮件模板与每日简报模板见 src/thesis_watch/render（待接入）
+
+# Agent loop 选型确认后启用
+llm:
+  model: "claude-sonnet-4-6"
+  # A: Claude Agent SDK 原生 / B: 手搓 SDK loop（见 docs/harness-design.md §1.1）
+
+# 预置账号（5 人 beta，无注册系统；email 在 store.SEED 后由作者填）
+preset_users:
+  - {user_id: beta1, display_name: "Beta One"}
+  - {user_id: beta2, display_name: "Beta Two"}
+  - {user_id: beta3, display_name: "Beta Three"}
+  - {user_id: beta4, display_name: "Beta Four"}
+  - {user_id: beta5, display_name: "Beta Five"}

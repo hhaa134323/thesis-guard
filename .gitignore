@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / PWA
+node_modules/
+dist/
+build/
+.vite/
+*.local
+
+# Secrets / config
+.env
+.env.*
+!.env.example
+config.yaml
+config.local.yaml
+secrets/
+*.key
+*.pem
+
+# Data / DB
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Notion snapshots are tracked (assets/), but never write to Notion live
+# (enforced by policy, not gitignore)
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build / packaging
+*.spec
+*.zip
+
+# WorkBuddy local artifacts (automations, etc.) — never commit
+.workbuddy/
