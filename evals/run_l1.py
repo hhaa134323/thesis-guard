@@ -346,7 +346,7 @@ def cmd_run(args) -> int:
         pair = {"case": ticker, "fields": {}}
         smap = {"case": ticker, "fields": {}}
         for f in SUBJECTIVE:
-            left_m, right_m = ("qwen-turbo", "glm-5.2-fast-preview") if rng.random() < 0.5 else ("glm-5.2-fast-preview", "qwen-turbo")
+            left_m, right_m = (MODELS[0], MODELS[-1]) if rng.random() < 0.5 else (MODELS[-1], MODELS[0])
             pair["fields"][f] = {"A": per_model_subj[left_m].get(f), "B": per_model_subj[right_m].get(f)}
             smap["fields"][f] = {"A": left_m, "B": right_m}
         blind_pairs.append(pair)
@@ -396,7 +396,7 @@ def cmd_collect(args) -> int:
 
     total = 0
     accepted = 0  # acceptable=yes
-    win = {"qwen-turbo": 0, "glm-5.2-fast-preview": 0}  # pick
+    win = {m: 0 for m in MODELS}  # pick
     fails = []
     for v in verdicts:
         case = v.get("case")

@@ -138,3 +138,11 @@ gate 过后跑：16 台账 case + HSBC transcript，A/B 对照（A 不澄清直�
 - 「触发：同时出现」
 - 「net new ARR / 大客户订阅净新增连续 2 季负增长 且」（续行未合并）
 - 「领先代理（→ 🔭 观察项，不直接 CUT）」
+
+### 6.3 next_verdict 本轮样本不足（2026-08-02 加）
+
+GT 中 15 条仅 5 条 next_verdict 非 null（FDS / NVDA / VEEV / FIS / MCO），ambiguous 剔除后分母为 1（仅 NVDA glm 有 a_date）。该字段本轮**未获有效测量**，W2 补样本（更多 ticker 标注 next_verdict）。
+
+### 6.4 filer_type 一致率不计入 W1 判据 #3（2026-08-02 加）
+
+filer_type 在产品中已改为查 `filer_type_lookup.yaml`（SEC EDGAR API），**模型输出不参与产品逻辑**。本轮数据（qwen-turbo 38% vs glm-5.2-fast-preview 85%，前者大量输出 other）保留作为**模型能力观察**——支持「有权威数据源的字段不交给模型」这一设计决定。不计入 W1 判据 #3 的 ≥85% 门槛。

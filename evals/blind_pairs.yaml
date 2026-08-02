@@ -2,165 +2,119 @@
   fields:
     holding_reason_raw:
       A: FactSet = 金融数据与分析订阅平台，深度嵌入买卖方工作流、转换成本高、ASV（年化订阅）经常性强、续约率高。价值角度：高黏性订阅 + 稳定现金流的「卖铲子」生意。
-      B: null
+      B: FactSet = 金融数据与分析订阅平台，深度嵌入买卖方工作流、转换成本高、ASV（年化订阅）经常性强、续约率高。价值角度：高黏性订阅 + 稳定现金流的「卖铲子」生意。
     key_assumptions:
-      A:
-      - text: FactSet 深度嵌入买方/卖方工作流，转换成本高，客户难以迁移至竞品。
+      A: &id001
+      - text: 深度嵌入买卖方工作流
         judgeable: true
-      - text: ASV（年化订阅价值）经常性强、续约率高，构成稳定且可预测的经常性收入。
+      - text: 转换成本高
         judgeable: true
-      - text: 作为金融基础设施「卖铲子」生意，具备高黏性订阅 + 稳定现金流的价值属性。
+      - text: ASV（年化订阅）经常性强
         judgeable: true
-      B: null
+      - text: 续约率高
+        judgeable: true
+      - text: 高黏性订阅 + 稳定现金流的「卖铲子」生意
+        judgeable: true
+      B: *id001
     mirrors:
-      A: null
-      B:
-      - assumption_text: FactSet 深度嵌入买方/卖方工作流，转换成本高，客户难以迁移至竞品。
-        mirror_text: 客户工作流对 FactSet 的依赖度下降——例如竞品（Bloomberg、Refinitiv 等）在 API/集成/内容覆盖上反超，或大客户批量迁移至替代平台，转换成本壁垒被实质性削弱。
-      - assumption_text: ASV（年化订阅价值）经常性强、续约率高，构成稳定且可预测的经常性收入。
-        mirror_text: ASV 增速持续放缓或转负、续约率/留存率显著下降，表明订阅黏性被侵蚀，经常性收入不再稳定可预测。
-      - assumption_text: 作为金融基础设施「卖铲子」生意，具备高黏性订阅 + 稳定现金流的价值属性。
-        mirror_text: 买方/卖方行业整合或预算削减导致客户基数萎缩，或订阅模式被按需/一次性付费模式冲击，现金流稳定性与「卖铲子」逻辑被证伪。
+      A: &id002
+      - assumption_text: 深度嵌入买卖方工作流
+        mirror_text: 客户工作流中不再使用 FactSet 服务
+      - assumption_text: 转换成本高
+        mirror_text: 客户能低成本切换至其他平台
+      - assumption_text: ASV（年化订阅）经常性强
+        mirror_text: 客户订阅频率下降或 ASV 明显减少
+      - assumption_text: 续约率高
+        mirror_text: 客户不再续约或续约率显著下降
+      - assumption_text: 高黏性订阅 + 稳定现金流的「卖铲子」生意
+        mirror_text: FactSet 的商业模式被颠覆或出现替代品
+      B: *id002
 - case: HSBC
   fields:
     holding_reason_raw:
-      A: null
+      A: 以亚洲（香港）为核心的全球性大型银行，庞大的存款/财富管理特许经营权 + 跨境贸易网络，长期分红。价值角度：大而稳的息差生意 + 股息回报，越跌越买时提供现金流缓冲。
       B: 以亚洲（香港）为核心的全球性大型银行，庞大的存款/财富管理特许经营权 + 跨境贸易网络，长期分红。价值角度：大而稳的息差生意 + 股息回报，越跌越买时提供现金流缓冲。
     key_assumptions:
-      A:
-      - text: 汇丰以亚洲（香港）为核心，全球性大型银行的区域定位构成竞争优势。
+      A: &id003
+      - text: 庞大的存款/财富管理特许经营权
         judgeable: true
-      - text: 庞大的存款基础和财富管理特许经营权是可持续的护城河，不易被颠覆。
+      - text: 跨境贸易网络
         judgeable: true
-      - text: 跨境贸易网络带来的业务协同与收入具有长期稳定性。
+      - text: 大而稳的息差生意
         judgeable: true
-      - text: 净息差生意规模大且稳定，能够持续产生经营性现金流。
+      - text: 股息回报
         judgeable: true
-      - text: 长期分红政策可持续，股息回报为持有提供现金流缓冲。
-        judgeable: true
-      B: null
+      B: *id003
     mirrors:
-      A: null
-      B:
-      - assumption_text: 汇丰以亚洲（香港）为核心，全球性大型银行的区域定位构成竞争优势。
-        mirror_text: 香港或亚洲核心市场出现重大政治/经济/监管事件，导致汇丰在该区域特许经营权或市场份额实质性受损。
-      - assumption_text: 庞大的存款基础和财富管理特许经营权是可持续的护城河，不易被颠覆。
-        mirror_text: 存款大规模外流或财富管理 AUM 显著下滑，表明护城河被侵蚀（如竞争加剧、数字银行替代、客户信任危机）。
-      - assumption_text: 跨境贸易网络带来的业务协同与收入具有长期稳定性。
-        mirror_text: 地缘贸易脱钩、制裁或跨境资本流动管制导致跨境贸易网络收入实质性下降。
-      - assumption_text: 净息差生意规模大且稳定，能够持续产生经营性现金流。
-        mirror_text: 净息差（NIM）持续压缩至低于历史区间下沿，或息差收入显著下滑表明该业务模式不再稳定。
-      - assumption_text: 长期分红政策可持续，股息回报为持有提供现金流缓冲。
-        mirror_text: 汇丰宣布削减或暂停分红，或派息率显著下降，使得股息回报不再提供有效现金流缓冲。
+      A: &id004
+      - assumption_text: 庞大的存款/财富管理特许经营权
+        mirror_text: 存款/财富管理特许经营权被削弱或消失
+      - assumption_text: 跨境贸易网络
+        mirror_text: 跨境贸易网络被削弱或消失
+      - assumption_text: 大而稳的息差生意
+        mirror_text: 息差生意不再稳定或被颠覆
+      - assumption_text: 股息回报
+        mirror_text: 股息回报下降或取消
+      B: *id004
 - case: BRK.B
   fields:
     holding_reason_raw:
       A: 伯克希尔 = 价值投资的载体本身：多元控股 + 保险浮存金长期复利，管理稳健、极少出现永久性本金损失。买 BRK.B ≈ 买「稳健价值投资」这个能力圈，长期持有不折腾。
       B: 伯克希尔 = 价值投资的载体本身：多元控股 + 保险浮存金长期复利，管理稳健、极少出现永久性本金损失。买 BRK.B ≈ 买「稳健价值投资」这个能力圈，长期持有不折腾。
     key_assumptions:
-      A:
-      - text: 保险浮存金持续以低/负成本提供资本，支撑长期复利——承保纪律不变，浮存金规模不萎缩
-        judgeable: true
-      - text: 多元控股结构分散风险，组合内极少出现永久性本金损失——不依赖单一持仓或子公司
-        judgeable: true
-      - text: 管理层（巴菲特及继任者）保持稳健的价值投资纪律，不投机、不激进扩张
-        judgeable: true
-      B:
+      A: &id005
       - text: 多元控股 + 保险浮存金长期复利
         judgeable: true
-      - text: 管理稳健、极少出现永久性本金损失
-        judgeable: true
+      B: *id005
     mirrors:
-      A:
-      - assumption_text: 保险浮存金持续以低/负成本提供资本，支撑长期复利——承保纪律不变，浮存金规模不萎缩
-        mirror_text: 承保亏损常态化或巨灾赔付激增导致浮存金成本转正且规模连续下滑
-      - assumption_text: 多元控股结构分散风险，组合内极少出现永久性本金损失——不依赖单一持仓或子公司
-        mirror_text: 重大持仓或子公司出现永久性资本减值（如集中持仓暴雷、重大并购失败减记）
-      - assumption_text: 管理层（巴菲特及继任者）保持稳健的价值投资纪律，不投机、不激进扩张
-        mirror_text: 继任管理层偏离价值投资纪律：投机性仓位上升、激进并购或资本配置风格显著漂移
-      B:
+      A: &id006
       - assumption_text: 多元控股 + 保险浮存金长期复利
-        mirror_text: 多元化业务结构被削弱或无法持续产生浮存金
-      - assumption_text: 管理稳健、极少出现永久性本金损失
-        mirror_text: 管理层决策失误导致重大投资损失
+        mirror_text: 伯克希尔的多元化业务或保险浮存金无法持续产生长期复利
+      B: *id006
 - case: MCO
   fields:
     holding_reason_raw:
       A: 穆迪是评级双寡头（Moody's / S&P）之一，核心评级业务护城河强（监管准入 + 网络效应 + 客户黏性），现金流稳定。策略：逆势、越跌越买。
       B: 穆迪是评级双寡头（Moody's / S&P）之一，核心评级业务护城河强（监管准入 + 网络效应 + 客户黏性），现金流稳定。策略：逆势、越跌越买。
     key_assumptions:
-      A:
+      A: &id007
       - text: 穆迪是评级双寡头之一
         judgeable: true
       - text: 核心评级业务护城河强（监管准入 + 网络效应 + 客户黏性）
         judgeable: true
       - text: 现金流稳定
         judgeable: true
-      B:
-      - text: 评级行业为双寡头格局（Moody's 与 S&P），新进入者难以撼动既有市场结构。
-        judgeable: true
-      - text: 核心评级业务具备强护城河：监管准入壁垒 + 网络效应 + 客户黏性三重保障。
-        judgeable: true
-      - text: 公司现金流稳定，不随周期剧烈波动。
-        judgeable: true
+      B: *id007
     mirrors:
-      A:
+      A: &id008
       - assumption_text: 穆迪是评级双寡头之一
         mirror_text: 穆迪不再是评级双寡头之一
       - assumption_text: 核心评级业务护城河强（监管准入 + 网络效应 + 客户黏性）
-        mirror_text: 核心评级业务护城河被削弱（监管准入变化 + 网络效应减弱 + 客户黏性下降）
+        mirror_text: 核心评级业务护城河被颠覆
       - assumption_text: 现金流稳定
         mirror_text: 现金流不稳定
-      B:
-      - assumption_text: 评级行业为双寡头格局（Moody's 与 S&P），新进入者难以撼动既有市场结构。
-        mirror_text: 第三方评级机构（如 Fitch 或新兴 ESG 评级商）市场份额显著上升，或监管推动多评级体系稀释双寡头集中度。
-      - assumption_text: 核心评级业务具备强护城河：监管准入壁垒 + 网络效应 + 客户黏性三重保障。
-        mirror_text: 监管改革降低 NRSRO 认证门槛或强制去评级化（如规则去除对外部评级的硬性依赖），导致准入壁垒与网络效应同时削弱。
-      - assumption_text: 公司现金流稳定，不随周期剧烈波动。
-        mirror_text: 全球债券发行量大幅萎缩（利率持续高企或信用市场冻结），导致评级收入与发债相关收入同步下滑，自由现金流显著恶化。
+      B: *id008
 - case: GOOGL
   fields:
     holding_reason_raw:
       A: 买 GOOGL = 押「分发护城河」这个 job,而不是押「谁家模型最强」这个会被商品化的 task。
-      B: 按 Benedict Evans「模型商品化 → 价值沉淀到分发+应用层」的推导：基础模型大概率走电力/平板屏的路（造起来难、却没定价权），AI
-        的胜负手不是 benchmark 而是分发。Alphabet 握着全世界最深的分发——Search / Chrome / Android / Workspace
-        / YouTube 数十亿默认入口，把 Gemini 嵌进每个用户的选择时刻，不需要赢模型质量，只需「足够好 + 默认在位」。买 GOOGL = 押「分发护城河」这个
-        job，而不是押「谁家模型最强」这个会被商品化的 task。
+      B: 买 GOOGL = 押「分发护城河」这个 job,而不是押「谁家模型最强」这个会被商品化的 task。
     key_assumptions:
-      A:
+      A: &id009
       - text: Alphabet 握着全世界最深的分发——Search / Chrome / Android / Workspace / YouTube
           数十亿默认入口
         judgeable: true
       - text: 把 Gemini 嵌进每个用户的选择时刻,不需要赢模型质量,只需「足够好 + 默认在位」
         judgeable: true
-      B:
-      - text: 基础模型正在商品化（如同电力/平板屏：制造难度高但无定价权），AI 价值将从模型层沉淀到分发层+应用层
-        judgeable: true
-      - text: Alphabet 握有全球最深的分发护城河：Search / Chrome / Android / Workspace / YouTube，数十亿用户的默认入口
-        judgeable: true
-      - text: Gemini 嵌入每个用户的选择时刻，「足够好 + 默认在位」即可赢，不需要赢模型质量
-        judgeable: true
-      - text: 「谁家模型最强」这个维度会被商品化，不是可持续竞争优势来源
-        judgeable: true
+      B: *id009
     mirrors:
-      A:
-      - assumption_text: 基础模型正在商品化（如同电力/平板屏：制造难度高但无定价权），AI 价值将从模型层沉淀到分发层+应用层
-        mirror_text: 前沿模型开发者维持定价权——模型间持续存在显著性能差距且能提取溢价定价（如 OpenAI/Anthropic 持续提价或维持高利润率），模型层公司攫取大部分
-          AI 收入与利润
-      - assumption_text: Alphabet 握有全球最深的分发护城河：Search / Chrome / Android / Workspace
-          / YouTube，数十亿用户的默认入口
-        mirror_text: DOJ 反垄断救济裁决迫使 Alphabet 拆分或出售 Chrome / Android / Search 默认位；或竞争对手构建同等规模的
-          AI 分发入口，削弱默认在位优势
-      - assumption_text: Gemini 嵌入每个用户的选择时刻，「足够好 + 默认在位」即可赢，不需要赢模型质量
-        mirror_text: Gemini 即使获得默认位仍未获有意义采用，用户主动切换离开至竞品；或「足够好」阈值未达——质量差距大到默认位无法弥补
-      - assumption_text: 「谁家模型最强」这个维度会被商品化，不是可持续竞争优势来源
-        mirror_text: 模型质量成为不可商品化的持久差异化来源——专有数据/算力/人才壁垒在模型层创造持久护城河，模型层公司维持超额回报
-      B:
+      A: &id010
       - assumption_text: Alphabet 握着全世界最深的分发——Search / Chrome / Android / Workspace
           / YouTube 数十亿默认入口
-        mirror_text: Alphabet 的分发能力被削弱或替代
+        mirror_text: Alphabet 的分发渠道被其他平台取代或用户转向其他平台
       - assumption_text: 把 Gemini 嵌进每个用户的选择时刻,不需要赢模型质量,只需「足够好 + 默认在位」
-        mirror_text: Gemini 无法嵌入用户选择时刻或被其他模型替代
+        mirror_text: Gemini 无法嵌入用户的选择时刻或用户不再依赖 Alphabet 的服务
+      B: *id010
 - case: NOW
   fields:
     holding_reason_raw:
@@ -169,7 +123,7 @@
       B: 企业数字化工作流平台，跨 IT/HR/客服 横向扩展，净留存率高、平台黏性强、大客户扩张式增长。价值角度：高留存 SaaS 平台，复利式增长 +
         强现金流。
     key_assumptions:
-      A:
+      A: &id011
       - text: 净留存率高
         judgeable: true
       - text: 平台黏性强
@@ -182,26 +136,22 @@
         judgeable: true
       - text: 强现金流
         judgeable: true
-      B:
-      - text: 净留存率持续高位（平台黏性强，客户迁移成本高，锁定效应稳固）
-        judgeable: true
-      - text: 跨 IT/HR/客服 多领域横向扩展能力有效，新业务线持续贡献增量收入
-        judgeable: true
-      - text: 大客户 land-and-expand 扩张式增长模式持续，顶线合同金额 / ACV 保持高增速
-        judgeable: true
-      - text: 强现金流生成能力可持续，自由现金流增速与利润率不恶化
-        judgeable: true
+      B: *id011
     mirrors:
-      A:
-      - assumption_text: 净留存率持续高位（平台黏性强，客户迁移成本高，锁定效应稳固）
-        mirror_text: 净留存率从高位显著下滑（如跌破 115% 或连续多个季度下降趋势）
-      - assumption_text: 跨 IT/HR/客服 多领域横向扩展能力有效，新业务线持续贡献增量收入
-        mirror_text: HR/客服等新业务线增速明显放缓或市场份额被竞品（如 Salesforce、Microsoft）蚕食
-      - assumption_text: 大客户 land-and-expand 扩张式增长模式持续，顶线合同金额 / ACV 保持高增速
-        mirror_text: 大客户 ACV/新增合同金额增速放缓，或现有大客户续约率下降
-      - assumption_text: 强现金流生成能力可持续，自由现金流增速与利润率不恶化
-        mirror_text: 自由现金流增速显著放缓或运营利润率受 AI 投入等成本项压缩
-      B: []
+      A: &id012
+      - assumption_text: 净留存率高
+        mirror_text: 净留存率下降
+      - assumption_text: 平台黏性强
+        mirror_text: 平台黏性减弱
+      - assumption_text: 大客户扩张式增长
+        mirror_text: 大客户增长停滞或下滑
+      - assumption_text: 高留存 SaaS 平台
+        mirror_text: SaaS 平台留存率下降
+      - assumption_text: 复利式增长
+        mirror_text: 增长模式失效
+      - assumption_text: 强现金流
+        mirror_text: 现金流恶化
+      B: *id012
 - case: NFLX
   fields:
     holding_reason_raw:
@@ -210,7 +160,7 @@
       B: 全球流媒体规模龙头，最大订阅基数 + 自制内容飞轮 + 已验证的定价权（多次提价 churn 可控），广告档与打击共享账号打开新增长。价值角度：规模经济
         + 定价权带来的自由现金流转正与扩张。
     key_assumptions:
-      A:
+      A: &id013
       - text: 全球流媒体规模龙头
         judgeable: true
       - text: 最大订阅基数
@@ -221,51 +171,33 @@
         judgeable: true
       - text: 广告档与打击共享账号打开新增长
         judgeable: true
-      - text: 规模经济 + 定价权带来的自由现金流转正与扩张
+      - text: 规模经济
         judgeable: true
-      B:
-      - text: 奈飞拥有全球流媒体最大订阅基数，规模优势形成壁垒，竞争对手难以在订阅量级上追平。
+      - text: 定价权带来的自由现金流转正与扩张
         judgeable: true
-      - text: 自制内容飞轮持续运转：高投入自制内容 → 吸引用户 → 订阅收入反哺内容投入，形成正向循环且难以被复制。
-        judgeable: true
-      - text: 定价权已被多次提价验证，每次提价后 churn 可控、ARPU 提升，说明用户对内容价值的支付意愿强。
-        judgeable: true
-      - text: 广告档（ad-supported tier）和打击共享账号（password sharing crackdown）两个新 monetization
-          杠杆正在打开增量收入空间。
-        judgeable: true
-      - text: 规模经济 + 定价权将持续驱动自由现金流（FCF）转正并扩张，这是估值的核心支撑。
-        judgeable: true
+      B: *id013
     mirrors:
-      A:
-      - assumption_text: 奈飞拥有全球流媒体最大订阅基数，规模优势形成壁垒，竞争对手难以在订阅量级上追平。
-        mirror_text: 迪士尼+或亚马逊 Prime Video 全球付费订阅数追平或超过奈飞，或奈飞全球净新增订阅连续两个季度为负。
-      - assumption_text: 自制内容飞轮持续运转：高投入自制内容 → 吸引用户 → 订阅收入反哺内容投入，形成正向循环且难以被复制。
-        mirror_text: 内容投入 ROI 持续下降（如 Top 10 原创内容观看时长占比下滑、爆款产出率明显降低），或第三方数据（如 Nielsen）显示自制内容观看占比下降。
-      - assumption_text: 定价权已被多次提价验证，每次提价后 churn 可控、ARPU 提升，说明用户对内容价值的支付意愿强。
-        mirror_text: 下一次提价后季度 churn rate 显著上升（超出管理层指引或历史区间），或 ARPU 增长停滞/转负。
-      - assumption_text: 广告档（ad-supported tier）和打击共享账号（password sharing crackdown）两个新
-          monetization 杠杆正在打开增量收入空间。
-        mirror_text: 广告档日活/月活或广告 ARPU 增长连续两个季度停滞，或打击共享账号导致付费转化率低于管理层指引且未回升。
-      - assumption_text: 规模经济 + 定价权将持续驱动自由现金流（FCF）转正并扩张，这是估值的核心支撑。
-        mirror_text: 自由现金流（TTM FCF）连续两个季度同比下滑或转负，或内容现金投入增速持续超过收入增速导致 FCF margin 收窄。
-      B:
+      A: &id014
       - assumption_text: 全球流媒体规模龙头
-        mirror_text: 流媒体市场出现颠覆性竞争者或市场份额被大幅侵蚀
+        mirror_text: 流媒体市场出现更具竞争力的新玩家并占据主导地位
       - assumption_text: 最大订阅基数
-        mirror_text: 订阅用户数量显著下降或增长停滞
+        mirror_text: 用户订阅数大幅下降或被竞争对手超越
       - assumption_text: 自制内容飞轮
-        mirror_text: 自制内容质量下降或无法持续产出优质内容
+        mirror_text: 自制内容质量下降或无法持续产出
       - assumption_text: 已验证的定价权（多次提价 churn 可控）
         mirror_text: 提价导致用户流失率显著上升
       - assumption_text: 广告档与打击共享账号打开新增长
-        mirror_text: 广告业务增长停滞或共享账号问题未得到有效解决
-      - assumption_text: 规模经济 + 定价权带来的自由现金流转正与扩张
-        mirror_text: 自由现金流未能转正或扩张
+        mirror_text: 广告业务增长停滞或共享账号问题无法解决
+      - assumption_text: 规模经济
+        mirror_text: 规模效应减弱或成本大幅上升
+      - assumption_text: 定价权带来的自由现金流转正与扩张
+        mirror_text: 自由现金流无法转正或扩张
+      B: *id014
 - case: CRM
   fields:
     holding_reason_raw:
-      A: Salesforce = 全球第一大企业 CRM SaaS（Sales / Service / Marketing / Commerce + Data
-        Cloud + Slack + Tableau / MuleSoft + Agentforce），深嵌企业销售与客服工作流、客户数据与流程沉淀形成高转换成本，订阅经常性收入叠加持续扩张的营业利润率与强自由现金流。AI
+      A: 全球第一大企业 CRM SaaS（Sales / Service / Marketing / Commerce + Data Cloud + Slack
+        + Tableau / MuleSoft + Agentforce），深嵌企业销售与客服工作流、客户数据与流程沉淀形成高转换成本，订阅经常性收入叠加持续扩张的营业利润率与强自由现金流。AI
         角度（同 GOOGL「分发 > 模型」母题）：买 CRM = 押 Agentforce 把 agentic AI 嵌进已装机企业客户的既有 CRM
         入口与数据（Customer 360 / Data Cloud）这个 job，而不是押「哪家模型最强」这个会被商品化的 task——护城河在分发 +
         数据 + 工作流锁定，不在模型质量。
@@ -275,63 +207,31 @@
         入口与数据（Customer 360 / Data Cloud）这个 job，而不是押「哪家模型最强」这个会被商品化的 task——护城河在分发 +
         数据 + 工作流锁定，不在模型质量。
     key_assumptions:
-      A:
-      - text: Salesforce 深嵌企业销售与客服工作流，客户数据与流程沉淀形成高转换成本，竞争对手难以撬走已装机客户
+      A: &id015
+      - text: CRM SaaS 市场份额领先，深嵌企业工作流，客户数据与流程沉淀形成高转换成本
         judgeable: true
-      - text: 订阅经常性收入模式支撑营业利润率持续扩张与强自由现金流生成
+      - text: 订阅经常性收入叠加持续扩张的营业利润率与强自由现金流
         judgeable: true
-      - text: Agentforce 将 agentic AI 嵌入已装机客户既有 CRM 入口与数据（Customer 360 / Data Cloud），分发
-          + 数据 + 工作流锁定构成 AI 时代护城河，而非模型质量本身
+      - text: Agentforce 将 agentic AI 嵌入已装机企业客户的 CRM 入口与数据，形成分发 + 数据 + 工作流锁定的护城河
         judgeable: true
-      - text: AI 模型层将被商品化，价值在分发与应用层（企业既有入口与数据沉淀），CRM 作为企业工作流入口的优势不会被独立 AI 工作流平台颠覆
-        judgeable: true
-      B:
-      - text: CRM SaaS 市场份额领先，形成高转换成本
-        judgeable: true
-      - text: 订阅经常性收入和营业利润率持续增长
-        judgeable: true
-      - text: AI 技术通过 Agentforce 嵌入已有 CRM 入口与数据，形成分发和数据优势
-        judgeable: true
-      - text: 护城河在于分发、数据和工作流锁定，而非模型质量
-        judgeable: true
+      B: *id015
     mirrors:
-      A:
-      - assumption_text: Salesforce 深嵌企业销售与客服工作流，客户数据与流程沉淀形成高转换成本，竞争对手难以撬走已装机客户
-        mirror_text: 大客户流失率（net dollar retention）显著下降，或 Microsoft Dynamics 等竞品在大型企业
-          deal 中系统性替代 Salesforce
-      - assumption_text: 订阅经常性收入模式支撑营业利润率持续扩张与强自由现金流生成
-        mirror_text: 营业利润率扩张停滞或逆转，FCF 增长显著放缓，AI 投资（Agentforce 研发与 GPU 算力）侵蚀利润率而无对应收入提振
-      - assumption_text: Agentforce 将 agentic AI 嵌入已装机客户既有 CRM 入口与数据（Customer 360
-          / Data Cloud），分发 + 数据 + 工作流锁定构成 AI 时代护城河，而非模型质量本身
-        mirror_text: Agentforce 商业化指标（付费席位、ARR 贡献）持续不及预期，企业客户未将 AI agent 落地于 CRM 内部工作流
-      - assumption_text: AI 模型层将被商品化，价值在分发与应用层（企业既有入口与数据沉淀），CRM 作为企业工作流入口的优势不会被独立
-          AI 工作流平台颠覆
-        mirror_text: 独立 agentic AI 平台（非 CRM 原生）成功切入企业销售/客服工作流并规模化替代 Salesforce 入口，或模型层未被商品化而保持定价权
-      B:
-      - assumption_text: CRM SaaS 市场份额领先，形成高转换成本
-        mirror_text: CRM SaaS 市场份额被竞争对手超越，导致客户流失
-      - assumption_text: 订阅经常性收入和营业利润率持续增长
-        mirror_text: 订阅收入增长放缓或下降，营业利润率收缩
-      - assumption_text: AI 技术通过 Agentforce 嵌入已有 CRM 入口与数据，形成分发和数据优势
-        mirror_text: Agentforce 技术未能有效嵌入企业客户现有 CRM 系统，或被其他 AI 解决方案替代
-      - assumption_text: 护城河在于分发、数据和工作流锁定，而非模型质量
-        mirror_text: 模型质量成为竞争核心，且被其他公司超越
+      A: &id016
+      - assumption_text: CRM SaaS 市场份额领先，深嵌企业工作流，客户数据与流程沉淀形成高转换成本
+        mirror_text: CRM SaaS 市场份额被超越，企业工作流未被深嵌，客户数据与流程沉淀未形成高转换成本
+      - assumption_text: 订阅经常性收入叠加持续扩张的营业利润率与强自由现金流
+        mirror_text: 订阅收入增长停滞，营业利润率下降，自由现金流减弱
+      - assumption_text: Agentforce 将 agentic AI 嵌入已装机企业客户的 CRM 入口与数据，形成分发 + 数据 +
+          工作流锁定的护城河
+        mirror_text: Agentforce 未能将 agentic AI 嵌入已装机企业客户的 CRM 入口与数据，分发 + 数据 + 工作流锁定的护城河被削弱
+      B: *id016
 - case: FIS
   fields:
     holding_reason_raw:
-      A: 银行核心系统与支付处理商，银行更换核心系统的转换成本极高、合同长、客户黏性强，收入偏经常性。价值角度：嵌入金融基础设施的「收过路费」生意。
-      B: FIS（Fidelity National Information Services）= 银行核心系统与支付处理商，银行更换核心系统的转换成本极高、合同长、客户黏性强，收入偏经常性。价值角度：嵌入金融基础设施的「收过路费」生意。
+      A: 银行更换核心系统的转换成本极高、合同长、客户黏性强，收入偏经常性。价值角度：嵌入金融基础设施的「收过路费」生意。
+      B: 银行更换核心系统的转换成本极高、合同长、客户黏性强，收入偏经常性。价值角度：嵌入金融基础设施的「收过路费」生意。
     key_assumptions:
-      A:
-      - text: 银行更换核心系统的转换成本极高，客户难以迁移至竞争方案
-        judgeable: true
-      - text: 合同期限长，提供收入可见性与客户锁定
-        judgeable: true
-      - text: 收入偏经常性（recurring），稳定性优于项目制收入
-        judgeable: true
-      - text: FIS 嵌入金融基础设施，具备「收过路费」式的持续性商业价值
-        judgeable: true
-      B:
+      A: &id017
       - text: 银行更换核心系统的转换成本极高
         judgeable: true
       - text: 合同长
@@ -342,77 +242,65 @@
         judgeable: true
       - text: 嵌入金融基础设施的「收过路费」生意
         judgeable: true
+      B: *id017
     mirrors:
-      A:
+      A: &id018
       - assumption_text: 银行更换核心系统的转换成本极高
-        mirror_text: 银行更换核心系统的转换成本降低
+        mirror_text: 银行更换核心系统变得容易
       - assumption_text: 合同长
-        mirror_text: 合同周期缩短
+        mirror_text: 合同变短
       - assumption_text: 客户黏性强
-        mirror_text: 客户流失率上升
+        mirror_text: 客户黏性降低
       - assumption_text: 收入偏经常性
         mirror_text: 收入波动性增加
       - assumption_text: 嵌入金融基础设施的「收过路费」生意
-        mirror_text: 金融基础设施发生重大变革或替代
-      B:
-      - assumption_text: 银行更换核心系统的转换成本极高，客户难以迁移至竞争方案
-        mirror_text: 有大型银行客户成功完成核心系统切换至竞争方案（如 Fiserv、Jack Henry 或云原生核心），证明转换成本壁垒低于预期
-      - assumption_text: 合同期限长，提供收入可见性与客户锁定
-        mirror_text: 财报披露合同续约率显著下降，或大客户提前终止/缩短合同期限
-      - assumption_text: 收入偏经常性（recurring），稳定性优于项目制收入
-        mirror_text: 财报中经常性收入占比显著下降，或一次性/项目制收入占比上升
-      - assumption_text: FIS 嵌入金融基础设施，具备「收过路费」式的持续性商业价值
-        mirror_text: 云原生核心银行平台（如 Thought Machine、Mambu）或 BaaS 新兴模式被大型银行广泛采用，侵蚀 FIS
-          在核心系统层的嵌入地位
+        mirror_text: 公司不再嵌入金融基础设施或无法收取过路费
+      B: *id018
 - case: CGNX
   fields:
     holding_reason_raw:
-      A: 工业机器视觉全球龙头（视觉系统 + ID/条码读取 + 深度学习视觉软件），是 Tony Fadell「AI + 具体硬件 + 真实痛点」母题在公开市场最纯的代理——对应纺织缺陷检测、Greyparrot
-        这类用摄像头把质检/识别变成能省下来的钱的生意。买的是「把工厂的眼睛这件事做到足够好且默认在位」这个 job，不是押某一代 AI 模型谁最强（那是会被商品化的
-        task）。慢但干净：无负债、高毛利、强现金流、持续回购。
+      A: Cognex = 工业机器视觉全球龙头（视觉系统 + ID/条码读取 + 深度学习视觉软件），是 Tony Fadell「AI + 具体硬件 +
+        真实痛点」母题在公开市场最纯的代理——对应纺织缺陷检测、Greyparrot 这类用摄像头把质检/识别变成能省下来的钱的生意。护城河：视觉算法与深度学习的长期积累
+        + 一旦嵌进客户产线/质检流程后的高转换成本 + 在消费电子/汽车/物流/半导体的长期客户关系与品牌。买的是「把工厂的眼睛这件事做到足够好且默认在位」这个
+        job，不是押某一代 AI 模型谁最强（那是会被商品化的 task）。慢但干净：无负债、高毛利、强现金流、持续回购。
       B: Cognex = 工业机器视觉全球龙头（视觉系统 + ID/条码读取 + 深度学习视觉软件），是 Tony Fadell「AI + 具体硬件 +
         真实痛点」母题在公开市场最纯的代理——对应纺织缺陷检测、Greyparrot 这类用摄像头把质检/识别变成能省下来的钱的生意。护城河：视觉算法与深度学习的长期积累
         + 一旦嵌进客户产线/质检流程后的高转换成本 + 在消费电子/汽车/物流/半导体的长期客户关系与品牌。买的是「把工厂的眼睛这件事做到足够好且默认在位」这个
         job，不是押某一代 AI 模型谁最强（那是会被商品化的 task）。慢但干净：无负债、高毛利、强现金流、持续回购。
     key_assumptions:
-      A:
+      A: &id019
       - text: 视觉算法与深度学习的长期积累
         judgeable: true
       - text: 高转换成本
         judgeable: true
       - text: 长期客户关系与品牌
         judgeable: true
-      B:
-      - text: 视觉算法与深度学习的长期积累构成技术护城河，竞品短期内难以追平在工业场景的精度与可靠性。
+      - text: 无负债
         judgeable: true
-      - text: 一旦嵌入客户产线/质检流程后转换成本高，客户不会轻易更换视觉供应商。
+      - text: 高毛利
         judgeable: true
-      - text: 在消费电子/汽车/物流/半导体的长期客户关系与品牌构成持久竞争优势。
+      - text: 强现金流
         judgeable: true
-      - text: 「工厂的眼睛」这个 job 不依赖某一代 AI 模型谁最强，模型能力会被商品化而嵌入式视觉系统不会。
+      - text: 持续回购
         judgeable: true
-      - text: 公司维持无负债、高毛利、强现金流、持续回购的财务体质。
-        judgeable: true
+      B: *id019
     mirrors:
-      A:
+      A: &id020
       - assumption_text: 视觉算法与深度学习的长期积累
-        mirror_text: 视觉算法与深度学习技术被其他公司快速超越
+        mirror_text: 视觉算法与深度学习技术被其他竞争者快速超越
       - assumption_text: 高转换成本
-        mirror_text: 客户能够轻易更换视觉系统供应商
+        mirror_text: 客户能够低成本切换到其他供应商
       - assumption_text: 长期客户关系与品牌
         mirror_text: 客户关系和品牌影响力被削弱
-      B:
-      - assumption_text: 视觉算法与深度学习的长期积累构成技术护城河，竞品短期内难以追平在工业场景的精度与可靠性。
-        mirror_text: 开源/通用视觉模型（如 YOLO、Vision Transformer 变体）在工业缺陷检测场景的精度与可靠性达到 Cognex
-          Deep Learning 产品水平，使算法积累不再是壁垒。
-      - assumption_text: 一旦嵌入客户产线/质检流程后转换成本高，客户不会轻易更换视觉供应商。
-        mirror_text: 出现基于开放标准/即插即用的视觉平台，使客户产线视觉系统可被低成本替换，转换成本显著下降。
-      - assumption_text: 在消费电子/汽车/物流/半导体的长期客户关系与品牌构成持久竞争优势。
-        mirror_text: 大客户（如某头部消费电子或汽车 OEM）将视觉质检转为自研或切换至替代供应商，核心客户收入占比显著下降。
-      - assumption_text: 「工厂的眼睛」这个 job 不依赖某一代 AI 模型谁最强，模型能力会被商品化而嵌入式视觉系统不会。
-        mirror_text: 视觉系统本身被商品化——第三方以低价/免费提供足够好的工业视觉方案，Cognex 定价权与市场份额被侵蚀。
-      - assumption_text: 公司维持无负债、高毛利、强现金流、持续回购的财务体质。
-        mirror_text: 毛利率显著下滑、自由现金流转负、停止回购或新增有息负债，财务体质恶化。
+      - assumption_text: 无负债
+        mirror_text: 公司出现重大债务负担
+      - assumption_text: 高毛利
+        mirror_text: 毛利率显著下降
+      - assumption_text: 强现金流
+        mirror_text: 现金流状况恶化
+      - assumption_text: 持续回购
+        mirror_text: 公司停止股票回购计划
+      B: *id020
 - case: NVDA
   fields:
     holding_reason_raw:
@@ -423,41 +311,21 @@
         InfiniBand / 整机柜系统）——训练与推理工作流深度绑定 CUDA，迁移成本极高。买 NVDA = 押「AI 基础设施的卖铲人」这个 job：只要算力需求持续扩张、且生态锁定不被打破，就持续收税；而不是押「哪一代模型最强」这个会被商品化的
         task。
     key_assumptions:
-      A:
-      - text: CUDA 软件生态 + 开发者锁定构成核心护城河：训练与推理工作流深度绑定 CUDA，迁移成本极高
+      A: &id021
+      - text: 护城河不在单颗 GPU，而在 CUDA 软件生态 + 开发者锁定 + 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）——训练与推理工作流深度绑定
+          CUDA，迁移成本极高。
         judgeable: true
-      - text: 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）加深护城河，单点竞争难以颠覆
+      - text: 只要算力需求持续扩张、且生态锁定不被打破，就持续收税；而不是押「哪一代模型最强」这个会被商品化的 task。
         judgeable: true
-      - text: AI 算力需求持续扩张——卖铲人这个 job 持续存在
-        judgeable: true
-      - text: 押基础设施卖铲人比押哪一代模型最强更抗商品化：基础设施收税模式不会被模型层商品化侵蚀
-        judgeable: true
-      B:
-      - text: CUDA 软件生态 + 开发者锁定 + 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）
-        judgeable: true
-      - text: 训练与推理工作流深度绑定 CUDA，迁移成本极高
-        judgeable: true
-      - text: 只要算力需求持续扩张、且生态锁定不被打破，就持续收税
-        judgeable: true
+      B: *id021
     mirrors:
-      A:
-      - assumption_text: CUDA 软件生态 + 开发者锁定构成核心护城河：训练与推理工作流深度绑定 CUDA，迁移成本极高
-        mirror_text: AMD ROCm 或开源编译层（OpenAI Triton / MLIR 等）达到功能对等，主流框架（PyTorch /
-          JAX）实现硬件无关抽象，CUDA 降格为众多后端之一
-      - assumption_text: 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）加深护城河，单点竞争难以颠覆
-        mirror_text: 竞争对手在互连层面追平（如 Ultra Ethernet Consortium 标准成熟量产），或超大规模客户自研芯片+自研网络（Google
-          TPU+ICI、Amazon Trainium+NSA）规模化部署，绕开 NVLink / InfiniBand
-      - assumption_text: AI 算力需求持续扩张——卖铲人这个 job 持续存在
-        mirror_text: AI 训练/推理算力需求增长停滞或放缓：模型效率提升（量化、蒸馏、稀疏化）速度超过新能力对算力的需求增长
-      - assumption_text: 押基础设施卖铲人比押哪一代模型最强更抗商品化：基础设施收税模式不会被模型层商品化侵蚀
-        mirror_text: 推理侧专用 ASIC（如 Groq / 自研推理芯片）大规模替代通用 GPU，导致 GPU 单价/毛利率显著压缩，收税模式被推理商品化瓦解
-      B:
-      - assumption_text: CUDA 软件生态 + 开发者锁定 + 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）
-        mirror_text: CUDA 生态被其他平台替代或显著削弱
-      - assumption_text: 训练与推理工作流深度绑定 CUDA，迁移成本极高
-        mirror_text: 训练与推理工作流不再深度绑定 CUDA 或迁移成本显著降低
-      - assumption_text: 只要算力需求持续扩张、且生态锁定不被打破，就持续收税
-        mirror_text: 算力需求萎缩或生态锁定被打破
+      A: &id022
+      - assumption_text: 护城河不在单颗 GPU，而在 CUDA 软件生态 + 开发者锁定 + 数据中心级全栈整合（NVLink / InfiniBand
+          / 整机柜系统）——训练与推理工作流深度绑定 CUDA，迁移成本极高。
+        mirror_text: CUDA 生态被替代，或 NVIDIA 在数据中心级全栈整合中失去优势。
+      - assumption_text: 只要算力需求持续扩张、且生态锁定不被打破，就持续收税；而不是押「哪一代模型最强」这个会被商品化的 task。
+        mirror_text: 算力需求萎缩，或生态锁定被打破。
+      B: *id022
 - case: VEEV
   fields:
     holding_reason_raw:
@@ -466,107 +334,69 @@
       B: 生命科学行业的垂直 SaaS（CRM + 临床/质量/监管云），深嵌药企合规与监管流程、转换成本高、行业垄断地位。价值角度：垂直护城河 + 监管刚需
         + 高利润订阅。
     key_assumptions:
-      A:
+      A: &id023
+      - text: 深嵌药企合规与监管流程
+        judgeable: true
+      - text: 转换成本高
+        judgeable: true
+      - text: 行业垄断地位
+        judgeable: true
       - text: 垂直护城河
         judgeable: true
       - text: 监管刚需
         judgeable: true
       - text: 高利润订阅
         judgeable: true
-      B:
-      - text: Veeva 的 CRM + 临床/质量/监管云深嵌药企合规与监管流程，客户转换成本高，构成结构性护城河。
-        judgeable: true
-      - text: Veeva 在生命科学垂直 SaaS 领域占据行业垄断/主导地位，无明显替代者。
-        judgeable: true
-      - text: 监管合规需求是药企刚性支出，不会因周期或预算削减而取消。
-        judgeable: true
-      - text: 高利润订阅模式可持续，利润率和经常性收入结构稳定。
-        judgeable: true
+      B: *id023
     mirrors:
-      A:
-      - assumption_text: Veeva 的 CRM + 临床/质量/监管云深嵌药企合规与监管流程，客户转换成本高，构成结构性护城河。
-        mirror_text: 出现可验证的大客户流失/迁移案例（如 Top20 药企转用竞品），或 RPO/净留存率（NRR）显著下滑，说明转换成本护城河被侵蚀。
-      - assumption_text: Veeva 在生命科学垂直 SaaS 领域占据行业垄断/主导地位，无明显替代者。
-        mirror_text: 竞品（如 Salesforce Health Cloud、Sasunlife 等）在生命科学领域获得标志性大单或市场份额数据表明
-          Veeva 主导地位被动摇。
-      - assumption_text: 监管合规需求是药企刚性支出，不会因周期或预算削减而取消。
-        mirror_text: FDA/EMA 等监管机构出台新规降低合规系统要求，或药企行业周期下行导致 Veeva 订阅量/续约率明显下降。
-      - assumption_text: 高利润订阅模式可持续，利润率和经常性收入结构稳定。
-        mirror_text: 订阅毛利率或整体利润率持续下滑，或经常性收入占比下降至非健康水平，说明高利润订阅模式不可持续。
-      B:
+      A: &id024
+      - assumption_text: 深嵌药企合规与监管流程
+        mirror_text: Veeva 无法持续深嵌药企合规与监管流程
+      - assumption_text: 转换成本高
+        mirror_text: 转换成本降低或消失
+      - assumption_text: 行业垄断地位
+        mirror_text: 出现可替代的行业垄断者
       - assumption_text: 垂直护城河
-        mirror_text: 出现替代性技术或平台，打破现有垂直生态
+        mirror_text: 垂直护城河被突破或削弱
       - assumption_text: 监管刚需
-        mirror_text: 监管政策变化导致需求下降
+        mirror_text: 监管需求下降或被替代
       - assumption_text: 高利润订阅
-        mirror_text: 订阅模式被颠覆或利润率大幅下滑
+        mirror_text: 订阅模式利润下降或不可持续
+      B: *id024
 - case: QQQ
   fields:
     holding_reason_raw:
-      A: 纨斯达克100宽基指数，底仓 + 能力圈核心。逻辑：只要大盘不被结构性颠覆，宽基指数长期向上；策略是越跌越买、不择时清仓，用底仓承接波动。
+      A: 只要大盘不被结构性颠覆，宽基指数长期向上；策略是越跌越买、不择时清仓，用底仓承接波动。
       B: 只要大盘不被结构性颠覆，宽基指数长期向上；策略是越跌越买、不择时清仓，用底仓承接波动。
     key_assumptions:
-      A:
-      - text: 宽基指数（Nasdaq-100）具有自我再平衡机制——成分股定期按市值优胜劣汰，不会被个别公司衰落拖垮，这是结构性护城河。
+      A: &id025
+      - text: 只要大盘不被结构性颠覆，宽基指数长期向上
         judgeable: true
-      - text: 美国大盘不会被结构性颠覆——即不会出现长期、不可逆的市场下行（如指数编制规则失效、科技主导地位系统性瓦解）。
-        judgeable: true
-      - text: 宽基指数长期向上的趋势持续成立，短期波动不改变长期方向。
-        judgeable: true
-      B:
-      - text: 大盘不被结构性颠覆
-        judgeable: true
-      - text: 宽基指数长期向上
-        judgeable: true
+      B: *id025
     mirrors:
-      A:
-      - assumption_text: 大盘不被结构性颠覆
+      A: &id026
+      - assumption_text: 只要大盘不被结构性颠覆，宽基指数长期向上
         mirror_text: 大盘被结构性颠覆
-      - assumption_text: 宽基指数长期向上
-        mirror_text: 宽基指数长期向下
-      B:
-      - assumption_text: 宽基指数（Nasdaq-100）具有自我再平衡机制——成分股定期按市值优胜劣汰，不会被个别公司衰落拖垮，这是结构性护城河。
-        mirror_text: Nasdaq-100 指数编制规则发生重大变更（如调整入选/淘汰标准、权重上限改变），导致指数代表性或自我净化能力实质性削弱。
-      - assumption_text: 美国大盘不会被结构性颠覆——即不会出现长期、不可逆的市场下行（如指数编制规则失效、科技主导地位系统性瓦解）。
-        mirror_text: Nasdaq-100 出现连续多年（如3年+）的累计大幅跑输全球宽基或出现指数级别权重集中度极端失衡（top1 占比超 40%
-          且持续扩大），表明结构性颠覆已发生。
-      - assumption_text: 宽基指数长期向上的趋势持续成立，短期波动不改变长期方向。
-        mirror_text: 指数出现历史级别的长期回撤（如从高点回撤超 50% 且超过 3 年未恢复），长期向上趋势被证伪。
+      B: *id026
 - case: SPGI
   fields:
     holding_reason_raw:
       A: 逆势投资，越跌越买，评级机构，在软件股受AI冲击的情况下被市场错杀，主要业务是评级
-      B: 逆势投资，越跌越买，评级机构，在软件股受AI冲击的情况下被市场错杀，主要业务是评级。
+      B: 逆势投资，越跌越买，评级机构，在软件股受AI冲击的情况下被市场错杀，主要业务是评级
     key_assumptions:
-      A: []
-      B:
-      - text: 公司主要业务是评级，评级业务本身具有壁垒（品牌信任度、监管认可、数据积累），短期内难以被AI颠覆。
-        judgeable: true
-      - text: 市场将评级机构与普通软件股一并抛售，属于错杀——评级业务受AI冲击的程度远小于市场定价所反映的。
-        judgeable: true
-      - text: 越跌越买的逆势策略有效，即价格下跌不反映基本面恶化，而是情绪性抛售。
-        judgeable: true
+      A: &id027 []
+      B: *id027
     mirrors:
-      A:
-      - assumption_text: 公司主要业务是评级，评级业务本身具有壁垒（品牌信任度、监管认可、数据积累），短期内难以被AI颠覆。
-        mirror_text: 出现AI驱动的竞品或替代评级方案获得监管认可或客户采用，动摇评级业务护城河；或公司自身在财报/电话会中提及AI对评级业务的实质威胁。
-      - assumption_text: 市场将评级机构与普通软件股一并抛售，属于错杀——评级业务受AI冲击的程度远小于市场定价所反映的。
-        mirror_text: 财报显示评级业务收入增速放缓、利润率下降或客户流失，证明市场抛售并非情绪性错杀而是基本面驱动。
-      - assumption_text: 越跌越买的逆势策略有效，即价格下跌不反映基本面恶化，而是情绪性抛售。
-        mirror_text: 价格持续下跌伴随基本面同步恶化（如评级业务量价齐跌、利润下滑），逆势加仓策略的前提不成立。
-      B: []
+      A: &id028 []
+      B: *id028
 - case: GDXU
   fields:
     holding_reason_raw:
       A: 逆势投资，越跌越买
       B: 逆势投资，越跌越买
     key_assumptions:
-      A:
-      - text: 价格下跌是暂时性/市场情绪恐慌所致，基本面未实质恶化
-        judgeable: true
-      B: []
+      A: &id029 []
+      B: *id029
     mirrors:
-      A: []
-      B:
-      - assumption_text: 价格下跌是暂时性/市场情绪恐慌所致，基本面未实质恶化
-        mirror_text: 基本面出现实质性恶化（如营收持续下滑、核心业务被替代），下跌属于价值毁灭而非情绪恐慌
+      A: &id030 []
+      B: *id030

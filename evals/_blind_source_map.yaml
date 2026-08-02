@@ -1,165 +1,165 @@
 - case: FDS
   fields:
     holding_reason_raw:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
     key_assumptions:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
     mirrors:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
 - case: HSBC
   fields:
     holding_reason_raw:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
     key_assumptions:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
     mirrors:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
 - case: BRK.B
   fields:
     holding_reason_raw:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
     key_assumptions:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
     mirrors:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
 - case: MCO
   fields:
     holding_reason_raw:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
     key_assumptions:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
     mirrors:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
 - case: GOOGL
   fields:
     holding_reason_raw:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
     key_assumptions:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
     mirrors:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
 - case: NOW
   fields:
     holding_reason_raw:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
     key_assumptions:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
     mirrors:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
 - case: NFLX
   fields:
     holding_reason_raw:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
     key_assumptions:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
     mirrors:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
 - case: CRM
   fields:
     holding_reason_raw:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
     key_assumptions:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
     mirrors:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
 - case: FIS
   fields:
     holding_reason_raw:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
     key_assumptions:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
     mirrors:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
 - case: CGNX
   fields:
     holding_reason_raw:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
     key_assumptions:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
     mirrors:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
 - case: NVDA
   fields:
     holding_reason_raw:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
     key_assumptions:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
     mirrors:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
 - case: VEEV
   fields:
     holding_reason_raw:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
     key_assumptions:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
     mirrors:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
 - case: QQQ
   fields:
     holding_reason_raw:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
     key_assumptions:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
     mirrors:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
 - case: SPGI
   fields:
     holding_reason_raw:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
     key_assumptions:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
     mirrors:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
 - case: GDXU
   fields:
     holding_reason_raw:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
     key_assumptions:
-      A: glm-5.2-fast-preview
+      A: qwen-turbo
       B: qwen-turbo
     mirrors:
       A: qwen-turbo
-      B: glm-5.2-fast-preview
+      B: qwen-turbo
