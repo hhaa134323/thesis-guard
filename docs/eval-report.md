@@ -248,3 +248,18 @@ W1 §6.8 指出 mode A 单轮初稿与产品多轮收敛错配。W2 建 `evals/r
 **收敛后接受率 pending**：与 W1 主观盲评同构——作者对 5 张 converged 卡逐字段 pick A/B/都不对 + acceptable yes/no。填 `evals/w2_blind_verdicts.yaml`（模板待建）后跑 `run_w2.py collect`（待实现）算接受率。本轮 n=5 + 作者盲评 pending，不作达标判定。
 
 **W2.5 后续**：① mode B（菜单路径）系统化测量（稀疏输入样本 + clarification_rounds=1 的收敛后接受率）；② 全量 15 case 跑（本轮 n=5 demo）；③ 收敛后接受率盲评模板 + collect 子命令。
+
+### 7.2 范围修正：放弃 qwen-turbo 版盲评，只评 glm 版（2026-08-02）
+
+作者决定：`evals/blind_verdicts_w2.yaml`（qwen-turbo 版）不再继续填。
+
+- **理由**：qwen-turbo 质量裁决 W1 已成立（盲评胜率 4% vs glm 96%，已定仅用于冒烟回归），B4 升级决策不依赖 W2 的 qwen 接受率。
+- **处理**：case 1 (FDS) 保留作 error analysis 样本（model_output 供作者对照 reference_input 分析错误）；cases 2-5 (MCO/GOOGL/NVDA/VEEV) abandoned——不填 acceptable、不跑该版 collect。`blind_verdicts_w2.yaml` 已加头注释标记。
+- **只 collect glm 版**：`evals/blind_verdicts_w2_glm.yaml`（5 case / 55 字段，作者填后跑 `run_w2.py collect --verdicts evals/blind_verdicts_w2_glm.yaml --result evals/_w2_result_glm.json --model-label "glm-5.2-fast-preview · mode A"`）。
+
+**B4 决策依据（修订）**：W1 胜率裁决 + glm 版 W2 接受率。
+
+- **glm ≥85%** → task_model 升级 glm-5.2-fast-preview（成本 58s vs qwen 5s/call）。
+- **glm <85%** → 问题不在模型而在 prompt / 设计，转入 prompt 侧 error analysis（不改模型）。
+
+**glm 版早期信号**：5 case / 55 字段（vs qwen-turbo 版 33）——checklist prompt 让 glm 抽出更多假设/镜像。但「更多」≠「更对」，接受率才能判。

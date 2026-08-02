@@ -30,6 +30,7 @@ S_EXTRACTED = "extracted"      # 已抽，呈现 + 问（确认 or 无法确定�
 S_MENU = "menu"                # 给候选菜单，等用户勾选
 S_CONFIRM = "confirm_card"     # 复述确认卡（右侧实时），等用户点改/确认
 S_CONFIRMED = "confirmed"
+S_TICKER_CLARIFY = "ticker_clarify"  # 标的识别不出 → 追问代码（单输入框兜底，2026-08-02）
 
 # 用户「无法确定」的口语触发词
 UNDECIDED_HINTS = (
@@ -113,24 +114,38 @@ class EntrySession:
     # ------------------------------------------------------------------ #
     # 对话入口
     # ------------------------------------------------------------------ #
-    def start(self, reason: str) -> dict:
-        self.conversation.append({"role": "user", "text": reason})
+    def start(self, text: str, ticker_override: str | None = None) -> dict:
+        self.conversation.append({"role": "user", "text": text})
         self.metrics["turns"] += 1
         ea, _, da = self._agents()
-        res = extract(ea, reason, self.cfg, mode="A")  # §6.8 暂只 mode A；W2 eval 改收敛后测
+        res = extract(ea, text, self.cfg, mode="A")  # §6.8 暂只 mode A；W2 eval 改收敛后测
         self.ext = res["extraction"]
         if self.ext is None:
             self.error = f"{res.get('status')}: {res.get('error', '')[:200]}"
             a = redline.guard(f"抽取失败（{res.get('status')}）。可重试，或在右侧确认卡里手填。")
             self.conversation.append({"role": "assistant", "text": a})
             return self._view(assistant=a)
+        # 单输入框：ticker 从一句话抽取（ext.ticker）或 override（W2 eval 传 GT ticker）；识别不出 → 追问
+        resolved = (ticker_override or (self.ext.ticker if self.ext else None) or "").strip().upper()
+        if not resolved:
+            self.stage = S_TICKER_CLARIFY
+            dlg = generate_dialogue(da, self._ctx_ticker_clarify(), self.cfg)
+            a = dlg["text"] if dlg["ok"] and dlg["text"].strip() else "你持有的是哪只？说代码（如 HSBC）。"
+            a = redline.guard(a)
+            self.conversation.append({"role": "assistant", "text": a})
+            return self._view(assistant=a)
+        self.ticker = resolved
+        return self._after_ticker_resolved(is_price_pattern(text))
+
+    def _after_ticker_resolved(self, price_hit: bool) -> dict:
+        """ticker 解析后：建卡 + 复述呈现（start 与 S_TICKER_CLARIFY turn 共用）。"""
         self.stage = S_EXTRACTED
         self._filer, self._filer_src = self._resolve_filer(self.ext)
         self.card_draft = build_card_from_extraction(
             self.ext, user_id=self.user_id, ticker=self.ticker,
             tier=lookup_tier(self.ticker), filer_type=self._filer)
         self._filer_open_question(self._filer_src)
-        price_hit = is_price_pattern(reason)
+        _, _, da = self._agents()
         dlg = generate_dialogue(da, self._ctx_extracted(price_hit), self.cfg)
         a = dlg["text"] if dlg["ok"] and dlg["text"].strip() else self._present_extraction(price_hit)
         a = redline.guard(a)
@@ -140,6 +155,16 @@ class EntrySession:
     def turn(self, payload: dict) -> dict:
         text = (payload.get("text") or "").strip()
         self.metrics["turns"] += 1
+        if self.stage == S_TICKER_CLARIFY:
+            # 单输入框兜底：用户回的应是代码（如 HSBC）
+            resolved = (text or "").strip().upper()
+            self.conversation.append({"role": "user", "text": text})
+            if not resolved:
+                a = redline.guard("没识别到代码。再说一次，比如 HSBC。")
+                return self._view(assistant=a)
+            self.ticker = resolved
+            return self._after_ticker_resolved(
+                is_price_pattern(self.conversation[0]["text"] if self.conversation else ""))
         if self.stage == S_EXTRACTED:
             if any(h in text for h in UNDECIDED_HINTS) or payload.get("request_menu"):
                 self.conversation.append({"role": "user", "text": text or "无法确定"})
@@ -249,6 +274,20 @@ class EntrySession:
         c: ThesisCard | None = self.card_draft
         if c is None:
             return
+        if "ticker" in edits:
+            nt = (edits["ticker"] or "").strip().upper()
+            if nt and nt != c.ticker:
+                c.ticker = nt
+                from .models import FilerType as ModelFilerType
+                lookup = _load_filer_lookup()
+                ft_str = lookup.get(nt)
+                if ft_str:
+                    try:
+                        c.filer_type = ModelFilerType(ft_str)
+                    except ValueError:
+                        pass
+                t = lookup_tier(nt)
+                c.position_cap_tier = t.value if t else None
         if "holding_reason_raw" in edits:
             c.holding_reason_raw = edits["holding_reason_raw"]
         if "entry_anchor" in edits and c.entry_anchor is not None:
@@ -269,6 +308,13 @@ class EntrySession:
                 c.next_verdict.source_note = nv["source_note"]
         if "position_cap_tier" in edits:
             c.position_cap_tier = edits["position_cap_tier"]
+
+    def _ctx_ticker_clarify(self) -> dict:
+        return {
+            "stage": "ticker_clarify",
+            "ticker": self.ticker or None,
+            "instruction": "用户说的标的识别不出代码（或没说）。追问一句：你持有的是哪只？让用户回代码（如 HSBC）。不要替猜。",
+        }
 
     def _ctx_extracted(self, price_hit: bool) -> dict:
         ext = self.ext
@@ -362,8 +408,8 @@ class EntrySession:
         }
 
 
-def new_session(user_id: str, ticker: str, cfg: dict) -> EntrySession:
-    return EntrySession(user_id=user_id, ticker=(ticker or "").strip().upper(), cfg=cfg)
+def new_session(user_id: str, cfg: dict) -> EntrySession:
+    return EntrySession(user_id=user_id, ticker="", cfg=cfg)  # ticker 由 start 从一句话抽取/override 解析
 
 
 __all__ = ["EntrySession", "new_session", "S_CONFIRMED"]

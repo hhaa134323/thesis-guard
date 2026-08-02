@@ -1,0 +1,61 @@
+{
+  "model": "glm-5.2-fast-preview",
+  "mode": "confirm",
+  "n": 5,
+  "n_converged": 5,
+  "avg_clarification_rounds": 0.0,
+  "convergence_failure_rate": 0.0,
+  "acceptance_rate": null,
+  "results": [
+    {
+      "ticker": "FDS",
+      "converged": true,
+      "metrics": {
+        "turns": 2,
+        "clarification_rounds": 0,
+        "converged": true
+      },
+      "error": null
+    },
+    {
+      "ticker": "MCO",
+      "converged": true,
+      "metrics": {
+        "turns": 2,
+        "clarification_rounds": 0,
+        "converged": true
+      },
+      "error": null
+    },
+    {
+      "ticker": "GOOGL",
+      "converged": true,
+      "metrics": {
+        "turns": 2,
+        "clarification_rounds": 0,
+        "converged": true
+      },
+      "error": null
+    },
+    {
+      "ticker": "NVDA",
+      "converged": true,
+      "metrics": {
+        "turns": 2,
+        "clarification_rounds": 0,
+        "converged": true
+      },
+      "error": null
+    },
+    {
+      "ticker": "VEEV",
+      "converged": true,
+      "metrics": {
+        "turns": 2,
+        "clarification_rounds": 0,
+        "converged": true
+      },
+      "error": null
+    }
+  ]
+}

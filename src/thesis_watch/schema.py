@@ -79,6 +79,7 @@ class EntryExtraction(BaseModel):
     position_cap_tier 不在此处——它是确定性信息（按 ticker 查 tier_map），
     不交给 LLM 猜（作者 2026-08-01 定，见 tier_map.py + changelog）。
     """
+    ticker: str | None = None
     holding_reason_raw: str
     key_assumptions: list[Assumption] = Field(default_factory=list)
     mirrors: list[MirrorSpec] = Field(default_factory=list)

@@ -52,3 +52,7 @@ _thesis_pull_log.txt
 scripts/_*.json
 evals/_*              # 生成产物（_extractions/_l1_result/_blind_*/_blind_source_map/_w2_result）可复现；用户源（ground_truth/blind_verdicts/blind_pairs）tracked
 evals/w2_converged_cards.yaml  # W2 生成（含真实 thesis，可复现）
+
+# Playwright 截图（测试产物，含真实 thesis，可复现，不提交）
+screenshots/
+frontend/screenshots/

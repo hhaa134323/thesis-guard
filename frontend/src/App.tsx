@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { InfoTip } from "@/components/ui/tooltip";
+import { InfoTip, TooltipProvider } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 
 // ──────────────────────────────── types ────────────────────────────────
@@ -157,19 +157,18 @@ export default function App() {
   }
 
   async function start() {
-    const ticker = (document.getElementById("f-ticker") as HTMLInputElement).value.trim();
-    const reason = (document.getElementById("f-reason") as HTMLTextAreaElement).value.trim();
-    if (!ticker || !reason) { setError("ticker 与理由必填"); return; }
-    const um: Msg = { id: nextMid(), role: "user", text: `${ticker}：${reason}` };
+    const text = (document.getElementById("f-input") as HTMLTextAreaElement).value.trim();
+    if (!text) { setError("说一句标的 + 理由"); return; }
+    const um: Msg = { id: nextMid(), role: "user", text };
     setConv((c) => [...c, um]);
     setStatus("正在抽取…（5–45s）");
     setError("");
     try {
-      const r = await fetch("/api/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: "beta1", ticker, reason }) });
+      const r = await fetch("/api/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: "beta1", text }) });
       const v: View = await r.json();
       if (!r.ok) { setError(`(${r.status}) ${v.error || JSON.stringify(v)}`); return; }
       setSid(v.session_id ?? null);
-      applyView(v, { newUserMsg: um });
+      applyView(v);
     } catch (e) { setError(String(e)); }
   }
 
@@ -227,6 +226,7 @@ export default function App() {
   const showStart = stage === "opening";
 
   return (
+    <TooltipProvider>
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="max-w-conv mx-auto px-4 py-2 flex items-baseline gap-3">
@@ -237,7 +237,7 @@ export default function App() {
 
       <div className="flex">
         {/* 对话主流（居中单栏 ~680px） */}
-        <main className="flex-1 flex justify-center px-4">
+        <main className={`flex-1 flex justify-center px-4 ${drawerOpen ? "pr-[360px]" : ""}`}>
           <div className="w-full max-w-conv py-4 flex flex-col" style={{ height: "calc(100vh - 49px)" }}>
             <div ref={convRef} className="flex-1 overflow-y-auto space-y-3 pr-1">
               {conv.map((m) => (
@@ -274,8 +274,7 @@ export default function App() {
 
             {showStart ? (
               <div className="space-y-2 border-t border-border pt-3">
-                <input id="f-ticker" placeholder="ticker（如 HSBC）" className={inputCls} autoComplete="off" />
-                <textarea id="f-reason" placeholder="你为什么买它？（原话，越细越好）" rows={3} className={inputCls} />
+                <textarea id="f-input" placeholder={'一句话说标的 + 理由，如「我持有 MCO，因为评级双寡头的 moat 被 AI 恐慌错杀」'} rows={3} className={inputCls} />
                 <Button onClick={start}>开始录入</Button>
               </div>
             ) : (
@@ -293,6 +292,9 @@ export default function App() {
             <h2 className="text-sm font-semibold mb-2 text-muted-foreground">确认卡 <span className="text-xs">（字段可点改）</span></h2>
             {card ? (
               <>
+                <DrawerField label="标的（ticker）" hint="抽错了在这里改，确认时按新 ticker 重查 filer_type / 仓位档">
+                  <input className={inputCls} defaultValue={card.ticker} onChange={(e) => setEdit("ticker", e.target.value)} />
+                </DrawerField>
                 <DrawerField label="买入逻辑（原话）" justFilled={justFilled.has("holding_reason_raw")}>
                   <textarea className={inputCls} rows={3} defaultValue={card.holding_reason_raw}
                     onChange={(e) => setEdit("holding_reason_raw", e.target.value)} />
@@ -363,5 +365,6 @@ export default function App() {
         </aside>
       </div>
     </div>
+    </TooltipProvider>
   );
 }

@@ -1,0 +1,899 @@
+- ticker: FDS
+  card:
+    card_id: 4e1487b03036411c863ec967f65c7074
+    user_id: beta1
+    ticker: FDS
+    filer_type: domestic_10k
+    holding_reason_raw: FactSet = 金融数据与分析订阅平台，深度嵌入买卖方工作流、转换成本高、ASV（年化订阅）经常性强、续约率高。价值角度：高黏性订阅
+      + 稳定现金流的「卖铲子」生意。
+    key_assumptions:
+    - id: 5b28f1a47d474f0bb828e19805a3871f
+      text: FactSet 深度嵌入买卖方工作流，转换成本高（护城河）
+      judgeable: true
+    - id: f204dfa90a634c61814ac8a06a575a33
+      text: ASV 经常性强、续约率高，构成稳定现金流基础
+      judgeable: true
+    - id: d242696a7b4b408d8f1e426d117e1a50
+      text: ASV ~6% 增长 + 回购减股 ~3% 的增速轨迹可持续
+      judgeable: true
+    - id: 624ef2e599e34a4fb1f47d7faf1480a6
+      text: Reverse DCF：现价约 9.2B 市值、TTM FCF 约 575M，r=9% 或 10% 下隐含永续 FCF 增速仅 ~2.75%-3.75%，远低于
+        ASV ~6% + 回购 ~3% 的实际轨迹——两种折现率下都便宜
+      judgeable: true
+    - id: 45892e844c514520ae9c7fb1db54ca5f
+      text: 调整后 EPS（剔收购无形资产摊销）比 GAAP 高约 12%，线踩 GAAP 16x 门槛偏保守
+      judgeable: true
+    broken_conditions:
+    - id: cae5ef35efeb4aea93f26291a06e38bb
+      layer: mirror
+      text: 竞品（彭博 / S&P Global / Refinitiv 等）通过更优产品或更低价格侵蚀 FactSet 工作流嵌入度，出现客户批量迁移迹象
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: 5b28f1a47d474f0bb828e19805a3871f
+      template: null
+      threshold: {}
+    - id: 4ab4df3a26e94cb59c389effbb91dd6f
+      layer: mirror
+      text: ASV 增速显著放缓至远低于 6%，或续约率明显下降
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: f204dfa90a634c61814ac8a06a575a33
+      template: null
+      threshold: {}
+    - id: 52acdff2f24e410ca2c6a284668962c0
+      layer: mirror
+      text: ASV 增速和/或回购节奏放缓，实际增速轨迹无法维持
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: d242696a7b4b408d8f1e426d117e1a50
+      template: null
+      threshold: {}
+    - id: beb2e0b2bcc840098b8b506c7472e86d
+      layer: mirror
+      text: FCF 增速大幅放缓或市值显著上升，使隐含永续增速不再低于实际增速轨迹
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: 624ef2e599e34a4fb1f47d7faf1480a6
+      template: null
+      threshold: {}
+    - id: c8803fd32115463b9ee3434dbefda0ed
+      layer: mirror
+      text: 收购无形资产摊销占比上升，GAAP 与调整后 EPS 差距扩大，削弱保守性论证
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: 45892e844c514520ae9c7fb1db54ca5f
+      template: null
+      threshold: {}
+    - id: f3f56a5ae82f4b5aa8a6b9b7f4c4a906
+      layer: redline
+      text: 大额罚单
+      judgeable: true
+      historical_example:
+        event: 某发行人因合规问题被监管处大额罚单（待补一手来源）
+        source_url: ''
+        source_type: sec_filing
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: null
+      template: large_fine
+      threshold:
+        amount_usd: 100000000
+    - id: 099eaa0a7404486f8a0c67cce03a3d08
+      layer: redline
+      text: 高管突变（CEO/CFO 离任或被调查）
+      judgeable: true
+      historical_example:
+        event: 某发行人 CEO/CFO 突然离任并随之爆出会计/合规问题（待补一手来源）
+        source_url: ''
+        source_type: sec_filing
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: null
+      template: exec_change
+      threshold:
+        roles:
+        - CEO
+        - CFO
+        lookback_days: 30
+    - id: 7167581e9f194798a6a73e28424e11ed
+      layer: redline
+      text: 财报重述
+      judgeable: true
+      historical_example:
+        event: 某发行人对已披露财报进行重述更正（待补一手来源）
+        source_url: ''
+        source_type: sec_filing
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: null
+      template: restatement
+      threshold:
+        forms:
+        - 20-F
+        - 10-K
+        - 10-Q
+        - 6-K
+    manual_check_items:
+    - id: 5f79be9cccec494eb41c18f9467ce286
+      text: 现价距 52 周高 $464 腰斩（约 -46%）
+      reason: 价格图形型
+      cadence: monthly
+    - id: e68747e223a94ad29702277631998fa5
+      text: P/E 比十年均值约 28x 低约 55%
+      reason: 价格图形型
+      cadence: monthly
+    entry_anchor:
+      anchor_type: ttm_gaap_pe
+      anchor_value: 16.0
+      note: 16x ≈ $251（TTM GAAP EPS ≈ $15.66：Q1FY26 4.06 + Q2FY26 3.59 + FY25 后两季）。当前读数
+        2026-06-06：现价约 $253 ≈ 16.2x，已在加仓门口；forward P/E 约 13-14x。调整后 EPS 比 GAAP 高约
+        12%，线踩 GAAP 偏保守。
+    next_verdict:
+      event: Q3 FY26 10-Q 发布后重算 TTM GAAP EPS（Q1FY26 4.06 + Q2FY26 3.59 + FY25 后两季
+        → 加入 Q3FY26、剔除 FY25 Q3），判断 TTM P/E 是否跌破 16x ADD 门槛
+      date: null
+      source_note: FactSet 财年截至 8/31；Q3 FY26 对应 Mar-May 2026，预计 ~2026 年 6 月底发布，具体日期待确认
+    position_cap_tier: 硬thesis
+    confirmation:
+      paraphrased: true
+      confirmed_at: null
+      confirmed_by_user: true
+    created_at: '2026-08-02T13:54:42+00:00'
+    updated_at: '2026-08-02T13:55:01+00:00'
+    review_notes: []
+  metrics:
+    turns: 2
+    clarification_rounds: 0
+    converged: true
+- ticker: MCO
+  card:
+    card_id: 8c68709f4d154769a8faee4e22a3862a
+    user_id: beta1
+    ticker: MCO
+    filer_type: domestic_10k
+    holding_reason_raw: 穆迪是评级双寡头（Moody's / S&P）之一，核心评级业务护城河强（监管准入 + 网络效应 + 客户黏性），现金流稳定。策略：逆势、越跌越买。
+    key_assumptions:
+    - id: 8d2c9e20747841c0967d473892af329d
+      text: 评级行业为 Moody's / S&P 双寡头格局，新进入者难以撼动
+      judgeable: true
+    - id: e716aaa957594870bd432bcf60d65609
+      text: 核心评级业务护城河来自监管准入（NRSRO 资质壁垒）+ 网络效应（评级被广泛嵌入投资流程与监管框架）+ 客户黏性（发行人付费模式切换成本高）
+      judgeable: true
+    - id: 457f5cd3110a47b3b49590064028d7bf
+      text: 评级业务现金流稳定，受债务发行周期波动影响可控
+      judgeable: true
+    - id: 04b52d63d9664142b19b91c4ce07b11f
+      text: MCO GAAP 摊薄 EPS 干净、无需特别剔除项（无 GOOGL 那种股权公允值大额波动），可直接用于 TTM P/E 计算
+      judgeable: true
+    - id: 5c1e4f5a948f4fbe8fe7d58e5ea69d65
+      text: MCO FCF 增长轨迹为低双位数，25x TTM P/E 隐含 ~7% 增速明显低于该轨迹，说明有安全边际
+      judgeable: true
+    broken_conditions:
+    - id: 0fd265e98aef4cf5a3fe34b202d04f82
+      layer: mirror
+      text: 第三家评级机构获得 NRSRO 资质并在投资级/结构化市场份额显著提升，或监管推动降低对 NRSRO 评级的强制依赖
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: 8d2c9e20747841c0967d473892af329d
+      template: null
+      threshold: {}
+    - id: 49203c0d315946d48868f37c91389caa
+      layer: mirror
+      text: SEC 或国会立法削弱 NRSRO 体制（如取消评级引用规则、开放替代信用评估），或发行人付费模式被监管/市场转向订购者付费
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: e716aaa957594870bd432bcf60d65609
+      template: null
+      threshold: {}
+    - id: 9bb00555558c4f8c94dec97ae8af0e50
+      layer: mirror
+      text: 利率持续高企或信用周期紧缩导致全球债券发行量连续多季度大幅下滑，评级收入同步显著下降
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: 457f5cd3110a47b3b49590064028d7bf
+      template: null
+      threshold: {}
+    - id: fac6d806eb1e407b8a0116bb26c51e39
+      layer: mirror
+      text: GAAP EPS 出现大额非经常性损益（诉讼、减值、税务调整等），使 TTM 摄薄 EPS 失真、25x 加仓线需特别调整
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: 04b52d63d9664142b19b91c4ce07b11f
+      template: null
+      threshold: {}
+    - id: db34a7bbd3254e42b9f43329916f2318
+      layer: mirror
+      text: FCF 增长连续 2-3 年降至单位数（低于 10%），25x 隐含增速不再低于实际轨迹，安全边际消失
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: 5c1e4f5a948f4fbe8fe7d58e5ea69d65
+      template: null
+      threshold: {}
+    - id: 6c869b867f514e1c85f3c5ab292b7293
+      layer: redline
+      text: 大额罚单
+      judgeable: true
+      historical_example:
+        event: 某发行人因合规问题被监管处大额罚单（待补一手来源）
+        source_url: ''
+        source_type: sec_filing
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: null
+      template: large_fine
+      threshold:
+        amount_usd: 100000000
+    - id: 773647fec2e24b7b9e9a9b8143a3eb19
+      layer: redline
+      text: 高管突变（CEO/CFO 离任或被调查）
+      judgeable: true
+      historical_example:
+        event: 某发行人 CEO/CFO 突然离任并随之爆出会计/合规问题（待补一手来源）
+        source_url: ''
+        source_type: sec_filing
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: null
+      template: exec_change
+      threshold:
+        roles:
+        - CEO
+        - CFO
+        lookback_days: 30
+    - id: 3689dffe158c49b98e80c69063ec7ed5
+      layer: redline
+      text: 财报重述
+      judgeable: true
+      historical_example:
+        event: 某发行人对已披露财报进行重述更正（待补一手来源）
+        source_url: ''
+        source_type: sec_filing
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: null
+      template: restatement
+      threshold:
+        forms:
+        - 20-F
+        - 10-K
+        - 10-Q
+        - 6-K
+    manual_check_items:
+    - id: f3817b9f2cc849cdaa4d1d5340bc667c
+      text: Reverse DCF 参考锈：现价约 $475 隐含未来十年 FCF 年增 ~9% + 永续 3%；25x 加仓线隐含增速降至 ~7%，需与
+        MCO 实际低双位数轨迹对比确认安全边际。一次性锈、不进线。
+      reason: Reverse DCF 需人工判断隐含增速合理性，不可自动核对
+      cadence: quarterly
+    entry_anchor:
+      anchor_type: ttm_gaap_pe
+      anchor_value: 25.0
+      note: 25x ≈ $394（TTM GAAP 摊薄 EPS ≈ $15.76，2026-07-24 按 Q2 2026 10-Q 滚动重算：旧 TTM
+        13.94 − Q2'25 3.21 + Q2'26 5.03）。较 6/06 旧线 $349 上抬约 13%。现价约 $475 ≈ 30x，未触发，距加仓线约
+        −17%
+    next_verdict:
+      event: Q3 2026 10-Q 发布——更新 TTM GAAP 摊薄 EPS、重算 25x 加仓线，并检验 FCF 增长是否维持低双位数轨迹
+      date: null
+      source_note: Q2 2026 10-Q 已于 2026-07 前后发布（用户 7/24 滚动重算）；Q3 通常 10 月底前后，具体日期待公司公告
+    position_cap_tier: 硬thesis
+    confirmation:
+      paraphrased: true
+      confirmed_at: null
+      confirmed_by_user: true
+    created_at: '2026-08-02T13:55:31+00:00'
+    updated_at: '2026-08-02T13:55:58+00:00'
+    review_notes: []
+  metrics:
+    turns: 2
+    clarification_rounds: 0
+    converged: true
+- ticker: GOOGL
+  card:
+    card_id: f469d5271bd74c00813bcd8421a52edf
+    user_id: beta1
+    ticker: GOOGL
+    filer_type: domestic_10k
+    holding_reason_raw: 按 Benedict Evans「模型商品化 → 价值沉淀到分发+应用层」的推导：基础模型大概率走电力/平板屏的路（造起来难、却没定价权），AI
+      的胜负手不是 benchmark 而是分发。Alphabet 握着全世界最深的分发——Search / Chrome / Android / Workspace
+      / YouTube 数十亿默认入口，把 Gemini 嵌进每个用户的选择时刻，不需要赢模型质量，只需「足够好 + 默认在位」。买 GOOGL = 押「分发护城河」这个
+      job，而不是押「谁家模型最强」这个会被商品化的 task。
+    key_assumptions:
+    - id: f6c837fa7e2348c68528d584712d7dc9
+      text: AI 基础模型大概率被商品化——走电力/平板屏的路（造起来难却没定价权），价值沉淀到分发+应用层而非模型层
+      judgeable: true
+    - id: 69a4129e85e342079fff6802b163ed1e
+      text: Alphabet 握有全世界最深的分发护城河——Search / Chrome / Android / Workspace / YouTube
+        数十亿默认入口
+      judgeable: true
+    - id: d04796fcd7204da0849e3163c60849bd
+      text: Gemini 嵌入每个用户选择时刻，不需要赢模型质量，只需「足够好 + 默认在位」即可
+      judgeable: true
+    - id: adbceacd5ba4431c8164f015dbc31df8
+      text: AI 的胜负手是分发而非 benchmark
+      judgeable: true
+    broken_conditions:
+    - id: 79531258f223447c8df1eb630ddf1b88
+      layer: mirror
+      text: 头部模型供应商（如 OpenAI / Anthropic）API 定价持续上升或维持高毛利，基础模型未被商品化、定价权留存于模型层，价值未沉淀到分发层
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: f6c837fa7e2348c68528d584712d7dc9
+      template: null
+      threshold: {}
+    - id: ee39b98b576b407ab01305dddbea188b
+      layer: mirror
+      text: 反垄断裁决迫使 Alphabet 拆分或开放 Search / Chrome / Android 的默认设置，数十亿默认入口被削弱或丧失，分发护城河瓦解
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: 69a4129e85e342079fff6802b163ed1e
+      template: null
+      threshold: {}
+    - id: 6f4cc8e2f8dd41e3ab0d0271fe33232d
+      layer: mirror
+      text: Gemini 模型质量持续落后竞争对手导致用户主动绕过默认选项，或 Apple / OpenAI / Meta 通过 OS 级/设备级整合获得更深分发入口，「默认在位」优势被侵蚀
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: d04796fcd7204da0849e3163c60849bd
+      template: null
+      threshold: {}
+    - id: 2a4464763e9547389a1b1c70e8170fcb
+      layer: mirror
+      text: AI 出现质变体验，模型能力差异重新成为用户选择的决定因素（如某模型出现代际差距），分发优势不足以弥补质量差距
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: adbceacd5ba4431c8164f015dbc31df8
+      template: null
+      threshold: {}
+    - id: 00328251954441c98e6a8a1aa67543e1
+      layer: redline
+      text: 大额罚单
+      judgeable: true
+      historical_example:
+        event: 某发行人因合规问题被监管处大额罚单（待补一手来源）
+        source_url: ''
+        source_type: sec_filing
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: null
+      template: large_fine
+      threshold:
+        amount_usd: 100000000
+    - id: e167adeaf58747c486db923ddcdefa64
+      layer: redline
+      text: 高管突变（CEO/CFO 离任或被调查）
+      judgeable: true
+      historical_example:
+        event: 某发行人 CEO/CFO 突然离任并随之爆出会计/合规问题（待补一手来源）
+        source_url: ''
+        source_type: sec_filing
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: null
+      template: exec_change
+      threshold:
+        roles:
+        - CEO
+        - CFO
+        lookback_days: 30
+    - id: a1039735c3744b7fa283b7b88f275ee5
+      layer: redline
+      text: 财报重述
+      judgeable: true
+      historical_example:
+        event: 某发行人对已披露财报进行重述更正（待补一手来源）
+        source_url: ''
+        source_type: sec_filing
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: null
+      template: restatement
+      threshold:
+        forms:
+        - 20-F
+        - 10-K
+        - 10-Q
+        - 6-K
+    manual_check_items:
+    - id: f7cc711cd3c54072bd20cc485c9c7d86
+      text: Gemini 在 Search / Workspace / YouTube 中的功能渗透率和用户实际使用情况——需持续观察产品层面而非仅看
+        SEC 披露
+      reason: 产品功能渗透率属定性观察，10-K/10-Q 不直接披露
+      cadence: quarterly
+    - id: 6cb94a6959104b8495a25379ba58d933
+      text: 头部模型供应商（OpenAI / Anthropic / Google）API 定价趋势——验证模型是否被商品化（定价持续下降）还是维持定价权
+      reason: 竞争对手外部定价数据，GOOGL SEC 文件不覆盖
+      cadence: quarterly
+    - id: 782cf58d659c4d0a9ba3da94b1d19a61
+      text: 竞争对手分发入口变化——Apple OS 级 AI 整合、Meta 社交平台 AI 分发是否侵蚀 Alphabet 默认在位优势
+      reason: 竞争对手产品策略属定性跟踪，非 SEC 自动可查
+      cadence: quarterly
+    entry_anchor:
+      anchor_type: normalized_operating_pe
+      anchor_value: 25.0
+      note: 25x≈$250（2026-07-23 按 Q2'26 10-Q 重算：TTM 运营利润≈1,476亿×(1−17%)÷摊薄股约122.5亿股≈$10.0/股；现价$325≈32.5x
+        未触发）；买入价$379.67≈38x 属满估值区非安全边际。历史 6/06：≈$9.8/股，$359≈37x。每次复查按最新一手 10-Q 重算，不写死价格。不用
+        FCF 当线——2026 capex 指引 1800–1900亿、大头为增长性 capex，FCF 失真（Q2'26 单季 FCF 转负 -58.6亿）。
+    next_verdict:
+      event: Q3 2026 财报 / 10-Q：Search 营收增速是否维持 +17% 区间、Cloud 营业利润率是否守住 35%+、合并营业利润率是否维持
+        34%、Gemini 相关指标（用户渗透/使用量）是否披露且验证默认在位假设
+      date: null
+      source_note: GOOGL 通常 10 月下旬披露 Q3 财报；精确日期待公司 IR 公告
+    position_cap_tier: 中
+    confirmation:
+      paraphrased: true
+      confirmed_at: null
+      confirmed_by_user: true
+    created_at: '2026-08-02T13:56:46+00:00'
+    updated_at: '2026-08-02T13:57:17+00:00'
+    review_notes: []
+  metrics:
+    turns: 2
+    clarification_rounds: 0
+    converged: true
+- ticker: NVDA
+  card:
+    card_id: 5e6e22c2f02748aeb2afd69ecf9bf5bc
+    user_id: beta1
+    ticker: NVDA
+    filer_type: domestic_10k
+    holding_reason_raw: NVIDIA = AI 算力的事实标准。护城河不在单颗 GPU，而在 CUDA 软件生态 + 开发者锁定 + 数据中心级全栈整合（NVLink
+      / InfiniBand / 整机柜系统）——训练与推理工作流深度绑定 CUDA，迁移成本极高。买 NVDA = 押「AI 基础设施的卖铲人」这个 job：只要算力需求持续扩张、且生态锁定不被打破，就持续收税；而不是押「哪一代模型最强」这个会被商品化的
+      task。
+    key_assumptions:
+    - id: b34c0ff7d4de49f5916934867f869997
+      text: CUDA 软件生态构成开发者锁定，训练与推理工作流深度绑定 CUDA，迁移成本极高
+      judgeable: true
+    - id: a4639719d526470d99df18ae575f246b
+      text: 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）构成硬件层面的护城河，单颗 GPU 优势不是核心
+      judgeable: true
+    - id: 1df5f73ef4de4e3bb08a1ecf83d2000f
+      text: AI 算力需求持续扩张，驱动 NVDA 作为基础设施卖铲人持续收税
+      judgeable: true
+    - id: be505c2fa8d64ea8a7340961189cad46
+      text: 生态锁定不被打破——竞争对手（AMD / Intel / 自研 ASIC）无法在软件生态上形成有效替代
+      judgeable: true
+    - id: 57b878cd07544ea09c87b300c6b5fc96
+      text: 「哪一代模型最强」会被商品化，但卖铲人的基础设施地位不因此动摇——thesis 押的是基础设施收税而非模型领先
+      judgeable: true
+    broken_conditions:
+    - id: 3e592bef825d4d6a9c118b6d9c17d0ed
+      layer: mirror
+      text: 竞争对手（AMD ROCm / Intel oneAPI / 云厂商自研框架）在软件生态上取得开发者大规模采用，CUDA 迁移成本显著下降至可替换水平
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: b34c0ff7d4de49f5916934867f869997
+      template: null
+      threshold: {}
+    - id: 0f41864821ea4b66bea99a982a5d6c7a
+      layer: mirror
+      text: 竞争对手在互联（NVLink 等价物）、网络（InfiniBand 替代如 Ultra Ethernet）、整机柜系统层面追平 NVDA 全栈整合能力
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: a4639719d526470d99df18ae575f246b
+      template: null
+      threshold: {}
+    - id: 992828f729b3406c90c26a75cd02654d
+      layer: mirror
+      text: AI 算力需求增长停滞或逆转——模型效率提升大幅降低推理算力需求，或超大规模客户 AI capex 周期见顶回落
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: 1df5f73ef4de4e3bb08a1ecf83d2000f
+      template: null
+      threshold: {}
+    - id: fa185a512a214d7c8ffce1ccea85b86e
+      layer: mirror
+      text: 开源或跨平台抽象层（如 OpenAI Triton / ML 编译器统一抽象）降低对 CUDA 的直接依赖至可替换水平，生态锁定瓦解
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: be505c2fa8d64ea8a7340961189cad46
+      template: null
+      threshold: {}
+    - id: ce85aa78906a49e990e3cc93908f59d8
+      layer: mirror
+      text: AI 基础设施层本身被商品化——通用算力供给过剩（自研芯片 + 竞品涌入）导致定价权转移，卖铲人税收模式失效
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: 57b878cd07544ea09c87b300c6b5fc96
+      template: null
+      threshold: {}
+    - id: 99bf8c35553c4be7982dde77aa818e8b
+      layer: redline
+      text: 大额罚单
+      judgeable: true
+      historical_example:
+        event: 某发行人因合规问题被监管处大额罚单（待补一手来源）
+        source_url: ''
+        source_type: sec_filing
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: null
+      template: large_fine
+      threshold:
+        amount_usd: 100000000
+    - id: 158ec23c2cf1403288318c0ccd24c0c7
+      layer: redline
+      text: 高管突变（CEO/CFO 离任或被调查）
+      judgeable: true
+      historical_example:
+        event: 某发行人 CEO/CFO 突然离任并随之爆出会计/合规问题（待补一手来源）
+        source_url: ''
+        source_type: sec_filing
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: null
+      template: exec_change
+      threshold:
+        roles:
+        - CEO
+        - CFO
+        lookback_days: 30
+    - id: 43ff1f6761af4be09075af571d71df72
+      layer: redline
+      text: 财报重述
+      judgeable: true
+      historical_example:
+        event: 某发行人对已披露财报进行重述更正（待补一手来源）
+        source_url: ''
+        source_type: sec_filing
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: null
+      template: restatement
+      threshold:
+        forms:
+        - 20-F
+        - 10-K
+        - 10-Q
+        - 6-K
+    manual_check_items:
+    - id: 92729c27d76b4a5c87789801a37b6618
+      text: 深价线 ≈ $130：现价 ~$203 高出约 36%，默认 HOLD；仅当回落至 ~$130 带、且 thesis 未破时才重估 ADD
+      reason: 价格图形型（估值锚价格触发线，需人工监控）
+      cadence: monthly
+    entry_anchor:
+      anchor_type: normalized_pe
+      anchor_value: 22.0
+      note: 穿越周期归一化：中枢 EPS ~$5.9 × 22x ≈ $130；TTM GAAP EPS $6.53（含投资收益、偏慷慨）→ 此线已偏保守；现价
+        ~$203 高出约 36%。方法演变：A（forward P/E 信增长延续）经 steelman 自检未通过弃用 → 改用 B（穿越周期归一化）。caca
+        2026-06-10 审定。
+    next_verdict:
+      event: NVDA 下一次季度财报——数据中心营收增速是否放缓 + 竞争格局变化（AMD MI 系列 / 云厂商自研 ASIC 营收披露）+ CUDA
+        生态指标
+      date: null
+      source_note: 文本未给出具体财报日期
+    position_cap_tier: trinket
+    confirmation:
+      paraphrased: true
+      confirmed_at: null
+      confirmed_by_user: true
+    created_at: '2026-08-02T13:57:52+00:00'
+    updated_at: '2026-08-02T13:58:15+00:00'
+    review_notes: []
+  metrics:
+    turns: 2
+    clarification_rounds: 0
+    converged: true
+- ticker: VEEV
+  card:
+    card_id: 8fd46a5611d344ccb8346cb8f2b7501c
+    user_id: beta1
+    ticker: VEEV
+    filer_type: domestic_10k
+    holding_reason_raw: Veeva = 生命科学行业的垂直 SaaS（CRM + 临床/质量/监管云），深嵌药企合规与监管流程、转换成本高、行业垄断地位。价值角度：垂直护城河
+      + 监管刚需 + 高利润订阅。
+    key_assumptions:
+    - id: 43c273d32abf40538c118703032e5cd6
+      text: Veeva 是生命科学行业垂直 SaaS（CRM + 临床/质量/监管云），占据行业垄断地位，无明显替代者
+      judgeable: true
+    - id: 108aabf0e2dc4eb4974b0503425fd0ab
+      text: 深嵌药企合规与监管流程，转换成本高，客户难以迁移
+      judgeable: true
+    - id: 2bb8aa0da32b4d4d97465cd46360c0e0
+      text: 药企合规与监管流程是刚需而非可选支出，监管要求持续驱动对专有 SaaS 的需求
+      judgeable: true
+    - id: c188f4d6996643db827e76f2dff5a510
+      text: 高利润订阅收入模式，利润率高
+      judgeable: true
+    - id: 137ab132649c4e5d82cd2af892519d29
+      text: SBC（约 5 亿美元/年）是真实成本（通过增发稀释股权），必须用 GAAP 而非 Non-GAAP 口径估值；Non-GAAP 会把稀释当不存在、美化估值
+      judgeable: true
+    - id: cff17e44425841e791c37e143151e0c7
+      text: owner earnings（GAAP 净利 ~0.9B）盈利收益率 ~3.1%，r=9% 时隐含永续增速 ~5.9%，低于实际 ~14%
+        增长——估值合理偏便宜但非白菜价
+      judgeable: true
+    broken_conditions:
+    - id: 950775af8be74c73932d3b5d3356dd6c
+      layer: mirror
+      text: 生命科学垂直 SaaS 出现有力竞争者（如 Salesforce Health Cloud 扩展或新兴垂直竞品）蚕食核心市场份额，垄断地位动摇
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: 43c273d32abf40538c118703032e5cd6
+      template: null
+      threshold: {}
+    - id: d5385227c5574792951e72a2960356e2
+      layer: mirror
+      text: 出现客户批量迁移或大客户合同流失/续约率显著下降，转换成本不再构成壁垒
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: 108aabf0e2dc4eb4974b0503425fd0ab
+      template: null
+      threshold: {}
+    - id: 2e6c88a672bc4cc682e0bcd8c1390e54
+      layer: mirror
+      text: 监管环境变化导致药企削减合规云支出，或监管流程标准化/通用化降低对专有 SaaS 的依赖
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: 2bb8aa0da32b4d4d97465cd46360c0e0
+      template: null
+      threshold: {}
+    - id: a38121dbb5ed41c795104d049217d9e7
+      layer: mirror
+      text: 订阅收入增速显著放缓或毛利率持续下降，高利润订阅模式无法维持
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: c188f4d6996643db827e76f2dff5a510
+      template: null
+      threshold: {}
+    - id: 3e752ab9ca9847a7bcbd3a647b0f53d0
+      layer: mirror
+      text: SBC 持续扩大导致 GAAP 净利被显著侵蚀，或 SBC 政策/股权稀释速度发生重大变化
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: 137ab132649c4e5d82cd2af892519d29
+      template: null
+      threshold: {}
+    - id: 8af11ba196b04786a712010317f06ad5
+      layer: mirror
+      text: 实际增速从 ~14% 降至接近或低于隐含永续增速 ~5.9%，增长溢价不再支撑当前估值
+      judgeable: true
+      historical_example:
+        event: ''
+        source_url: ''
+        source_type: news
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: cff17e44425841e791c37e143151e0c7
+      template: null
+      threshold: {}
+    - id: bab21f38c6a8475aa7ce64563fca3651
+      layer: redline
+      text: 大额罚单
+      judgeable: true
+      historical_example:
+        event: 某发行人因合规问题被监管处大额罚单（待补一手来源）
+        source_url: ''
+        source_type: sec_filing
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: null
+      template: large_fine
+      threshold:
+        amount_usd: 100000000
+    - id: 981f4ad0f1814ac68ed5bb98eb87b1ef
+      layer: redline
+      text: 高管突变（CEO/CFO 离任或被调查）
+      judgeable: true
+      historical_example:
+        event: 某发行人 CEO/CFO 突然离任并随之爆出会计/合规问题（待补一手来源）
+        source_url: ''
+        source_type: sec_filing
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: null
+      template: exec_change
+      threshold:
+        roles:
+        - CEO
+        - CFO
+        lookback_days: 30
+    - id: e4889ba4b55f4d5d8d3ff594c0c9b6b9
+      layer: redline
+      text: 财报重述
+      judgeable: true
+      historical_example:
+        event: 某发行人对已披露财报进行重述更正（待补一手来源）
+        source_url: ''
+        source_type: sec_filing
+        verified: false
+      status: untriggered
+      evidence: []
+      source_assumption_id: null
+      template: restatement
+      threshold:
+        forms:
+        - 20-F
+        - 10-K
+        - 10-Q
+        - 6-K
+    manual_check_items:
+    - id: c85f05b56c154c7480a314e6399eca90
+      text: TTM GAAP P/E 跌破 25x 触发 ADD 信号：每次复查按最新财报四季 GAAP 摄薄 EPS 重算 P/E（现价 ÷ TTM
+        GAAP EPS），低于 25x 且 thesis 未破、在能力圈内才算候选
+      reason: 估值阈值型，需手动取最新财报数据重算
+      cadence: monthly
+    - id: 45477092c26349118fe0de399351359c
+      text: 25x ≈ $141，距现价约 −22%（接近 52 周低 $148）；现价约 $180 ≈ 32x（forward Non-GAAP 约
+        20x），未触发
+      reason: 价格阈值型
+      cadence: monthly
+    entry_anchor:
+      anchor_type: ttm_gaap_pe
+      anchor_value: 25.0
+      note: 25x ≈ $141；当前约 32x（$180）；VEEV 必须用 GAAP 不用 Non-GAAP（SBC ~$5亿/年当真实成本）；TTM
+        EPS = 最近四季 GAAP 摄薄 EPS 加总（财年截止 1/31）；forward Non-GAAP 约 20x 但不用作加仓钥匙；reverse
+        DCF：$29B 市值、GAAP 净利 ~$0.9B、盈利收益率 ~3.1%、r=9% 隐含永续增速 ~5.9% < 实际 ~14%
+    next_verdict:
+      event: Veeva 下一份季报发布（财年截止 1 月 31 日；当前读数 2026-06-06 基于最近四季 GAAP EPS ~$5.65），需用最新四季
+        GAAP 摄薄 EPS 重算 TTM GAAP P/E 并检查是否跌破 25x
+      date: null
+      source_note: Veeva 财年截止 1/31，Q1 FY2027 约 5-6 月报告，下一份 Q2 FY2027 预计 8-9 月；具体日期待确认
+    position_cap_tier: 中
+    confirmation:
+      paraphrased: true
+      confirmed_at: null
+      confirmed_by_user: true
+    created_at: '2026-08-02T13:58:43+00:00'
+    updated_at: '2026-08-02T13:59:02+00:00'
+    review_notes: []
+  metrics:
+    turns: 2
+    clarification_rounds: 0
+    converged: true

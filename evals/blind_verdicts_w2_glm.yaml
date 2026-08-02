@@ -1,11 +1,3 @@
-# qwen-turbo 版盲评中止（2026-08-02）
-# 理由：qwen-turbo 质量裁决 W1 已成立（盲评胜率 4% vs glm 96%，已定仅用于冒烟回归），
-#       B4 升级决策不依赖 W2 的 qwen 接受率。
-# 处理：case 1 (FDS) 保留作 error analysis 样本（model_output 见下，供作者对照 reference_input 分析错误）；
-#       cases 2-5 (MCO/GOOGL/NVDA/VEEV) abandoned——不填 acceptable、不跑 collect。
-# 质量裁决依据 W1 胜率；只 collect glm 版（evals/blind_verdicts_w2_glm.yaml）。
-# B4 决策依据：W1 胜率裁决 + glm 版 W2 接受率（glm ≥85% → task_model 升级 glm；<85% → 问题在 prompt/设计，转 prompt 侧 error analysis）。
-
 - case: 1
   ticker: FDS
   reference_input: '## Thesis · 为什么买
@@ -22,27 +14,43 @@
     acceptable: null
     reason: ''
   - field: key_assumptions[0]
-    model_output: 深度嵌入买卖方工作流、转换成本高
+    model_output: FactSet 深度嵌入买卖方工作流，转换成本高（护城河）
     acceptable: null
     reason: ''
   - field: key_assumptions[1]
-    model_output: ASV（年化订阅）经常性强、续约率高
+    model_output: ASV 经常性强、续约率高，构成稳定现金流基础
     acceptable: null
     reason: ''
   - field: key_assumptions[2]
-    model_output: 高黏性订阅 + 稳定现金流的「卖铲子」生意
+    model_output: ASV ~6% 增长 + 回购减股 ~3% 的增速轨迹可持续
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[3]
+    model_output: Reverse DCF：现价约 9.2B 市值、TTM FCF 约 575M，r=9% 或 10% 下隐含永续 FCF 增速仅 ~2.75%-3.75%，远低于 ASV ~6% + 回购 ~3% 的实际轨迹——两种折现率下都便宜
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[4]
+    model_output: 调整后 EPS（剔收购无形资产摊销）比 GAAP 高约 12%，线踩 GAAP 16x 门槛偏保守
     acceptable: null
     reason: ''
   - field: mirrors[0]
-    model_output: 客户切换平台的意愿增强或成本降低
+    model_output: 竞品（彭博 / S&P Global / Refinitiv 等）通过更优产品或更低价格侵蚀 FactSet 工作流嵌入度，出现客户批量迁移迹象
     acceptable: null
     reason: ''
   - field: mirrors[1]
-    model_output: ASV 下降或续约率显著降低
+    model_output: ASV 增速显著放缓至远低于 6%，或续约率明显下降
     acceptable: null
     reason: ''
   - field: mirrors[2]
-    model_output: 业务模式被颠覆或现金流不稳定
+    model_output: ASV 增速和/或回购节奏放缓，实际增速轨迹无法维持
+    acceptable: null
+    reason: ''
+  - field: mirrors[3]
+    model_output: FCF 增速大幅放缓或市值显著上升，使隐含永续增速不再低于实际增速轨迹
+    acceptable: null
+    reason: ''
+  - field: mirrors[4]
+    model_output: 收购无形资产摊销占比上升，GAAP 与调整后 EPS 差距扩大，削弱保守性论证
     acceptable: null
     reason: ''
 - case: 2
@@ -61,19 +69,43 @@
     acceptable: null
     reason: ''
   - field: key_assumptions[0]
-    model_output: 监管准入 + 网络效应 + 客户黏性
+    model_output: 评级行业为 Moody's / S&P 双寡头格局，新进入者难以撼动
     acceptable: null
     reason: ''
   - field: key_assumptions[1]
-    model_output: 现金流稳定
+    model_output: 核心评级业务护城河来自监管准入（NRSRO 资质壁垒）+ 网络效应（评级被广泛嵌入投资流程与监管框架）+ 客户黏性（发行人付费模式切换成本高）
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[2]
+    model_output: 评级业务现金流稳定，受债务发行周期波动影响可控
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[3]
+    model_output: MCO GAAP 摊薄 EPS 干净、无需特别剔除项（无 GOOGL 那种股权公允值大额波动），可直接用于 TTM P/E 计算
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[4]
+    model_output: MCO FCF 增长轨迹为低双位数，25x TTM P/E 隐含 ~7% 增速明显低于该轨迹，说明有安全边际
     acceptable: null
     reason: ''
   - field: mirrors[0]
-    model_output: 监管政策变化导致准入门槛降低或出现新竞争者
+    model_output: 第三家评级机构获得 NRSRO 资质并在投资级/结构化市场份额显著提升，或监管推动降低对 NRSRO 评级的强制依赖
     acceptable: null
     reason: ''
   - field: mirrors[1]
-    model_output: 核心评级业务收入大幅下滑或出现重大亏损
+    model_output: SEC 或国会立法削弱 NRSRO 体制（如取消评级引用规则、开放替代信用评估），或发行人付费模式被监管/市场转向订购者付费
+    acceptable: null
+    reason: ''
+  - field: mirrors[2]
+    model_output: 利率持续高企或信用周期紧缩导致全球债券发行量连续多季度大幅下滑，评级收入同步显著下降
+    acceptable: null
+    reason: ''
+  - field: mirrors[3]
+    model_output: GAAP EPS 出现大额非经常性损益（诉讼、减值、税务调整等），使 TTM 摄薄 EPS 失真、25x 加仓线需特别调整
+    acceptable: null
+    reason: ''
+  - field: mirrors[4]
+    model_output: FCF 增长连续 2-3 年降至单位数（低于 10%），25x 隐含增速不再低于实际轨迹，安全边际消失
     acceptable: null
     reason: ''
 - case: 3
@@ -94,23 +126,39 @@
     （历史）当前读数 2026-06-06：运营利润 Q1 约 397 亿，归一化每股运营利润约 9.8 美元，现价约 359 美元≈37x，未触发；25x≈245 美元，距现价约 −32%。'
   fields:
   - field: holding_reason_raw
-    model_output: 按 Benedict Evans「模型商品化 → 价值沉淀到分发+应用层」的推导:基础模型大概率走电力/平板屏的路(造起来难、却没定价权),AI 的胜负手不是 benchmark 而是分发。Alphabet 握着全世界最深的分发——Search / Chrome / Android / Workspace / YouTube 数十亿默认入口,把 Gemini 嵌进每个用户的选择时刻,不需要赢模型质量,只需「足够好 + 默认在位」。买 GOOGL = 押「分发护城河」这个 job,而不是押「谁家模型最强」这个会被商品化的 task。
+    model_output: 按 Benedict Evans「模型商品化 → 价值沉淀到分发+应用层」的推导：基础模型大概率走电力/平板屏的路（造起来难、却没定价权），AI 的胜负手不是 benchmark 而是分发。Alphabet 握着全世界最深的分发——Search / Chrome / Android / Workspace / YouTube 数十亿默认入口，把 Gemini 嵌进每个用户的选择时刻，不需要赢模型质量，只需「足够好 + 默认在位」。买 GOOGL = 押「分发护城河」这个 job，而不是押「谁家模型最强」这个会被商品化的 task。
     acceptable: null
     reason: ''
   - field: key_assumptions[0]
-    model_output: Alphabet 拥有全球最深的分发渠道，包括 Search、Chrome、Android、Workspace 和 YouTube 等数十亿默认入口。
+    model_output: AI 基础模型大概率被商品化——走电力/平板屏的路（造起来难却没定价权），价值沉淀到分发+应用层而非模型层
     acceptable: null
     reason: ''
   - field: key_assumptions[1]
-    model_output: Gemini 能够嵌入每个用户的选择时刻，无需在模型质量上取胜，只需达到「足够好 + 默认在位」。
+    model_output: Alphabet 握有全世界最深的分发护城河——Search / Chrome / Android / Workspace / YouTube 数十亿默认入口
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[2]
+    model_output: Gemini 嵌入每个用户选择时刻，不需要赢模型质量，只需「足够好 + 默认在位」即可
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[3]
+    model_output: AI 的胜负手是分发而非 benchmark
     acceptable: null
     reason: ''
   - field: mirrors[0]
-    model_output: Alphabet 的分发渠道被其他公司超越或替代，导致其无法维持当前的市场主导地位。
+    model_output: 头部模型供应商（如 OpenAI / Anthropic）API 定价持续上升或维持高毛利，基础模型未被商品化、定价权留存于模型层，价值未沉淀到分发层
     acceptable: null
     reason: ''
   - field: mirrors[1]
-    model_output: Gemini 无法有效嵌入用户的选择时刻，或被其他更优的 AI 模型取代。
+    model_output: 反垄断裁决迫使 Alphabet 拆分或开放 Search / Chrome / Android 的默认设置，数十亿默认入口被削弱或丧失，分发护城河瓦解
+    acceptable: null
+    reason: ''
+  - field: mirrors[2]
+    model_output: Gemini 模型质量持续落后竞争对手导致用户主动绕过默认选项，或 Apple / OpenAI / Meta 通过 OS 级/设备级整合获得更深分发入口，「默认在位」优势被侵蚀
+    acceptable: null
+    reason: ''
+  - field: mirrors[3]
+    model_output: AI 出现质变体验，模型能力差异重新成为用户选择的决定因素（如某模型出现代际差距），分发优势不足以弥补质量差距
     acceptable: null
     reason: ''
 - case: 4
@@ -129,35 +177,43 @@
     acceptable: null
     reason: ''
   - field: key_assumptions[0]
-    model_output: CUDA 软件生态 + 开发者锁定 + 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）
+    model_output: CUDA 软件生态构成开发者锁定，训练与推理工作流深度绑定 CUDA，迁移成本极高
     acceptable: null
     reason: ''
   - field: key_assumptions[1]
-    model_output: 训练与推理工作流深度绑定 CUDA，迁移成本极高
+    model_output: 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）构成硬件层面的护城河，单颗 GPU 优势不是核心
     acceptable: null
     reason: ''
   - field: key_assumptions[2]
-    model_output: 算力需求持续扩张
+    model_output: AI 算力需求持续扩张，驱动 NVDA 作为基础设施卖铲人持续收税
     acceptable: null
     reason: ''
   - field: key_assumptions[3]
-    model_output: 生态锁定不被打破
+    model_output: 生态锁定不被打破——竞争对手（AMD / Intel / 自研 ASIC）无法在软件生态上形成有效替代
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[4]
+    model_output: 「哪一代模型最强」会被商品化，但卖铲人的基础设施地位不因此动摇——thesis 押的是基础设施收税而非模型领先
     acceptable: null
     reason: ''
   - field: mirrors[0]
-    model_output: CUDA 生态被替代或出现更优替代方案
+    model_output: 竞争对手（AMD ROCm / Intel oneAPI / 云厂商自研框架）在软件生态上取得开发者大规模采用，CUDA 迁移成本显著下降至可替换水平
     acceptable: null
     reason: ''
   - field: mirrors[1]
-    model_output: 训练与推理工作流不再依赖 CUDA 或迁移成本大幅降低
+    model_output: 竞争对手在互联（NVLink 等价物）、网络（InfiniBand 替代如 Ultra Ethernet）、整机柜系统层面追平 NVDA 全栈整合能力
     acceptable: null
     reason: ''
   - field: mirrors[2]
-    model_output: 算力需求停滞或下降
+    model_output: AI 算力需求增长停滞或逆转——模型效率提升大幅降低推理算力需求，或超大规模客户 AI capex 周期见顶回落
     acceptable: null
     reason: ''
   - field: mirrors[3]
-    model_output: 生态锁定被打破或出现更强竞争者
+    model_output: 开源或跨平台抽象层（如 OpenAI Triton / ML 编译器统一抽象）降低对 CUDA 的直接依赖至可替换水平，生态锁定瓦解
+    acceptable: null
+    reason: ''
+  - field: mirrors[4]
+    model_output: AI 基础设施层本身被商品化——通用算力供给过剩（自研芯片 + 竞品涌入）导致定价权转移，卖铲人税收模式失效
     acceptable: null
     reason: ''
 - case: 5
@@ -176,26 +232,50 @@
     acceptable: null
     reason: ''
   - field: key_assumptions[0]
-    model_output: 垂直护城河
+    model_output: Veeva 是生命科学行业垂直 SaaS（CRM + 临床/质量/监管云），占据行业垄断地位，无明显替代者
     acceptable: null
     reason: ''
   - field: key_assumptions[1]
-    model_output: 监管刚需
+    model_output: 深嵌药企合规与监管流程，转换成本高，客户难以迁移
     acceptable: null
     reason: ''
   - field: key_assumptions[2]
-    model_output: 高利润订阅
+    model_output: 药企合规与监管流程是刚需而非可选支出，监管要求持续驱动对专有 SaaS 的需求
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[3]
+    model_output: 高利润订阅收入模式，利润率高
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[4]
+    model_output: SBC（约 5 亿美元/年）是真实成本（通过增发稀释股权），必须用 GAAP 而非 Non-GAAP 口径估值；Non-GAAP 会把稀释当不存在、美化估值
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[5]
+    model_output: owner earnings（GAAP 净利 ~0.9B）盈利收益率 ~3.1%，r=9% 时隐含永续增速 ~5.9%，低于实际 ~14% 增长——估值合理偏便宜但非白菜价
     acceptable: null
     reason: ''
   - field: mirrors[0]
-    model_output: Veeva 的垂直 SaaS 模式被其他平台替代或出现更优解决方案
+    model_output: 生命科学垂直 SaaS 出现有力竞争者（如 Salesforce Health Cloud 扩展或新兴垂直竞品）蚕食核心市场份额，垄断地位动摇
     acceptable: null
     reason: ''
   - field: mirrors[1]
-    model_output: 生命科学行业对 Veeva 的合规与监管流程依赖减弱
+    model_output: 出现客户批量迁移或大客户合同流失/续约率显著下降，转换成本不再构成壁垒
     acceptable: null
     reason: ''
   - field: mirrors[2]
-    model_output: Veeva 的订阅模式盈利能力下降或出现竞争性定价策略
+    model_output: 监管环境变化导致药企削减合规云支出，或监管流程标准化/通用化降低对专有 SaaS 的依赖
+    acceptable: null
+    reason: ''
+  - field: mirrors[3]
+    model_output: 订阅收入增速显著放缓或毛利率持续下降，高利润订阅模式无法维持
+    acceptable: null
+    reason: ''
+  - field: mirrors[4]
+    model_output: SBC 持续扩大导致 GAAP 净利被显著侵蚀，或 SBC 政策/股权稀释速度发生重大变化
+    acceptable: null
+    reason: ''
+  - field: mirrors[5]
+    model_output: 实际增速从 ~14% 降至接近或低于隐含永续增速 ~5.9%，增长溢价不再支撑当前估值
     acceptable: null
     reason: ''

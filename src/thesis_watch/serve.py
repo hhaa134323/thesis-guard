@@ -32,6 +32,16 @@ STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "static"
 
 app = FastAPI(title="Thesis Watch 录入 Agent", version="0.1")
 
+
+@app.middleware("http")
+async def _no_cache_html(request, call_next):
+    """HTML 响应不缓存（index.html 引用的 /assets/* hash 每次 build 变，
+    缓存旧 index.html → 旧 hash CSS/JS 404 → 白屏/无样式）。/assets/* 哈希产物可缓存。"""
+    response = await call_next(request)
+    if "text/html" in response.headers.get("content-type", ""):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
 # 会话内存存储（单进程 demo 用；进程重启即失，已落库的卡在 SQLite）
 _sessions: dict[str, EntrySession] = {}
 
@@ -43,12 +53,9 @@ Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
 _store = ThesisStore(DB_PATH)
 _store.seed_preset_users()
 
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
-
-
-@app.get("/")
-def index() -> FileResponse:
-    return FileResponse(str(STATIC_DIR / "index.html"))
+# 静态托管：根挂载放最后（/api/* 路由先匹配），其余（/、/assets/*）走 StaticFiles。
+# html=True → GET / 服务 static/index.html；/assets/* 命中构建产物（修 Vite 绝对路径白屏，2026-08-02）。
+# 旧的 /static 挂载 + @app.get("/") 已删（Vite 产物引用 /assets/，/static 对不上 → 404 → 白屏）。
 
 
 def _err_view(sess: EntrySession, e: Exception) -> dict:
@@ -60,17 +67,16 @@ def _err_view(sess: EntrySession, e: Exception) -> dict:
 @app.post("/api/session")
 def api_start(payload: dict) -> JSONResponse:
     user_id = (payload.get("user_id") or "beta1").strip() or "beta1"
-    ticker = (payload.get("ticker") or "").strip()
-    reason = (payload.get("reason") or "").strip()
-    if not ticker or not reason:
-        raise HTTPException(400, "ticker 与 reason 必填")
+    text = (payload.get("text") or "").strip()
+    if not text:
+        raise HTTPException(400, "text 必填（一句话说标的 + 理由）")
     if _store.get_user(user_id) is None:
         raise HTTPException(400, f"未知 user_id={user_id}（预置 beta1–beta5）")
     sid = uuid.uuid4().hex[:12]
-    sess = new_session(user_id, ticker, _cfg)
+    sess = new_session(user_id, _cfg)  # ticker 由 start 从一句话抽取
     _sessions[sid] = sess
     try:
-        view = sess.start(reason)
+        view = sess.start(text)
     except Exception as e:  # noqa: BLE001
         view = _err_view(sess, e)
     view["session_id"] = sid
@@ -105,6 +111,11 @@ def api_confirm(sid: str, payload: dict) -> JSONResponse:
         view["stored"] = True
         view["card_id"] = sess.card_draft.card_id
     return JSONResponse(view)
+
+
+# 根挂载（必须在所有 /api/* 路由之后注册，否则会吞掉 /api）：
+# GET / → static/index.html；GET /assets/* → static/assets/*（Vite 产物）；/api/* 由上方路由匹配。
+app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="root")
 
 
 def main() -> None:

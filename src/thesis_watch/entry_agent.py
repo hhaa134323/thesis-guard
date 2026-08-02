@@ -30,8 +30,9 @@ SYSTEM_PROMPT = """你是持仓条件录入助手。从用户给的 thesis 描�
 - 只整理条件，不下投资结论。
 
 字段：
+- ticker：用户持有的股票代码（如 MCO/HSBC/NVDA/NFLX）。从用户一句话里识别标的；说不清返 null。
 - holding_reason_raw：用户原话买它的理由。
-- key_assumptions：关键假设（moat + 不被颠覆的理由）。
+- key_assumptions：关键假设（moat + 不被颠覆的理由）。**要覆盖结构性主题**（文本里有的相关项都抽进假设，别漏）：AI 替代 / 监管 / 利率与久期 / 竞争格局 / 客户集中度。
 - mirrors：每条假设对应的镜像破局条件（assumption_text 关联对应假设原文，mirror_text 写破局事件）。
 - manual_items：价格图形型等不可自动核对项。
 - filer_type：申报方类型（美国本土 10-K → domestic_10k；20-F/6-K 外国发行人 → foreign_issuer_20f_6k；ETF/ETN/基金/信托 → etf_fund）。

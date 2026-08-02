@@ -42,8 +42,8 @@ def run_case(gc: dict, cfg: dict, mode: str = "confirm") -> dict:
         return {"ticker": ticker, "converged": False,
                 "metrics": {"turns": 0, "clarification_rounds": 0, "converged": False},
                 "error": "empty input text", "card": None}
-    s = new_session("beta1", ticker, cfg)
-    v = s.start(text)
+    s = new_session("beta1", cfg)
+    v = s.start(text, ticker_override=ticker)
     if s.card_draft is None:
         return {"ticker": ticker, "converged": False, "metrics": v.get("metrics", {}),
                 "error": v.get("error") or "extract failed", "card": None}
@@ -58,6 +58,8 @@ def run_case(gc: dict, cfg: dict, mode: str = "confirm") -> dict:
 
 def cmd_run(args) -> int:
     cfg = load_config(args.config)
+    if args.model:
+        cfg.setdefault("llm", {}).setdefault("task_model", {})["model"] = args.model
     gt_cases = load_ground_truth()
     if args.tickers:
         want = {t.strip().upper() for t in args.tickers.split(",")}
@@ -86,12 +88,12 @@ def cmd_run(args) -> int:
     print(f"\n=== W2 eval (model={model_name}, mode={args.mode}, n={n}) ===")
     print(f"  平均澄清轮数 = {avg_clar:.2f}")
     print(f"  收敛失败率   = {fail_rate:.2%}（{n - n_conv}/{n} 未收敛）")
-    print(f"  收敛后接受率 = author blind-eval pending（导出 {len(converged_cards)} 张 converged 卡 → {CONVERGED_CARDS}）")
-    print(f"  下一步：python evals/run_w2.py template 生成盲评模板，作者填 acceptable 后 python evals/run_w2.py collect")
+    print(f"  收敛后接受率 = author blind-eval pending（导出 {len(converged_cards)} 张 converged 卡 → {args.out}）")
+    print(f"  下一步：python evals/run_w2.py template --converged {args.out} 生成盲评模板")
 
-    CONVERGED_CARDS.write_text(
+    Path(args.out).write_text(
         yaml.safe_dump(converged_cards, allow_unicode=True, sort_keys=False), encoding="utf-8")
-    W2_RESULT.write_text(json.dumps({
+    Path(args.result).write_text(json.dumps({
         "model": model_name, "mode": args.mode, "n": n, "n_converged": n_conv,
         "avg_clarification_rounds": round(avg_clar, 4),
         "convergence_failure_rate": round(fail_rate, 4),
@@ -104,11 +106,12 @@ def cmd_run(args) -> int:
 
 # ──────────────────────────── template ────────────────────────────
 def cmd_template(args) -> int:
-    """读 w2_converged_cards.yaml + load_input_text → 铺 blind_verdicts_w2.yaml 盲评模板。"""
-    if not CONVERGED_CARDS.exists():
-        print(f"先跑 run 生成 {CONVERGED_CARDS}")
+    """读 converged cards + load_input_text → 铺盲评模板。"""
+    conv = Path(args.converged)
+    if not conv.exists():
+        print(f"先跑 run 生成 {conv}")
         return 1
-    data = yaml.safe_load(CONVERGED_CARDS.read_text(encoding="utf-8")) or []
+    data = yaml.safe_load(conv.read_text(encoding="utf-8")) or []
     out: list[dict] = []
     for i, item in enumerate(data, 1):
         ticker = item["ticker"]
@@ -125,25 +128,26 @@ def cmd_template(args) -> int:
                            "acceptable": None, "reason": ""})
         out.append({
             "case": i, "ticker": ticker,
-            "reference_input": load_input_text(ticker),  # GT thesis text，供填评人对照（只看本文件）
+            "reference_input": load_input_text(ticker),
             "fields": fields,
         })
-    BLIND_VERDICTS.write_text(
+    Path(args.out).write_text(
         yaml.safe_dump(out, allow_unicode=True, sort_keys=False, width=10000), encoding="utf-8")
     n_fields = sum(len(c["fields"]) for c in out)
-    print(f"盲评模板 → {BLIND_VERDICTS}")
+    print(f"盲评模板 → {args.out}")
     print(f"  {len(out)} case / {n_fields} 字段。填 acceptable: yes/no（no 必填 reason 一句），no pick（单模型 mode A）。")
-    print(f"  填完跑：python evals/run_w2.py collect")
+    print(f"  填完跑：python evals/run_w2.py collect --verdicts {args.out}")
     return 0
 
 
 # ──────────────────────────── collect ────────────────────────────
 def cmd_collect(args) -> int:
-    """读已填 blind_verdicts_w2.yaml → 算 收敛后接受率 + 写 eval-report §7.1。"""
-    if not BLIND_VERDICTS.exists():
-        print(f"盲评模板不存在 {BLIND_VERDICTS}——先 template。")
+    """读已填盲评模板 → 算 收敛后接受率 + 写 eval-report §7.1。"""
+    verdicts_path = Path(args.verdicts)
+    if not verdicts_path.exists():
+        print(f"盲评模板不存在 {verdicts_path}——先 template。")
         return 1
-    data = yaml.safe_load(BLIND_VERDICTS.read_text(encoding="utf-8")) or []
+    data = yaml.safe_load(verdicts_path.read_text(encoding="utf-8")) or []
     total = 0
     accepted = 0
     unanswered = 0
@@ -170,45 +174,44 @@ def cmd_collect(args) -> int:
         return 1
     acceptance = accepted / total
 
-    # 平均澄清轮数 / 收敛失败率（从 _w2_result.json）
+    # 平均澄清轮数 / 收敛失败率（从 result json）
     avg_clar = None
     fail_rate = None
     model = "?"
-    if W2_RESULT.exists():
-        w2 = json.loads(W2_RESULT.read_text(encoding="utf-8"))
+    result_path = Path(args.result)
+    if result_path.exists():
+        w2 = json.loads(result_path.read_text(encoding="utf-8"))
         avg_clar = w2.get("avg_clarification_rounds")
         fail_rate = w2.get("convergence_failure_rate")
         model = w2.get("model", "?")
+    label = args.model_label or f"{model} · mode A"
 
     import datetime
     date = datetime.date.today().isoformat()
     block = f"""
 
-### 7.1 collect 结果（{date}，`run_w2.py collect`）
+### 7.1 collect 结果（{date}，`run_w2.py collect --verdicts {verdicts_path.name}`）
 
-盲评模板 `evals/blind_verdicts_w2.yaml`（{len(data)} case / {total} 字段，单模型 mode A，无 pick）已填。
+盲评模板 `{verdicts_path}`（{len(data)} case / {total} 字段，单模型 mode A，无 pick）已填。
+**模型：{label}**
 
 | 指标 | 值 |
 |---|---|
-| 模型 | {model} |
 | 平均澄清轮数 | {avg_clar} |
 | 收敛失败率 | {fail_rate} |
 | **收敛后接受率** | **{acceptance:.2%}**（{accepted}/{total} acceptable=yes；未答 {unanswered}） |
 
-不接受明细见 `evals/blind_verdicts_w2.yaml` 的 reason 字段。
+不接受明细见 `{verdicts_path}` 的 reason 字段。
 """
     report = EVAL_REPORT.read_text(encoding="utf-8") if EVAL_REPORT.exists() else ""
-    marker = "### 7.1"
-    if "### 7.1" in report:
-        # 替换已有 §7.1
+    if "### 7.1" in report and args.model_label is None:
         idx = report.index("### 7.1")
-        # 截到上一个 ## 或文件尾
         report = report[:idx].rstrip() + "\n" + block
     else:
         report = report.rstrip() + "\n" + block
     EVAL_REPORT.write_text(report, encoding="utf-8")
 
-    print(f"=== W2 collect ===")
+    print(f"=== W2 collect ({label}) ===")
     print(f"  收敛后接受率 = {acceptance:.2%}（{accepted}/{total}，未答 {unanswered}）")
     print(f"  平均澄清轮数 = {avg_clar}")
     print(f"  收敛失败率   = {fail_rate}")
@@ -224,8 +227,16 @@ def main() -> int:
     r.add_argument("--limit", type=int, default=0)
     r.add_argument("--tickers")
     r.add_argument("--mode", choices=["confirm"], default="confirm")
-    sub.add_parser("template", help="铺 blind_verdicts_w2.yaml 盲评模板")
-    sub.add_parser("collect", help="算接受率 + 写 eval-report §7.1")
+    r.add_argument("--model", help="覆盖 task_model（如 glm-5.2-fast-preview，W2 接受率模型修正）")
+    r.add_argument("--out", default=str(CONVERGED_CARDS), help="converged 卡输出路径")
+    r.add_argument("--result", default=str(W2_RESULT), help="_w2_result json 路径")
+    t = sub.add_parser("template", help="铺盲评模板")
+    t.add_argument("--converged", default=str(CONVERGED_CARDS))
+    t.add_argument("--out", default=str(BLIND_VERDICTS))
+    c = sub.add_parser("collect", help="算接受率 + 写 eval-report §7.1")
+    c.add_argument("--verdicts", default=str(BLIND_VERDICTS))
+    c.add_argument("--result", default=str(W2_RESULT))
+    c.add_argument("--model-label", default=None, help="§7.1 标注（如 glm-5.2-fast-preview · mode A）")
     args = ap.parse_args()
     if args.cmd == "run":
         return cmd_run(args)
