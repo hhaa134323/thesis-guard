@@ -21,7 +21,7 @@
 | qwen3.6-flash | openai `/compatible-mode` | 0/5 (0%) | — | — | 5/5 `400 tool_choice=required 与 thinking 模式冲突`（同 B4，亦为 thinking 模型） |
 | glm-5.2-fast-preview | openai `/compatible-mode` | 4/5 (80%) | 58.6s | 4364 | 1/5 `finish_reason 非标准`（pydantic-ai openai validator 拒非标 finish_reason；1 次 429 退避后过——限流防护生效） |
 | **glm-5.2-fast-preview + lenient fix** | openai `/compatible-mode` | **5/5 (100%) ✅** | **45.7s** | **5135** | 0/5（`LenientOpenAIChatModel` 容错非标 finish_reason 后全过；**gate 通过，任务模型定**） |
-| qwen-turbo | openai `/compatible-mode` | **5/5 (100%)** | **4.96s** | **586** | 0/5（backup 试；比 glm-5.2-fast-preview 快 ~9x（45.7s→4.96s）、out_tok 5135→586——**命中 §7 切换门槛，待作者拍板**） |
+| qwen-turbo | openai `/compatible-mode` | **5/5 (100%)** | **4.96s** | **586** | 0/5（backup 试；**已定：仅用于 harness 冒烟/回归，不作质量迭代**——§3.2 裁决：有偏好时 glm 胜 96%） |
 | qwen-plus | openai `/compatible-mode` | 3/5 (60%) | 10.31s | 501 | 2/5 `function.arguments JSON 格式`（code model 间歇拒，同 qwen-flash，B5） |
 
 **per-call 指标**：
@@ -61,7 +61,7 @@
 | qwen-plus | 4 | pass | 11.68 | 1997 | 508 | 0 | |
 | qwen-plus | 5 | other(400) | 9.00 | — | — | 0 | function.arguments JSON（code model） |
 
-> 3 候选 + lenient 修复 + backup 试。**gate PASSED 5/5**（glm-5.2-fast-preview + lenient）。**backup 试命中切换门槛：qwen-turbo 5/5 + 4.96s/call（glm-5.2-fast-preview 45.7s 的 1/9）+ out_tok 586（5135 的 1/9）**——按 eval-plan §7 stop-condition，**待作者拍板是否切换任务模型**（切换后一轮 L1 eval 从 ≥40min 降到 ~3min）。qwen-plus 3/5（code model 间歇，B5）。
+> 3 候选 + lenient 修复 + backup 试。**gate PASSED 5/5**（glm-5.2-fast-preview + lenient）。**已定**：glm-5.2-fast-preview 为质量基线与产品默认；qwen-turbo 仅用于 harness 冒烟与回归（管线连通性），不用于质量迭代。依据 §3.2 用户裁决——无差别率 41.7%，但有明确偏好的 25 条中 glm 胜 24 条（96%）。即质量出现差异时 qwen-turbo 几乎必输，用它调 prompt 得到的改进不能外推到 glm。
 
 ## 2. Error analysis（根因/修复，非现象统计）
 
@@ -122,7 +122,13 @@
 | pick=A/B + acceptable=no（两模型都不够） | 3 条（FDS × 3） |
 | pick=tie + acceptable=no（模型一致但错） | 6 条（NOW × 3 + VEEV × 3） |
 
-逐字段（主样本 12 each）：holding_reason_raw 75% / key_assumptions 75% / mirrors 75%——三字段齐平。3 个全败 case（FDS/NOW/VEEV）共同根因：作者真实买入理由含 AI Agent 冲击维度，两模型均未从台账文本抽到——验证 input_type=ai_polished 局限（台账是 AI 润色后的，不含作者未写出的思考）。
+逐字段（主样本 12 each）：holding_reason_raw 75% / key_assumptions 75% / mirrors 75%——三字段齐平。
+
+**3 个全败 case 根因（FDS/NOW/VEEV）**：prompt 缺结构性主题引导。三只票的真实买入逻辑均含 AI Agent 冲击维度（FDS 被冲击 / NOW 因 AI 买入 / VEEV 在 AI 恐慌中被误杀），两模型均未主动考虑该维度。该类判断（「这只票的关键风险是否包含 AI 替代」）可枚举为结构性主题清单，属确定性可注入的领域知识，不属于需要模型自发联想的推理能力。与 §2.1 position_cap_tier、§6.4 filer_type 同属一类：确定性的东西不该交给概率模型。
+**fix_action**：prompt 增加结构性主题 checklist（AI 替代 / 监管 / 利率与久期 / 竞争格局 / 客户集中度），要求逐项 consider 后再产出 holding_reason。列入 W2。
+
+**字段级联依赖**：9 条不接受源自 3 个独立根因，非 9 个独立错误。key_assumptions 与 mirrors 在单次结构化调用中以 holding_reason_raw 为条件生成，reason 偏则两者连带偏——字段间存在级联依赖。口径对比：字段级 75%（27/36）/ 标的级 75%（9/12）/ 独立根因数 3。单字段口径高估了错误的独立性、低估了单个错误的杀伤力。
+**fix_action**：让 key_assumptions 与 mirrors 从原文独立抽取，不从模型生成的 reason 派生。列入 W2。
 
 **边界样本**（3 已清仓 × 3 = 9 条，不算接受率，算拒答正确率）：
 
@@ -146,9 +152,9 @@
 - ✅ entry_anchor_value 100%（两模型）
 - ⚠️ next_verdict 样本不足（§6.3）
 - ✗ manual_items GT 自身带噪，本轮无法有效测量
-- ✗ 主观接受率 75% < 85%——3 case 全败（FDS/NOW/VEEV），根因是 input_type=ai_polished 不含作者未写出的 AI Agent 思考
+- ✗ 主观接受率 75%（单轮初稿口径）——3 case 全败（FDS/NOW/VEEV），根因是 prompt 缺结构性主题引导（§3.2）
 
-**不写成达标或接近达标。** 主观 75% 离 85% 差 10pp，差距来自输入侧（台账 AI 润色过），不是模型推理能力。
+**主观 75% 为单轮初稿口径，因 §6.8 效度限制，本轮不对该门槛作达标判定，W1 判据 #3 记为未完成测量而非未达标。**
 
 ## 4. 局限
 
@@ -220,3 +226,9 @@ GT 15 条含 3 只已清仓标的（CGNX/SPGI/GDXU），本轮通过分组处理
 ### 6.7 边界样本仅 3 例，拒答正确率无统计显著性（2026-08-02 加）
 
 边界样本 3 例（CGNX/SPGI/GDXU），拒答正确率仅作定性观察。GDXU 3/3 正确拒答（台账无破条件 → 两模型未生成）；CGNX/SPGI 台账有 thesis → 模型从薄输入生成了内容（非拒答测试）。样本量不足以对拒答行为下统计结论。
+
+### 6.8 仅执行 mode A，A/B 澄清对照未测（本轮核心效度限制）
+
+`run_l1.py` 中 `extract()` 写死 `mode='A'`（eval-plan §9.6 暂缓）。产品形态是多轮澄清对话——模型产出初稿，用户在对话中补充修正，最终 thesis 是收敛后的产物。本轮测量的是**零轮对话下的单轮初稿质量**，与产品实际输出不是同一个对象。
+
+因此 §3.2 的 75% 不应直接对 85% 门槛判定达标与否：**尺子与被测物错配**。W2 应改测三个指标：收敛后接受率、平均澄清轮数、收敛失败率。其中平均澄清轮数对应 PRD §4-B 的时长约束，是真实用户成本度量。
