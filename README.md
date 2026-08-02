@@ -24,6 +24,7 @@
 | R5 | 每条事实必须附一手原文链接 | 禁止「市场预期」「据传」等无源表述 |
 | R6 | 判断权归用户 | 只呈现「你定的条件 X 今天出现了对应事件」，不替用户结论 |
 | R7 | 禁止写入用户的 Notion 工作区任何页面/数据库 | Notion 资产以本 repo `assets/` 快照为准 |
+| R8 | eval ground truth 必须由作者手工标注，不许模型生成/推断/兜底 | harness 读独立 `evals/ground_truth.yaml`；缺失或字段为空 → 报错退出，不用模型输出兜底 |
 
 红线源自复用资产 `pre-market-briefing/README.md` 的「AI 边界（硬规则）」表（4 条可以 vs 5 条不可以），原样沿用并扩充。
 
@@ -55,17 +56,17 @@
 
 ## Notion 资产（eval 基准已快照定格，活库只读、禁止写入）
 
-对话抽取 eval 与条件判定 eval 的基准集 = 本 repo `assets/` 下的快照文件（2026-07-31 定格）。**一律以文件为准，不要去读 Notion 活库**——台账每天被现有复查流程更新（复盘备注自动回写），基准不冻结，eval 就不可复现。
+对话抽取 eval 与条件判定 eval 的基准集 = 本 repo `assets/` 下的快照文件（2026-08-01 定格）。**一律以文件为准，不要去读 Notion 活库**——台账每天被现有复查流程更新（复盘备注自动回写），基准不冻结，eval 就不可复现。
 
-快照清单（待网络恢复后从 Notion 只读拉取定格）：
+快照清单（2026-08-01 已从 Notion 只读拉取定格，复盘备注逐字照抄）：
 
-- `assets/notion/thesis_db_part1-4.md` — 台账 15 行全量 + 两个月复盘备注（**两层 eval 的核心基准**）
-- `assets/notion/briefing_db_overview.md` — 简报库 schema + 45 行元数据
-- `assets/notion/skill_thesis_review_v4.md` — 复查 Skill 全文（核对 Agent 提示词起点）
-- `assets/notion/spec_public_v1_20260610.md` — 历史 spec（参考后归档）
-- `assets/onboarding_dryrun_0731.md` — 录入演练 transcript（录入 Agent 行为 spec 基线）
+- `assets/notion/thesis/` — 台账 **16 行全量** + 两个月复盘备注（**两层 eval 的核心基准**）。拆为 `00_schema_and_small_rows.md`（schema + QQQ/DPZ/SPGI/GDXU）+ 12 个 ticker 单文件（NVDA/VEEV/MCO/GOOGL/CGNX/NOW/NFLX/CRM/FIS/FDS/HSBC/BRK.B）。
+- `assets/notion/briefing_db_overview.md` — 简报库 schema + 71 行元数据（单日正文留 Notion）。
+- `assets/notion/skill_thesis_review_v4.md` — 复查 Skill v4 全文（核对 Agent 提示词起点）。
+- `assets/notion/spec_public_v1_20260610.md` — 历史 spec（参考后归档）。
+- `assets/onboarding_dryrun_0731.md` — 录入演练 transcript（录入 Agent 行为 spec 基线）。
 
-> ⚠️ 当前 `assets/` 为空——见 `docs/BLOCKERS.md`。
+> Notion MCP 只读可达（`workspace_search` 模式）；刷新快照走只读，**禁止写入**（R7）。台账与简报库是生产投资记录。
 
 ## 文档索引
 
@@ -76,8 +77,8 @@
 | `docs/thesis-card-schema.md` | thesis 卡结构化 schema | v0.1 草稿 |
 | `docs/broken-condition-schema.md` | 破条件两层结构 + 理由 | v0.1 草稿 |
 | `docs/eval-plan.md` | 双层 eval 口径 + 埋点方案 + KILL 判据 | v0.1 草稿 |
-| `docs/entry-agent-spec.md` | 录入 Agent 行为 spec | ⛔ 阻塞（缺 transcript） |
-| `docs/eval-report.md` | 一致率报告（≥85% / ≥80%） | ⛔ 阻塞（缺基准 + 实现） |
+| `docs/entry-agent-spec.md` | 录入 Agent 行为 spec | 🔵 进行中（transcript 已就位，W1） |
+| `docs/eval-report.md` | 一致率报告（≥85% / ≥80%） | 🔵 进行中（基准已就位，待跑 L1） |
 | `docs/competitor-teardown.md` | 竞品横测（项目六方法） | ⛔ 阻塞（缺网络） |
 | `docs/changelog.md` | 版本变更记录 | 进行中 |
 | `docs/BLOCKERS.md` | 阻塞项与缓解 runbook | 进行中 |

@@ -17,6 +17,7 @@
 5. 每条事实必须附一手原文链接，禁止无源表述
 6. 判断权归用户：只呈现「条件 X 今天出现了对应事件」，不替用户结论
 7. **禁止写入用户的 Notion 工作区任何页面/数据库**
+8. **eval ground truth 必须由作者手工标注**——Claude/任何模型不许生成、推断、或用模型产出去填；harness 读独立文件 `evals/ground_truth.yaml`（与代码和模型产物完全分离），文件缺失或字段为空 → 报错退出，**绝不允许用模型输出兜底**
 
 ## Notion 用法（只读快照，禁止写入）
 
@@ -27,8 +28,11 @@
 
 ## 资产现状
 
-- `assets/` 目前为空。目标里假设的 5 个快照文件尚未落地（见 `docs/BLOCKERS.md` B3）。在快照落地前，依赖基准的 eval / 行为 spec 无法完成。
-- 复用源码来自私有库 `hhaa134323/pre-market-briefing`，尚未 clone（见 `docs/BLOCKERS.md` B1）。
+- `assets/` 已落地（2026-08-01，不再是空）：
+  - `assets/notion/thesis/` — 台账 16 行全量：`00_schema_and_small_rows.md`（schema + QQQ/DPZ/SPGI/GDXU）+ 12 个 ticker 单文件（NVDA/VEEV/MCO/GOOGL/CGNX/NOW/NFLX/CRM/FIS/FDS/HSBC/BRK.B）。**复盘备注逐字照抄，未做任何摘要**（eval ground truth，摘要即废）。
+  - `assets/notion/briefing_db_overview.md`（简报库 schema + 71 行元数据，单日正文留 Notion）、`assets/notion/skill_thesis_review_v4.md`（复查 Skill v4 全文，核对 Agent 提示词起点）、`assets/notion/spec_public_v1_20260610.md`（历史 spec）、`assets/onboarding_dryrun_0731.md`（录入演练 transcript）。
+- Notion MCP **只读可达**（`notion-fetch` + `notion-search` 的 `workspace_search` 模式；AI 语义搜索不稳，优先 workspace_search）。只用于只读刷新 `assets/` 快照，禁止写入（R7）。
+- 复用源码来自私有库 `hhaa134323/pre-market-briefing`，**仍未 clone 到本机**（GitHub 直连受阻，见 `docs/BLOCKERS.md` B1）。需要时先告诉作者，别自重写。
 
 ## 协作边界
 
