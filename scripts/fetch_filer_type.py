@@ -22,9 +22,13 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "evals" / "filer_type_lookup.yaml"
 TICKERS = ["NVDA", "VEEV", "MCO", "GOOGL", "CGNX", "NOW", "NFLX", "CRM",
-           "FIS", "FDS", "HSBC", "BRK.B", "QQQ"]
-UA = os.environ.get("SEC_USER_AGENT", "Thesis-Watch thesis-guard@example.com")
-HEADERS = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
+           "FIS", "FDS", "HSBC", "BRK.B", "QQQ", "SPGI", "GDXU"]
+# EDGAR 查不到独立申报主体的已知 ETF/ETN → 直接标 etf_fund + note（不留空）
+ETF_FALLBACK = {
+    "GDXU": "杠杆 ETN（MicroSectors Gold Miners 3X），申报主体为发行商，v1 不支持自动核对",
+}
+UA = os.environ.get("SEC_USER_AGENT")  # 真实「姓名 邮箱」；未设 → main() 报错退出（不硬编码，R9 脱敏）
+HEADERS = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"} if UA else {}
 FUND_FORMS = {"N-CSR", "N-PORT", "N-CEN", "NSAR", "485", "497", "24F-2"}
 
 
@@ -60,9 +64,11 @@ def classify(forms: list[str]) -> str | None:
 
 
 def main() -> int:
-    if not os.environ.get("SEC_USER_AGENT"):
-        print("⚠️ 未设 SEC_USER_AGENT（格式「姓名 邮箱」），用默认——SEC 可能 403")
-    print("拉 company_tickers.json ...")
+    if not UA:
+        sys.exit("❌ 未设 SEC_USER_AGENT 环境变量。SEC EDGAR 要求真实「姓名 邮箱」作 User-Agent，"
+                 "占位符会被限流/403。设 SEC_USER_AGENT='YourName your@email.com' 后重试。"
+                 "（不要把真实邮箱硬编码进仓库——R9 脱敏）")
+    print(f"拉 company_tickers.json ...")
     try:
         cik_map = fetch_cik_map()
     except Exception as e:  # noqa: BLE001
@@ -78,9 +84,14 @@ def main() -> int:
             if cik:
                 break
         if not cik:
-            out["tickers"][t] = {"cik": None, "filer_type": None, "forms": [],
-                                 "note": f"ticker 未在 company_tickers.json（试 {'/'.join(candidates)}）"}
-            print(f"  {t}: CIK 未找到")
+            if t in ETF_FALLBACK:
+                out["tickers"][t] = {"cik": None, "filer_type": "etf_fund", "forms": [],
+                                     "note": f"EDGAR 无 CIK（{ETF_FALLBACK[t]}）"}
+                print(f"  {t}: 无 CIK → etf_fund（{ETF_FALLBACK[t]}）")
+            else:
+                out["tickers"][t] = {"cik": None, "filer_type": None, "forms": [],
+                                     "note": f"ticker 未在 company_tickers.json（试 {'/'.join(candidates)}）"}
+                print(f"  {t}: CIK 未找到")
             continue
         try:
             forms = fetch_forms(cik)

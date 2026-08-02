@@ -101,3 +101,13 @@ gate 过后跑：16 台账 case + HSBC transcript，A/B 对照（A 不澄清直�
   - **口径 / 会计逻辑类判断**（如「该用 P/TBV 还是 P/E」「调整后 vs GAAP」）→ 评估者具备专业背景（CPA 会计科目已通过），盲评接受率**有效**（反映正确性）。
   - **具体倍数 / 目标价类判断**（如「$130 是否合理」「P/E 16x 对不对」）→ 评估者自述能力不足，接受率反映**「合理性感知」而非正确性**，须单独标注 + 打折解读。
   - harness 按此分层标注每个主观字段（holding_reason / key_assumptions / mirrors 的各条）属于哪一类。
+
+## 5. 方法论迭代记录（2026-08-02 修正，跑 eval 前发现）
+
+初版打分有**三处会让 headline 数字虚高**，均在跑 eval 前发现并修正：
+
+1. **entry_anchor 用 bigram 模糊匹配**：ttm_gaap_pe 与 forward_non_gaap_pe 共享 6 个 bigram → 误判命中；15 只票 8 只属 P/E 家族 → 一致率虚高接近 100% 但不测出任何东西。**修正**：改 `AnchorType` 闭集枚举（`models.py`）精确相等 + `anchor_value` 相对误差 ≤5% 单独报（不合并 type）。
+2. **next_verdict 比中文 event 文本**：GT「Q3 2026 财报」与输出「Q2 FY27 财报」仅靠「财报」二字即判命中，季度错了也算对。**修正**：改比 `date`（归一到 YYYY-Qn 精确；GT 月精度 → ±1 月命中）；event 文本仅 case 明细打印，不参与判定。
+3. **盲评将「二选一偏好」等同于「接受」**：二选一场景用户挑较好的一方，不代表其达标；两个都不合格时勉强择一也计为接受。「用户接受率」实际测的是「是否存在明显更差的一方」而非「是否达标」。**修正**：拆成两问——`pick`（偏好：哪个更好）+ `acceptable`（接受：选中的是否可直接用）；用户接受率 = acceptable=yes/total（对应 ≥85% 门槛）；模型胜率 = pick/total（仅选型，不设门槛）。both_wrong → acceptable=no。
+
+**manual_items 表述降级**：manual_items 评分 = (len > 0) == expected，只判「有没有」不判「对不对」（FDS 7 条破条件，识别 1 条 vs 7 条得分相同）。报告中**不称「准确率」**，改称「**是否识别出存在人工项（覆盖标志，非逐条准确率）**」。若成本允许，额外报逐条 set-level precision/recall 作参考，不设门槛、不进 85% 判定。

@@ -1,10 +1,11 @@
-"""跑 classify_condition 在 13 只真实持仓的全部破局条件上，输出分类表 → docs/condition-classification.md。
+"""跑 classify_condition 在 13(+2) 只持仓的全部破局条件上，输出分段列表 → docs/condition-classification.md。
 
-作者人工确认后才固化（进 GT）。分类错则改 condition_classify.py 规则后重跑。
+v0.3（2026-08-02）：_split_conditions 改进（剥离结构行+condition_tier+续行合并）；
+classify_condition multi-label；不截断（输出全文）；分段列表；NOW「下滱」[sic]。
+作者人工确认后才固化（进 GT）。
 """
 from __future__ import annotations
 
-import re
 import sys
 from pathlib import Path
 
@@ -12,14 +13,15 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from thesis_watch.condition_classify import (  # noqa: E402
+    _split_conditions,
     classify_condition,
     is_v1_auto,
-    v1_gap_reason,
+    v1_gap_reasons,
 )
 
 THESIS_DIR = ROOT / "assets" / "notion" / "thesis"
 TICKERS = ["NVDA", "VEEV", "MCO", "GOOGL", "CGNX", "NOW", "NFLX", "CRM",
-           "FIS", "FDS", "HSBC", "BRK.B", "QQQ"]
+           "FIS", "FDS", "HSBC", "BRK.B", "QQQ", "SPGI", "GDXU"]
 
 
 def load_break_conditions(ticker: str) -> str:
@@ -28,12 +30,14 @@ def load_break_conditions(ticker: str) -> str:
         text = p.read_text(encoding="utf-8")
     else:
         schema = THESIS_DIR / "00_schema_and_small_rows.md"
-        text = schema.read_text(encoding="utf-8")
-        i = text.find(f"## {ticker}")
+        if not schema.exists():
+            return ""
+        s = schema.read_text(encoding="utf-8")
+        i = s.find(f"## {ticker}")
         if i < 0:
             return ""
-        j = text.find("\n## ", i + 3)
-        text = text[i: j if j > 0 else len(text)]
+        j = s.find("\n## ", i + 3)
+        text = s[i: j if j > 0 else len(s)]
     h = "## Thesis 破的条件"
     i = text.find(h)
     if i < 0:
@@ -43,64 +47,45 @@ def load_break_conditions(ticker: str) -> str:
     return text[start: j if j > 0 else len(text)].strip()
 
 
-def split_conditions(text: str) -> list[str]:
-    """粗粒度切分（①②③④⑤ • ； \n）。切分不完美，作者复核时合并/拆分。"""
-    if not text:
-        return []
-    parts = re.split(r"[①②③④⑤⑥⑦⑧⑨⑩•；;\n]", text)
-    out = []
-    for p in parts:
-        p = p.strip(" -—·：:（）()，,。 \t")
-        if len(p) > 4:
-            out.append(p)
-    return out
-
-
 def main() -> None:
-    rows: list[tuple] = []
+    lines = [
+        "# 破局条件分类表（v0.3，**待作者人工确认后固化**）",
+        "",
+        "> 由 `condition_classify.classify_condition`（multi-label）+ `_split_conditions`（剥离结构行+condition_tier+续行合并）跑。",
+        "> **不截断**（输出全文）——作者逐条确认对象必须是完整原文。",
+        "> 确认后：v1 可自动（`xbrl_structured` / `press_release_text`）→ 不进 manual_items；其余 → manual_items。",
+        "> 分类错 → 改 `src/thesis_watch/condition_classify.py` 规则后重跑本表。",
+        "",
+    ]
+    total = 0
+    auto_n = 0
     for t in TICKERS:
         bc = load_break_conditions(t)
+        lines.append(f"## {t}")
         if not bc:
-            rows.append((t, "(台账无破条件)", "—", None, "无"))
+            lines.append("（台账无破条件）\n")
             continue
-        conds = split_conditions(bc)
+        conds = _split_conditions(bc)
         if not conds:
-            rows.append((t, bc[:80], "—", None, "切分为空（作者手查）"))
+            lines.append(f"（切分为空，作者手查。原文前 200 字：{bc[:200]}）\n")
             continue
-        for cond in conds:
-            info = classify_condition(cond)
-            auto = is_v1_auto(info) if info else False
-            if info is None:
-                reason = "否定从句，跳过分类"
-            elif auto:
-                reason = "v1 可自动核对"
-            else:
-                reason = v1_gap_reason(info)
-            rows.append((t, cond[:90], info.value if info else "(negation)", auto, reason))
-
-    lines = [
-        "# 破局条件分类表（v0.2 规则近似，**待作者人工确认后固化**）",
-        "",
-        "> 由 `condition_classify.classify_condition` 跑 13 只真实持仓的全部破局条件。",
-        "> 规则近似（关键词优先级），**必须作者逐条人工确认**后才进 GT。",
-        "> 确认后：v1 可自动（`xbrl_structured` / `press_release_text`）→ 不进 manual_items；其余 → manual_items。",
-        "> 分类错 → 改 `src/thesis_watch/condition_classify.py` 规则后重跑本表（`scripts/classify_conditions.py`）。",
-        "",
-        "| ticker | 条件原文（截断 90 字） | 分类 InfoType | v1 可自动 | 理由 |",
-        "|---|---|---|---|---|",
-    ]
-    for t, cond, info, auto, reason in rows:
-        lines.append(f"| {t} | {cond} | {info} | {auto} | {reason} |")
-
+        for cond, tier in conds:
+            total += 1
+            labels = classify_condition(cond)
+            auto = is_v1_auto(labels)
+            if auto:
+                auto_n += 1
+            reasons = v1_gap_reasons(labels) if not auto else []
+            # [sic] 标注台账错字
+            sic = " [sic: 台账原文「下滱」疑为「下滑」]" if "下滱" in cond else ""
+            label_str = ", ".join(l.value for l in labels) if labels else "(negation 跳过)"
+            lines.append(f"- **[{tier or '—'}]** {cond}{sic}")
+            lines.append(f"  - 分类: {label_str} | v1 可自动: {auto}" + (f" | 缺口: {'; '.join(reasons)}" if reasons else ""))
+            lines.append("")
+    lines.insert(8, f"> **统计**: {total} 条件, v1 可自动 {auto_n}/{total} = {auto_n/total:.0%}" if total else "")
     out_path = ROOT / "docs" / "condition-classification.md"
     out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"wrote {out_path} ({len(rows)} 条件)")
-    # 控制台摘要：各 InfoType 计数 + v1 auto 占比
-    from collections import Counter
-    cnt = Counter(r[2] for r in rows)
-    auto_n = sum(1 for r in rows if r[3])
-    print(f"分类分布: {dict(cnt)}")
-    print(f"v1 可自动: {auto_n}/{len(rows)} = {auto_n/len(rows):.0%}")
+    print(f"wrote {out_path} ({total} 条件, v1 auto {auto_n}/{total})")
 
 
 if __name__ == "__main__":

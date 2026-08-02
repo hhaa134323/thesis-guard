@@ -40,6 +40,22 @@ class FilerType(str, enum.Enum):
     OTHER = "other"
 
 
+class AnchorType(str, enum.Enum):
+    """估值锚方法闭集（entry_anchor.anchor_type 精确匹配用，2026-08-02 加）。
+    bigram 模糊匹配会让 P/E 家族（ttm_gaap_pe / forward_non_gaap_pe / normalized_pe）
+    互相误命中 → 一致率虚高。改闭集枚举精确相等。
+    """
+    TTM_GAAP_PE = "ttm_gaap_pe"
+    FORWARD_NON_GAAP_PE = "forward_non_gaap_pe"
+    NORMALIZED_PE = "normalized_pe"
+    NORMALIZED_OPERATING_PE = "normalized_operating_pe"
+    NORMALIZED_FWD_GAAP_PE = "normalized_fwd_gaap_pe"
+    P_FCF = "p_fcf"
+    P_TBV = "p_tbv"
+    OPERATING_MULTIPLE_2COL = "operating_multiple_2col"
+    OTHER = "other"
+
+
 class ConditionLayer(str, enum.Enum):
     MIRROR = "mirror"      # Layer 1：关键假设的镜像条件
     REDLINE = "redline"    # Layer 2：通用红线默认包
