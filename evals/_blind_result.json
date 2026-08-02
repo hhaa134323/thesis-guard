@@ -1,0 +1,65 @@
+{
+  "acceptance_rate": 0.8,
+  "total": 45,
+  "accepted": 36,
+  "win_rate": {
+    "qwen-turbo": 0.0222,
+    "glm-5.2-fast-preview": 0.5333
+  },
+  "fails": [
+    {
+      "case": "FDS",
+      "field": "holding_reason_raw",
+      "pick": "A",
+      "reason": "并没有考虑到今年claude code这些AI Agent的崛起，可能会对FDS的业务产生影响。以及即使在这样对SaaS的冲击中，我为什么依旧看好FactSer"
+    },
+    {
+      "case": "FDS",
+      "field": "key_assumptions",
+      "pick": "A",
+      "reason": "hoding_reson_raw中已经提到，AI Agent的崛起可能会对SaaS产生冲击，FactSet作为SaaS公司也会受到影响。reason本身是错误的，assumptions也是错误的"
+    },
+    {
+      "case": "FDS",
+      "field": "mirrors",
+      "pick": "B",
+      "reason": "同理，reason错了，assumptions的反面也错了"
+    },
+    {
+      "case": "NOW",
+      "field": "holding_reason_raw",
+      "pick": "tie",
+      "reason": "A/B的表述完全一致，但是没有提及AI相关的现实情况，其实我当时是因为看好它的AI业务才加入标的中的"
+    },
+    {
+      "case": "NOW",
+      "field": "key_assumptions",
+      "pick": "tie",
+      "reason": "reason错了，asumptions跟着错"
+    },
+    {
+      "case": "NOW",
+      "field": "mirrors",
+      "pick": "tie",
+      "reason": "reason错了，mirrors也跟着错了"
+    },
+    {
+      "case": "VEEV",
+      "field": "holding_reason_raw",
+      "pick": "tie",
+      "reason": "内容完全一致，其实我当时买入是人为它在AI agent对软件行业的冲击中被误杀了，ai基本不可能获得veeva积累的生命科学数据"
+    },
+    {
+      "case": "VEEV",
+      "field": "key_assumptions",
+      "pick": "tie",
+      "reason": "reason错了，assumptions跟着错"
+    },
+    {
+      "case": "VEEV",
+      "field": "mirrors",
+      "pick": "tie",
+      "reason": "reason错了，mirrors也跟着错了"
+    }
+  ]
+}

@@ -2,10 +2,11 @@
 
 | 项 | 值 |
 |----|----|
-| 日期 | 2026-08-01 |
-| 调用方式 | PydanticAI 单次结构化调用（`output_type=EntryExtraction`），CLI 程序 `scripts/day1_fds_validation.py`，配置驱动（`config.yaml` task_model），不依赖会话上下文 |
-| 基准 | `assets/notion/thesis/FDS.md`（台账字段最全的一行，1137 字符输入） |
-| 状态 | day-1 gate 未通过（任务模型待定）；L1 一致率 eval 待 gate 过后跑 |
+| 日期 | 2026-08-02 |
+| 调用方式 | PydanticAI 单次结构化调用（`output_type=EntryExtraction`），CLI `evals/run_l1.py`，config 驱动，不依赖会话上下文 |
+| 模型 | qwen-turbo（日常迭代）/ glm-5.2-fast-preview（质量基线） |
+| 基准 | assets/notion/thesis/ 15 ticker（12 当前持仓 + 3 已清仓边界），input_type=ai_polished |
+| 状态 | L1 eval 完成（gate 5/5 + 双模型 30 case + 主观盲评 45 条） |
 
 ## 1. 结构化输出稳定性（多模型对比 · gate 连跑 5 次）
 
@@ -88,9 +89,66 @@
 - **【3】「精简 description 降 out_tok」假设证伪**——该待办关闭，不再追 description 精简方向。out_tok 问题随模型选型解决（选非 verbose 模型，如 qwen 系），不靠改 schema。
 - 严格隔离 description 效果需 glm-5.2-regular 跑 post-trim，未做（结论已清楚，不必要）。
 
-## 3. L1 对话抽取一致率（待跑）
+## 3. L1 对话抽取一致率 + 主观盲评（2026-08-02 完成）
 
-gate 过后跑：16 台账 case + HSBC transcript，A/B 对照（A 不澄清直接抽 / B 走完整澄清），逐字段一致率（`holding_reason` / `key_assumption` / 破条件 / `filer_type` 各自 ≥85%，非总分），per case 出 `root_cause_hypothesis` + `fix_action`。
+模型：qwen-turbo（日常迭代，~5s/case）/ glm-5.2-fast-preview（质量基线，~46s/case）。
+基准：assets/notion/thesis/ 15 ticker（12 当前持仓 + 3 已清仓边界样本），input_type=ai_polished。
+
+### 3.1 客观字段结果
+
+| 字段 | qwen-turbo (clean) | glm (clean) | 门槛 | 判定 |
+|---|---|---|---|---|
+| entry_anchor_type | 100% (9/9) | 100% (9/9) | ≥85% | ✅ |
+| entry_anchor_value | 100% (8/8) | 100% (8/8) | ≥85% | ✅ |
+| next_verdict | 75% (3/4) | 100% (1/1) | ≥85% | ⚠️ 样本不足（§6.3） |
+| manual_items（覆盖标志） | 69% (9/13) | 77% (10/13) | ≥85% | ✗ 无法有效测量（见下） |
+
+**entry_anchor 100%**：该字段接近查表任务（台账原文已含「25x ≈ $394」形式），100% 反映抽取管线正确，不反映模型推理强度。qwen-turbo 与 glm 无差异本身即证据。
+
+**manual_items 69%/77%**：GT 由 classify_condition 推导，该分类器已知含 6 条误判 + CRM 5 条切分残渣，GT 自身带噪。本项不能判定为「模型未达标」，只能判定为「本轮无法有效测量」。GT 规则缺陷：台账破条件为空时 expected=False，但「台账没写破条件」恰恰意味着需要人工核，规则方向反了（W2 修）。
+
+**next_verdict**：分母 4（qwen）与 1（glm），样本不足，不报率。
+
+**filer_type**：不计入判据（§6.4，查 lookup）。模型能力观察：qwen-turbo 38% vs glm 92%，支持「有权威数据源的字段不交给模型」。
+
+### 3.2 主观字段盲评结果
+
+**主样本**（12 当前持仓 × 3 字段 = 36 条，对 85% 门槛）：
+
+| 指标 | 值 |
+|---|---|
+| 用户接受率（acceptable=yes / 36） | **75% (27/36)** — 未达 85% |
+| 模型无差别率（tie / 36） | **41.7% (15/36)** — ≥1/3 |
+| pick=A/B + acceptable=no（两模型都不够） | 3 条（FDS × 3） |
+| pick=tie + acceptable=no（模型一致但错） | 6 条（NOW × 3 + VEEV × 3） |
+
+逐字段（主样本 12 each）：holding_reason_raw 75% / key_assumptions 75% / mirrors 75%——三字段齐平。3 个全败 case（FDS/NOW/VEEV）共同根因：作者真实买入理由含 AI Agent 冲击维度，两模型均未从台账文本抽到——验证 input_type=ai_polished 局限（台账是 AI 润色后的，不含作者未写出的思考）。
+
+**边界样本**（3 已清仓 × 3 = 9 条，不算接受率，算拒答正确率）：
+
+| Case | 结果 | 说明 |
+|---|---|---|
+| CGNX | 3/3 生成内容（非拒答） | 台账有 thesis，模型从薄输入抽出了内容，作者接受 |
+| SPGI | 3/3 生成内容（非拒答） | 同上 |
+| GDXU | 3/3 正确拒答 | 台账无破条件，两模型均未生成 → 正确 |
+
+分组理由：产品只服务当前持仓，已清仓标的不构成产品价值；但它们是输入稀薄的边界样本，检验「输入为空时模型是否编造」（PRD §2「让『什么都不做』变得可信」）。两组 acceptable=yes 语义不同（主样本=内容可用；GDXU=正确拒答），合并会虚高接受率并掩盖拒答测试。
+
+**模型胜率**（clear preference 分母=25，不含 tie）：glm 96% (24/25) / qwen-turbo 4% (1/25)。有明确偏好时几乎全选 glm。
+
+**模型无差别率 41.7%**：≥1/3 → 支持「日常迭代用 qwen-turbo（~5s）、质量基线用 glm（~46s）」的分工，结论来自用户裁决而非成本推断。
+
+### 3.3 W1 判据 #3 结论
+
+**2 项达标 / 1 项样本不足 / 1 项无法有效测量 / 主观 75% 未达标。**
+
+- ✅ entry_anchor_type 100%（两模型）
+- ✅ entry_anchor_value 100%（两模型）
+- ⚠️ next_verdict 样本不足（§6.3）
+- ✗ manual_items GT 自身带噪，本轮无法有效测量
+- ✗ 主观接受率 75% < 85%——3 case 全败（FDS/NOW/VEEV），根因是 input_type=ai_polished 不含作者未写出的 AI Agent 思考
+
+**不写成达标或接近达标。** 主观 75% 离 85% 差 10pp，差距来自输入侧（台账 AI 润色过），不是模型推理能力。
 
 ## 4. 局限
 
@@ -154,3 +212,11 @@ filer_type 在产品中已改为查 `filer_type_lookup.yaml`（SEC EDGAR API）�
 修正：`load_input_text` 改为拼接「Thesis · 为什么买」+「加仓价 / 安全边际」两段（不含破条件段，那段由 `load_break_conditions` 单独读）。修正后 qwen-turbo entry_anchor_type 从 **0% → 100%**（11/11）。
 
 **方法论教训**：eval 输入切片必须覆盖被测字段的来源段。这与前述「打分逻辑系统性高估」（§5）构成一对镜像错误——同一个 agent 既写被测物又写评分器时，两个方向的偏差都会出现（高估 + 低估）。
+
+### 6.6 GT 样本构成含已清仓标的（2026-08-02 加）
+
+GT 15 条含 3 只已清仓标的（CGNX/SPGI/GDXU），本轮通过分组处理（主样本 36 + 边界 9）。W2 重建 GT 时应按「当前持仓 / 边界样本」显式设计，而非照台账全量取。
+
+### 6.7 边界样本仅 3 例，拒答正确率无统计显著性（2026-08-02 加）
+
+边界样本 3 例（CGNX/SPGI/GDXU），拒答正确率仅作定性观察。GDXU 3/3 正确拒答（台账无破条件 → 两模型未生成）；CGNX/SPGI 台账有 thesis → 模型从薄输入生成了内容（非拒答测试）。样本量不足以对拒答行为下统计结论。
