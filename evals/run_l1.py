@@ -113,17 +113,36 @@ def check_snapshot_ref(args) -> None:
         print(msg + "\n  (--allow-stale-gt 已给，继续)")
 
 
+def _extract_md_section(text: str, header: str) -> str:
+    """从大文本中提取 header（## 开头）到下一个 \n## 之间的内容（含 header 行）。"""
+    i = text.find(header)
+    if i < 0:
+        return ""
+    j = text.find("\n## ", i + len(header))
+    return text[i: j if j > 0 else len(text)].strip()
+
+
+def _extract_bullet_section(sec: str, header_kw: str) -> str:
+    """从 00_schema section 中提取 - **header_kw**：到下一个 - ** 之间的内容（含行首 - **）。"""
+    b = sec.find(f"**{header_kw}**")
+    if b < 0:
+        return ""
+    j = sec.find("\n- **", b)
+    k = sec.find("\n## ", b)
+    end = min(x for x in [j, k, len(sec)] if x > 0)
+    return sec[b:end].strip()
+
+
 def load_input_text(ticker: str) -> str:
+    """读台账「Thesis · 为什么买」+「加仓价 / 安全边际」两段拼接（eval fixture）。
+    【十六】解冻：之前只读买入理由段，缺加仓价段 → entry_anchor 假阴性 0%。
+    不含破条件段（那段由 load_break_conditions 单独读，拼进来会污染 manual_items）。"""
     p = THESIS_DIR / f"{ticker}.md"
     if p.exists():
         text = p.read_text(encoding="utf-8")
-        h = "## Thesis · 为什么买"
-        i = text.find(h)
-        if i < 0:
-            return text.strip()
-        start = i + len(h)
-        j = text.find("\n## ", start)
-        return text[start: j if j > 0 else len(text)].strip()
+        parts = [_extract_md_section(text, "## Thesis · 为什么买"),
+                 _extract_md_section(text, "## 加仓价 / 安全边际")]
+        return "\n\n".join(p for p in parts if p)
     schema = THESIS_DIR / "00_schema_and_small_rows.md"
     if not schema.exists():
         sys.exit(f"台账快照缺失：{p} 与 {schema} 都没有")
@@ -133,8 +152,9 @@ def load_input_text(ticker: str) -> str:
         return ""
     j = s.find("\n## ", i + 3)
     sec = s[i: j if j > 0 else len(s)]
-    m = re.search(r"\*\*Thesis · 为什么买\*\*：(.+?)(\n- \*\*|\Z)", sec, re.S)
-    return m.group(1).strip() if m else sec.strip()
+    parts = [_extract_bullet_section(sec, "Thesis · 为什么买"),
+             _extract_bullet_section(sec, "加仓价 / 安全边际")]
+    return "\n\n".join(p for p in parts if p)
 
 
 def load_break_conditions(ticker: str) -> str:

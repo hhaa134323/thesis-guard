@@ -146,3 +146,11 @@ GT 中 15 条仅 5 条 next_verdict 非 null（FDS / NVDA / VEEV / FIS / MCO）�
 ### 6.4 filer_type 一致率不计入 W1 判据 #3（2026-08-02 加）
 
 filer_type 在产品中已改为查 `filer_type_lookup.yaml`（SEC EDGAR API），**模型输出不参与产品逻辑**。本轮数据（qwen-turbo 38% vs glm-5.2-fast-preview 85%，前者大量输出 other）保留作为**模型能力观察**——支持「有权威数据源的字段不交给模型」这一设计决定。不计入 W1 判据 #3 的 ≥85% 门槛。
+
+### 6.5 eval fixture 输入切片缺失（2026-08-02 修正）
+
+本轮发现 eval fixture `load_input_text` 只截取「Thesis · 为什么买」段，未含「加仓价 / 安全边际」段 → entry_anchor 字段前两轮测量值为 0%（假阴性）。
+
+修正：`load_input_text` 改为拼接「Thesis · 为什么买」+「加仓价 / 安全边际」两段（不含破条件段，那段由 `load_break_conditions` 单独读）。修正后 qwen-turbo entry_anchor_type 从 **0% → 100%**（11/11）。
+
+**方法论教训**：eval 输入切片必须覆盖被测字段的来源段。这与前述「打分逻辑系统性高估」（§5）构成一对镜像错误——同一个 agent 既写被测物又写评分器时，两个方向的偏差都会出现（高估 + 低估）。
