@@ -1,216 +1,162 @@
-# 🚨 R8 红线（与 R1–R7 同级）：本文件是 eval ground truth，必须由作者（caca）手工标注。
+# 🚨 R8 红线（与 R1–R7 同级）：本文件是 eval ground truth（**仅客观字段**），必须由作者手工标注。
 # Claude/任何模型不许生成、推断、或用模型产出去填。
 #
-# 用法：拷本模板为 evals/ground_truth.yaml，填全后 harness（evals/run_l1.py）才跑。
+# Eval 设计 v2（eval-plan §9）：主观字段（holding_reason / key_assumptions / mirrors）**不进 GT**，
+# 走盲评（§9.4）。`manual_items` 也**不进 GT**——按 `docs/data-sources.md` 规则推导（价格图形型 → manual），
+# 与 position_cap_tier 同类（规则推导，不交人/模型猜）。本文件只标**有唯一可查证答案的客观字段**。
+#
+# 用法：填全后 harness（`evals/run_l1.py run`）才跑。
 # 输入 harness 自动从 assets/notion/thesis/<ticker>.md 的「Thesis · 为什么买」段读（你不用填输入）。
-# 你只填下面的「期望抽取」。
 #
-# exposure（必填，每条都填）：
-#   seen  = 你已看过该 ticker 的抽取结果（会被锚定，一致率天然偏高，仅参考，不进 85% 判定）
-#   clean = 未看过（进 85% 判定，作准）
-#   → FDS、HSBC 标 seen（演练 / gate 阶段曝光过）；其余 13 条标 clean。
+# exposure（必填）：seen = 你看过该 ticker 抽取结果（仅参考，不进 85% 判定）；clean = 未看过（进判定）。
+#   → FDS、HSBC 标 seen；其余 13 条标 clean。
+# input_type（必填）：ai_polished = 台账 AI 结构化输入（现有 15 条全属此类）；raw = 真实用户口述（W3 引入）。
+#   → 15 条全 ai_polished。Limitation：当前分数基于 AI 结构化输入，面向 raw 预期下降，W3 重测。
 #
-# 各字段（填什么 / 判断标准 / 留空条件）。⚠️ 说明里无任何示例值，也不用其他 ticker 举例——避免锚定你。
+# 客观字段（填什么 / 判断标准 / 留空条件）。⚠️ 说明无示例值，不用其他 ticker 举例——避免锚定。
 #
-#   holding_reason_raw : 填期望的买入理由原话（一句）。
-#     判断：抓 thesis 的核心——moat 是什么 + 为什么 5-10 年不被颠覆。
-#     留空条件：无（thesis 总有买入理由）。若实在标不出 → null + open_questions。
-#
-#   key_assumptions : 填期望关键假设列表，每条 {text: ...}。
-#     判断：thesis 成立所依赖的具体前提，且能被一手公开披露击中（不是模糊词）。
-#     留空条件：无。若标不出 → null + open_questions。
-#
-#   mirrors : 填期望镜像破局条件列表，每条 {assumption_text: ..., mirror_text: ...}。
-#     判断：对应台账「Thesis 破的条件」逐条结构化——破哪条假设 → 什么具体事件/数据点出现。
-#     留空条件：无。若台账破条件信息不足 → null + open_questions。
-#
-#   manual_items : 填期望人工自查项列表，每条 {text, reason, cadence}。
-#     判断：仅当 thesis 依赖价格图形（均线/形态/突破/支撑阻力等）才填；否则填 []（期望空）。
-#     留空条件：台账无价格图形信息 → 填 []；信息不足判断 → null + open_questions。
-#
-#   filer_type : 填申报方类型，取值三选一：
+#   filer_type : 填申报方类型，取值四选一：
 #     domestic_10k            = 美国本土公司，10-K 申报方
 #     foreign_issuer_20f_6k   = 外国发行人，20-F/6-K 申报方
+#     etf_fund                = ETF/ETN/基金/信托（无 10-K/20-F；QQQ/GDXU 等。v1 不支持自动核对 → harness 全 manual）
 #     other                    = 其余
-#     留空条件：无。若标不出 → null + open_questions。
+#     留空条件：无（每个 ticker 都有申报方类型）。null 须配 open_questions。
+#
+#   entry_anchor : 填录入估值锚 {anchor_type, anchor_value, note}。
+#     判断：估值型破条件用；锚类型由 thesis 类型定（现金流类 / 控股投资类 / 指数类各不同）；value 无数据留 null。
+#     留空条件：台账无估值锚信息 → null（optional，不强制 open_questions，但鼓励写原因）。
 #
 #   next_verdict : 填下一个能证伪 thesis 的事件+日期 {event, date, source_note}。
 #     判断：下一次有新证据能让 thesis 被推翻的时点（财报日 / 监管裁定日 等），不等于「下次复盘日」。
-#     留空条件：台账无此信息 → 填 null + open_questions（不算模型错，从该字段分母剔除，单独统计）。
+#     留空条件：台账无此信息 → null（optional）。
 #
-#   entry_anchor : 填录入估值锚 {anchor_type, anchor_value, note}。
-#     判断：估值型破条件用——锚类型由 thesis 类型定（现金流类/控股投资类/指数类各不同）；value 无数据留 null。
-#     留空条件：台账无估值锚信息 → 填 null + open_questions。
+#   open_questions : 列你标 null 的字段 + 原因，每条 {field: <字段名>, reason: <台账为何信息不足>}。
+#     harness 见 null + open_questions → 该字段从一致率分母剔除，单独统计「台账模糊字段数」（产品发现）。
+#     required 客观字段（filer_type）若 null 但无 open_questions → harness 报错退出（R8）。
+#     optional 客观字段（entry_anchor / next_verdict）null 不强制 open_questions。
 #
-#   open_questions : 列出你标 null 的字段 + 原因，每条 {field: <字段名>, reason: <台账为何信息不足>}。
-#     仅当某字段因台账信息不足填 null 时才记。
-#     harness 见 null + open_questions → 该字段从一致率分母剔除，单独统计「台账模糊字段数」（产品发现：多少 thesis 模糊）。
-#     required 字段（holding_reason_raw/key_assumptions/mirrors/filer_type）若 null 但无 open_questions → harness 报错退出（R8）。
-#
-# position_cap_tier 不填——harness 按 ticker 查 tier_map（确定性，不交给模型）。
+# 不在本文件（规则推导 / 盲评，都不手标）：
+#   - manual_items：按 docs/data-sources.md 规则推导（is_price_pattern W1）。
+#   - position_cap_tier：按 ticker 查 tier_map。
+#   - holding_reason / key_assumptions / mirrors：走盲评（eval-plan §9.4）。
 
 cases:
   - ticker: FDS
     exposure: seen
-    holding_reason_raw: ""
-    key_assumptions: []
-    mirrors: []
-    manual_items: []
+    input_type: ai_polished
     filer_type: ""
-    next_verdict: null
     entry_anchor: null
+    next_verdict: null
     open_questions: []
 
   - ticker: HSBC
     exposure: seen
-    holding_reason_raw: ""
-    key_assumptions: []
-    mirrors: []
-    manual_items: []
+    input_type: ai_polished
     filer_type: ""
-    next_verdict: null
     entry_anchor: null
+    next_verdict: null
     open_questions: []
 
   - ticker: BRK.B
     exposure: clean
-    holding_reason_raw: ""
-    key_assumptions: []
-    mirrors: []
-    manual_items: []
+    input_type: ai_polished
     filer_type: ""
-    next_verdict: null
     entry_anchor: null
+    next_verdict: null
     open_questions: []
 
   - ticker: MCO
     exposure: clean
-    holding_reason_raw: ""
-    key_assumptions: []
-    mirrors: []
-    manual_items: []
+    input_type: ai_polished
     filer_type: ""
-    next_verdict: null
     entry_anchor: null
+    next_verdict: null
     open_questions: []
 
   - ticker: GOOGL
     exposure: clean
-    holding_reason_raw: ""
-    key_assumptions: []
-    mirrors: []
-    manual_items: []
+    input_type: ai_polished
     filer_type: ""
-    next_verdict: null
     entry_anchor: null
+    next_verdict: null
     open_questions: []
 
   - ticker: NOW
     exposure: clean
-    holding_reason_raw: ""
-    key_assumptions: []
-    mirrors: []
-    manual_items: []
+    input_type: ai_polished
     filer_type: ""
-    next_verdict: null
     entry_anchor: null
+    next_verdict: null
     open_questions: []
 
   - ticker: NFLX
     exposure: clean
-    holding_reason_raw: ""
-    key_assumptions: []
-    mirrors: []
-    manual_items: []
+    input_type: ai_polished
     filer_type: ""
-    next_verdict: null
     entry_anchor: null
+    next_verdict: null
     open_questions: []
 
   - ticker: CRM
     exposure: clean
-    holding_reason_raw: ""
-    key_assumptions: []
-    mirrors: []
-    manual_items: []
+    input_type: ai_polished
     filer_type: ""
-    next_verdict: null
     entry_anchor: null
+    next_verdict: null
     open_questions: []
 
   - ticker: FIS
     exposure: clean
-    holding_reason_raw: ""
-    key_assumptions: []
-    mirrors: []
-    manual_items: []
+    input_type: ai_polished
     filer_type: ""
-    next_verdict: null
     entry_anchor: null
+    next_verdict: null
     open_questions: []
 
   - ticker: CGNX
     exposure: clean
-    holding_reason_raw: ""
-    key_assumptions: []
-    mirrors: []
-    manual_items: []
+    input_type: ai_polished
     filer_type: ""
-    next_verdict: null
     entry_anchor: null
+    next_verdict: null
     open_questions: []
 
   - ticker: NVDA
     exposure: clean
-    holding_reason_raw: ""
-    key_assumptions: []
-    mirrors: []
-    manual_items: []
+    input_type: ai_polished
     filer_type: ""
-    next_verdict: null
     entry_anchor: null
+    next_verdict: null
     open_questions: []
 
   - ticker: VEEV
     exposure: clean
-    holding_reason_raw: ""
-    key_assumptions: []
-    mirrors: []
-    manual_items: []
+    input_type: ai_polished
     filer_type: ""
-    next_verdict: null
     entry_anchor: null
+    next_verdict: null
     open_questions: []
 
   - ticker: QQQ
     exposure: clean
-    holding_reason_raw: ""
-    key_assumptions: []
-    mirrors: []
-    manual_items: []
+    input_type: ai_polished
     filer_type: ""
-    next_verdict: null
     entry_anchor: null
+    next_verdict: null
     open_questions: []
 
   - ticker: SPGI
     exposure: clean
-    holding_reason_raw: ""
-    key_assumptions: []
-    mirrors: []
-    manual_items: []
+    input_type: ai_polished
     filer_type: ""
-    next_verdict: null
     entry_anchor: null
+    next_verdict: null
     open_questions: []
 
   - ticker: GDXU
     exposure: clean
-    holding_reason_raw: ""
-    key_assumptions: []
-    mirrors: []
-    manual_items: []
+    input_type: ai_polished
     filer_type: ""
-    next_verdict: null
     entry_anchor: null
+    next_verdict: null
     open_questions: []

@@ -15,9 +15,14 @@ from pydantic import BaseModel, Field
 
 
 class FilerType(str, enum.Enum):
-    """SEC 申报方类型，决定核对时 SEC 表单路由（6-K 为主 vs 10-K）。"""
+    """SEC 申报方类型，决定核对时 SEC 表单路由（6-K 为主 vs 10-K）。
+
+    ETF/ETN/基金/信托（etf_fund）无公司层面 10-K/20-F，破条件依赖指数成分/基金公告/价格规模，
+    v1 数据源不覆盖 → 全 manual（见 docs/data-sources.md）。
+    """
     FOREIGN_ISSUER_20F_6K = "foreign_issuer_20f_6k"
     DOMESTIC_10K = "domestic_10k"
+    ETF_FUND = "etf_fund"
     OTHER = "other"
 
 

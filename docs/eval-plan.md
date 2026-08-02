@@ -107,3 +107,56 @@ under-fill 直接量（与一致率分开报，qwen-turbo vs glm-5.2-fast-previe
 - **不算模型错**：该字段从一致率分母**剔除**（不计入 matched 也不计入 denominator）。
 - 但**单独统计数量**「台账模糊字段数」，列进 eval-report——这个数字本身是**产品发现**（多少 thesis 模糊）。
 - required 字段（holding_reason_raw / key_assumptions / mirrors / filer_type）若 `null` 但无 open_questions 说明 → harness 报错退出（R8，不兜底）。optional 字段（manual_items / next_verdict / entry_anchor）`null` 不强制 open_questions。
+
+## 9. Eval 设计 v2（客观/主观拆分 + 盲评；2026-08-02 定，**supersede §1 的 L1 一致率设计**）
+
+> 起因：台账 thesis 文本本身是 AI 润色过的（作者口述模糊 → AI 补全结构化字段），作者录入时想法就模糊，多数散户也如此。
+> 由此：(1) 输入被污染（ai_polished 比真实 raw 口述干净，分数虚高）；(2) 主观字段无唯一答案，不能判一致率，改盲评。
+
+### 9.1 L1 门槛预注册（写定不改，调整须 changelog 留理由）
+
+- **客观字段**（有唯一可查证答案）：`filer_type` / `entry_anchor` / `next_verdict` / `manual_items` → 一致率 **≥85%**（原门槛不变）。
+- **主观字段**（取决于作者怎么想，无唯一答案）：`holding_reason` / `key_assumptions` / `mirrors` → 用户接受率 **≥85%**（新指标，同门槛）。
+- **两者分开报，不合并成一个总分。**
+
+> 注：`manual_items` 作者未在拆分里点名，本设计判为客观（价格图形检测有可查证的分类答案：thesis 含/不含价格技术词）。作者可改判。
+
+### 9.2 input_type 标记（输入污染）
+
+- 每条 case 标 `input_type: ai_polished | raw`。现有 15 条台账输入全部 `ai_polished`（AI 已结构化）。
+- **Limitation**（必进 eval-report）：当前一致率/接受率基于 AI 已结构化输入，面向真实用户原始口语输入时预期下降；W3 引入真实用户后须重测（`raw` 组）。
+
+### 9.3 客观字段：GT 一致率（保持原做法）
+
+- 作者手写标准答案（`filer_type` / `entry_anchor` / `next_verdict` / `manual_items`），harness 判 agent 输出 vs GT 一致率。客观可查证，与「想法模糊」无关。
+- §8.1 exposure（seen/clean，报三数、clean 为准）+ §8.2 null/open_questions（剔除分母 + 统计模糊数）继续适用。
+- 两模型（qwen-turbo / glm-5.2-fast-preview）各跑，一致率分开报。
+
+### 9.4 主观字段：盲评（人类偏好评估）
+
+- **不用 GT 一致率**（主观无唯一答案）。流程：
+  1. qwen-turbo 与 glm-5.2-fast-preview 对同一条 case 各产一份（`holding_reason` / `key_assumptions` / `mirrors`）。
+  2. 并排展示，**隐藏模型来源，左右顺序随机**。
+  3. 作者对每条给三选一：**A 更贴近 / B 更贴近 / 都不对**。
+  4. 选「都不对」必须由作者写一句为什么 → 该条计入**失败**。
+  5. 指标：**用户接受率** = (A 或 B 被接受) / 总数；**两模型各自胜率** = 被接受数 / 总数。
+- harness 支持：(a) 导出盲评对照文件（`evals/blind_pairs.yaml`，隐藏来源 + 随机左右）；(b) 回收作者裁决（`evals/blind_verdicts.yaml`）→ 算接受率 + 胜率。
+- 门槛：用户接受率 ≥85%（§9.1）。
+
+### 9.5 流程（harness 两阶段，作者卡点）
+
+1. 作者填 `evals/ground_truth.yaml`（**仅客观字段**：filer_type / entry_anchor / next_verdict / manual_items + exposure + input_type + open_questions）。
+2. harness `run`：两模型跑 15 case → 客观一致率（逐字段，exposure 三数）+ 导出盲评对照文件。
+3. 作者做盲评（填 `evals/blind_verdicts.yaml`，A/B/都不对 + 都不对理由）。
+4. harness `collect`：读裁决 → 算主观接受率 + 胜率 → 写 eval-report（客观一致率 + 主观接受率分开；under-fill + 台账模糊字段数 + per-call 指标同前）。
+
+### 9.6 A/B 澄清对照（**已缩减，非取消**；作者 2026-08-02 定）
+
+- A/B 在新设计下**更有落点**：A 组（不澄清，直接从台账抽）→ 用户接受率 X；B 组（走完整澄清流程）→ 用户接受率 Y。**Y − X = 澄清设计价值**（接受率 = 用户价值本身，比一致率差值更有说服力）。
+- 真正阻碍是**成本**（B 要真走澄清对话，15 条 × 几分钟不现实），不是设计。故**缩减不取消**：
+  - **W1 只做 3 条小样本 A/B**（作者走 3 次澄清对话，约 20 分钟）。
+  - 选 case 规则：从 clean 组挑，覆盖不同 thesis 类型，**至少含一条图形型、一条纯财务型**。
+  - 不追求统计显著，目的是**方向性信号 + 一份可展示对比**。
+  - **全量 A/B 推到 W2**。
+- W2 重启条件：B 组澄清流程产品化（多轮对话 agent 落地）+ 成本可控后，扩到全量 15 条。
+- 范围调整已留痕（本节）。

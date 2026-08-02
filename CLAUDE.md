@@ -18,6 +18,7 @@
 6. 判断权归用户：只呈现「条件 X 今天出现了对应事件」，不替用户结论
 7. **禁止写入用户的 Notion 工作区任何页面/数据库**
 8. **eval ground truth 必须由作者手工标注**——Claude/任何模型不许生成、推断、或用模型产出去填；harness 读独立文件 `evals/ground_truth.yaml`（与代码和模型产物完全分离），文件缺失或字段为空 → 报错退出，**绝不允许用模型输出兜底**
+9. **仓库转 public / 对外分享 / 作品集展示前，必须移除或脱敏**：`assets/`、`evals/ground_truth.yaml`、`evals/blind_verdicts.yaml`、`evals/blind_pairs.yaml`、及任何含真实持仓/真实 thesis/真实金额的文件；**新增此类文件时必须同步更新本清单**
 
 ## Notion 用法（只读快照，禁止写入）
 
