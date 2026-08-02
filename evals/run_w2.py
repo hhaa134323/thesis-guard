@@ -155,7 +155,13 @@ def cmd_collect(args) -> int:
     for c in data:
         for f in c.get("fields") or []:
             total += 1
-            acc = (f.get("acceptable") or "").strip().lower()
+            raw = f.get("acceptable")
+            if isinstance(raw, bool):
+                acc = "yes" if raw else "no"
+            elif raw is None:
+                acc = ""
+            else:
+                acc = str(raw).strip().lower()
             if acc == "yes":
                 accepted += 1
             elif acc == "no":

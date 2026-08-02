@@ -46,7 +46,7 @@ llm:
   task_model:
     provider: openai
     base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    model: "qwen-turbo"   # 日常迭代模型（3min/轮）；glm-5.2-fast-preview 作质量基线只跑一次（--model 覆盖）
+    model: "glm-5.2-fast-preview"   # B4 升级后默认（W1 胜率 96% + W2 接受率 85.45% ≥ 85%；2026-08-02）；qwen-turbo 仅冒烟/回归（--model 覆盖）
     api_key_env: "ANTHROPIC_AUTH_TOKEN"
   max_tokens: 8192
   # 限流防护（eval 批跑用；429 与其它错误分开计数进 per-call 指标表）

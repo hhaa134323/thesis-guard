@@ -263,3 +263,38 @@ W1 §6.8 指出 mode A 单轮初稿与产品多轮收敛错配。W2 建 `evals/r
 - **glm <85%** → 问题不在模型而在 prompt / 设计，转入 prompt 侧 error analysis（不改模型）。
 
 **glm 版早期信号**：5 case / 55 字段（vs qwen-turbo 版 33）——checklist prompt 让 glm 抽出更多假设/镜像。但「更多」≠「更对」，接受率才能判。
+
+
+### 7.1 collect 结果（2026-08-02，`run_w2.py collect --verdicts blind_verdicts_w2_glm.yaml`）
+
+盲评模板 `evals\blind_verdicts_w2_glm.yaml`（5 case / 55 字段，单模型 mode A，无 pick）已填。
+**模型：glm-5.2-fast-preview · mode A**
+
+| 指标 | 值 |
+|---|---|
+| 平均澄清轮数 | 0.0 |
+| 收敛失败率 | 0.0 |
+| **收敛后接受率** | **85.45%**（47/55 acceptable=yes；未答 0） |
+
+不接受明细见 `evals\blind_verdicts_w2_glm.yaml` 的 reason 字段。
+
+### 7.3 B4 决策 + prompt scope 修复 + 客观验证（2026-08-02）
+
+**B4 决策（作者拍板，选 ①）**：task_model **升级 glm-5.2-fast-preview**。依据：W1 胜率 96% + W2 收敛后接受率 85.45% ≥ 85% 注册门槛。卡线 0.45% 记录在案。`config.yaml` + `config.example.yaml` task_model.model 已改 glm-5.2-fast-preview（qwen-turbo 降为仅冒烟/回归，`--model` 覆盖）。
+
+**8 条 not-accepted 根因（error analysis）**：100% 同源——glm（verbose）把「加仓价/安全边际」段的**估值机械**（EPS / FCF / DCF / SBC / 倍数口径 / reverse DCF）塞进 `key_assumptions`，但该字段该是 moat + 不被颠覆的理由；估值属 `entry_anchor`。另有 1 条（MCO `holding_reason_raw`）混入「策略：逆势、越跌越买」操作策略。**非模型问题，是 prompt scope**——换 glm 不消除（glm verbose 更易塞）。
+
+**prompt scope 修复（`entry_agent.py` SYSTEM_PROMPT）**：
+- `key_assumptions` 限定 moat + 不被颠覆（checklist：AI 替代 / 监管 / 利率与久期 / 竞争格局 / 客户集中度）；估值机械（EPS / FCF / DCF / SBC / 倍数 / reverse DCF）**不进**，导向 `entry_anchor.note`，进不了 anchor 弃置。
+- `holding_reason_raw` 只放买入理由，不混策略表述。
+- `entry_anchor.note` 收估值机械（明示不进 key_assumptions）。
+
+**客观验证（不做新一轮盲评）**：重跑 FDS / MCO / VEEV（3 case，新 prompt，glm）→ grep `key_assumptions` 估值关键词（EPS / FCF / DCF / SBC / P/E / 倍数 / reverse）应清零。
+
+| case | key_assumptions 估值类条目（修复前 → 修复后） | 状态 |
+|---|---|---|
+| FDS | 3（ASV 增速/reverse DCF/调整后 EPS）→ **0**（清零；估值移至 entry_anchor.note：16x TTM GAAP P/E + EPS 重算） | ✓ |
+| MCO | 2（EPS 干净度/FCF 增速）→ **0**（清零；估值移至 entry_anchor.note：25x TTM GAAP P/E + EPS） | ✓ |
+| VEEV | 2（SBC 口径/owner earnings）→ **0**（清零；估值移至 entry_anchor.note：25x TTM GAAP P/E + GAAP/Non-GAAP/SBC） | ✓ |
+
+**验证结论**：3 case key_assumptions 估值关键词（EPS/FCF/DCF/SBC/P/E/倍数/reverse/估值/市值/收益率/GAAP/Non-GAAP/归一化/摊薄/摊销）命中 **0**，估值机械全部移至 `entry_anchor.note`。8 条 no 根因（prompt scope 估值混入）**已修复，客观验证通过**（不做新一轮盲评，依作者 2026-08-02 拍板）。**W2 关闭。**
