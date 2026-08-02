@@ -1,5 +1,5 @@
 fetched_at: '2026-08-02'
-user_agent: Thesis-Watch thesis-guard@example.com
+user_agent: Minghui Huang 2248789162@qq.com
 source: SEC EDGAR submissions API
 tickers:
   NVDA:
@@ -324,4 +324,50 @@ tickers:
     - N-8A
     - N-8A/A
     - N-8B-2
+    note: ''
+  SPGI:
+    cik: 64040
+    filer_type: domestic_10k
+    forms:
+    - 10-K
+    - 10-Q
+    - 11-K
+    - '144'
+    - 15-12B
+    - '3'
+    - 3/A
+    - '4'
+    - 424B2
+    - 424B3
+    - 424B5
+    - '425'
+    - 8-K
+    - 8-K/A
+    - ARS
+    - CORRESP
+    - DEF 14A
+    - DEFA14A
+    - EFFECT
+    - FWP
+    note: ''
+  GDXU:
+    cik: 927971
+    filer_type: foreign_issuer_20f_6k
+    forms:
+    - 11-K
+    - 13F-HR
+    - 40-F
+    - 40-F/A
+    - 424B2
+    - 424B3
+    - 424B8
+    - 6-K
+    - 8-A12B
+    - ABS-15G
+    - CERT
+    - FWP
+    - N-PX
+    - SBSE-A/A
+    - SCHEDULE 13G
+    - SCHEDULE 13G/A
     note: ''
