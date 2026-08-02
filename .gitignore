@@ -46,3 +46,7 @@ Thumbs.db
 
 # WorkBuddy local artifacts (automations, etc.) — never commit
 .workbuddy/
+
+# Local run artifacts / caches — never commit
+_thesis_pull_log.txt
+scripts/_*.json
