@@ -1,6 +1,6 @@
 # VEEV（有 thesis · US · 长线 (≥3y)）
 
-> 来源：Notion「🧭 持仓 Thesis · 价值投资台账」，2026-07-31 导出。最近更新 2026-07-19 13:29:04Z
+> 来源：Notion「🧭 持仓 Thesis · 价值投资台账」，2026-08-01 只读拉取定格（workspace_search + query-database-view，复盘备注逐字照抄未做任何摘要）。最近更新 2026-07-19T13:29:04.841Z
 
 - **搜索名**：Veeva Systems
 - **关注词**：Salesforce, customer loss, CRM migration, pharma, competition
