@@ -108,16 +108,23 @@ _REDLINE_DEFAULTS: list[dict] = [
 ]
 
 
-def default_redline_pack(thresholds: dict | None = None) -> list[BrokenCondition]:
-    """下发通用红线默认包（Layer 2），用户阈值可覆盖。
+def default_redline_pack(thresholds: dict | None = None,
+                        enabled_redlines: list[str] | None = None) -> list[BrokenCondition]:
+    """下发通用红线默认包（Layer 2），用户阈值可覆盖、可关停。
 
     thresholds 形如 {"large_fine": {"amount_usd": 5e7}, ...}，
     与模板默认阈值合并（用户值优先）。
+    enabled_redlines：可选，只保留这些 template（按 .value，如 "large_fine"）的红线；
+    None=全部。用于去重——当某条 mirror 已覆盖某红线语义（如 CEO/CFO 离职既在
+    mirror 又会触发 exec_change），关停该红线避免同一事件重复计入。
     """
     out: list[BrokenCondition] = []
     overrides = thresholds or {}
+    enabled = set(enabled_redlines) if enabled_redlines is not None else None
     for d in _REDLINE_DEFAULTS:
         key = d["template"].value
+        if enabled is not None and key not in enabled:
+            continue
         merged = {**d["threshold"], **overrides.get(key, {})}
         out.append(BrokenCondition(
             id=_new_id(),
@@ -135,15 +142,16 @@ def default_redline_pack(thresholds: dict | None = None) -> list[BrokenCondition
 def build_card_conditions(assumptions: list[Assumption],
                           mirrors: list[BrokenCondition],
                           extra_redlines: list[BrokenCondition] | None = None,
-                          user_thresholds: dict | None = None) -> tuple[list[BrokenCondition], list[ManualCheckItem]]:
+                          user_thresholds: dict | None = None,
+                          enabled_redlines: list[str] | None = None) -> tuple[list[BrokenCondition], list[ManualCheckItem]]:
     """组装一张卡的破局条件 + 人工自查项。
 
     - mirrors：录入 Agent 已为各假设生成的镜像候选（可能为空）
-    - 额外追加默认红线包（用户阈值可调）
+    - 额外追加默认红线包（用户阈值可调、可关停，见 default_redline_pack）
     - 返回 (broken_conditions, manual_check_items)
     """
     broken: list[BrokenCondition] = list(mirrors)
-    broken.extend(default_redline_pack(user_thresholds))
+    broken.extend(default_redline_pack(user_thresholds, enabled_redlines))
     if extra_redlines:
         broken.extend(extra_redlines)
     return broken, []

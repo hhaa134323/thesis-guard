@@ -96,7 +96,8 @@ def _find(assumptions: list[Assumption], aid: str) -> Assumption | None:
 
 def build_card(user_id: str, ticker: str, filer_type: FilerType,
               conversation: list[dict], extractor: Extractor,
-              user_thresholds: dict | None = None) -> ThesisCard:
+              user_thresholds: dict | None = None,
+              enabled_redlines: list[str] | None = None) -> ThesisCard:
     """对话 → thesis 卡（未确认状态；确认是后续用户动作）。
 
     流程：extractor 抽取 → 镜像(L1) + 红线包(L2) + 人工自查(价格图形) → 组装。
@@ -113,7 +114,7 @@ def build_card(user_id: str, ticker: str, filer_type: FilerType,
         redline.guard(m.get("text", ""))
         broken.append(make_mirror(a, m["text"]))
 
-    broken.extend(default_redline_pack(user_thresholds))
+    broken.extend(default_redline_pack(user_thresholds, enabled_redlines))
 
     manual: list[ManualCheckItem] = [to_manual_check(t) for t in ext.manual_items]
 
@@ -194,5 +195,65 @@ def demo() -> None:
     print(json.dumps(to_dict(card), ensure_ascii=False, indent=2))
 
 
+# --------------------------------------------------------------------------- #
+# HSBC 演练 transcript demo（W1：glm-5.2 内联抽取固化；生产 API responder 见 W2）
+# 基线 transcript：assets/onboarding_dryrun_0731.md（6 轮对话 + 8 条设计发现）
+# --------------------------------------------------------------------------- #
+
+# transcript 6 轮对话摘要（round 1–4 关键产出；完整原文见 assets/onboarding_dryrun_0731.md）。
+HSBC_TRANSCRIPT: list[dict] = [
+    {"role": "user", "text": "HSBC，因为按照年来看，它的股价表现稳健上升的形状"},
+    {"role": "assistant", "text": "追问：信图形还是公司？什么算「形状破了」？"},
+    {"role": "user", "text": "1、公司  2、无法确定，那得想想什么会让这家公司变得让人无法信任"},
+    {"role": "assistant", "text": "候选菜单 A（假设）/ B（破条件镜像）；价格形状→人工自查"},
+    {"role": "user", "text": "1、A4  2、B6？"},
+    {"role": "assistant", "text": "确认卡：A4 镜像①② + 通用红线③罚单 + 人工自查价格形状"},
+    {"role": "user", "text": "确认。大多数情况下不会触发对吗"},
+]
+
+
+def hsbc_glm52_extractor(conversation: list[dict]) -> ExtractionResult:
+    """glm-5.2 读 onboarding_dryrun_0731.md HSBC transcript 产出的 ExtractionResult（固化）。
+
+    生产用 API responder（W2）替换本函数为 headless 自动调 glm-5.2；
+    本函数是 W1 的「模型内联」产出，证明 harness 跑通 + 供 eval 基线。
+    镜像文本经 build_card 内 redline.guard 校验（R3）。
+    """
+    a = Assumption(text="管理层战略清晰，重组聚焦见效")
+    return ExtractionResult(
+        holding_reason_raw="按照年来看，它的股价表现稳健上升的形状",
+        assumptions=[a],
+        mirrors=[
+            {"assumption_id": a.id, "text": "宣布战略转向、重组叫停，或亚洲核心资产被剥离"},
+            {"assumption_id": a.id, "text": "CEO / CFO 突然离职"},
+        ],
+        manual_items=["价格「形状」：年线"],
+    )
+
+
+def run_entry_agent_demo() -> ThesisCard:
+    """跑 HSBC transcript 通过 harness，产出确认卡 + 复述（经 redline.guard）。
+
+    - filer_type=FOREIGN_ISSUER_20F_6K（HSBC 是 20-F/6-K 申报方，6-K 主渠道，发现 7）
+    - user_thresholds large_fine=5e7（贴合 transcript round-4 的 5000 万阈值）
+    - enabled_redlines=["large_fine"]（mirror②已覆盖 CEO/CFO 离职，关停 exec_change 去重，发现 1）
+    - manual_check = 价格形状年线（发现 5）
+    """
+    card = build_card(
+        user_id="beta1",
+        ticker="HSBC",
+        filer_type=FilerType.FOREIGN_ISSUER_20F_6K,
+        conversation=HSBC_TRANSCRIPT,
+        extractor=hsbc_glm52_extractor,
+        user_thresholds={"large_fine": {"amount_usd": 5e7}},
+        enabled_redlines=["large_fine"],
+    )
+    print(render_summary(card))
+    print("\n--- card_json ---")
+    import json
+    print(json.dumps(to_dict(card), ensure_ascii=False, indent=2))
+    return card
+
+
 if __name__ == "__main__":
-    demo()
+    run_entry_agent_demo()

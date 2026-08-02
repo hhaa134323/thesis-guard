@@ -1,5 +1,10 @@
-# v0.1 依赖（从简）。
-# Agent loop（Claude Agent SDK / Anthropic SDK）与 FastAPI 待选型确认后加入。
+# v0.2 依赖（从简）。
+# Agent loop 选型确认（2026-08-01）：PydanticAI 单次结构化调用（非 Claude Agent SDK）。
+# 模型走百炼兼容端点（Anthropic 协议）；端点+模型名从 config.yaml 读，API key 从 env。
 
 PyYAML>=6.0
 pytest>=7.0
+pydantic>=2.0
+pydantic-ai
+pydantic-evals
+anthropic
