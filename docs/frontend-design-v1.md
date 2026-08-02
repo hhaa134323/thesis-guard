@@ -37,6 +37,7 @@
 - `POST /api/session/{id}/confirm` `{edits?}` → view
 - view 形状：`{stage, assistant, card, menu, open_questions, ticker, error, metrics}`
 
+- **`assistant` 字段来源**（2026-08-02 补充，话术生成层）：追问/拒判处由 `dialogue.py` LLM 生成（锐利、有解释力——说透为什么核不了/能改成什么样才核得了，过 `redline.guard`）；**复述确认段保模板逐字保真**（确认卡文字与入库一致）。前端只渲染返回文本（打字机逐字，验收点 8），不碰话术生成。
 前端只换皮肤 + 交互结构，不碰这些端点与 view 形状。
 
 ## 4. 目录与构建（部署中立）

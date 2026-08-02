@@ -1,0 +1,193 @@
+- case: 1
+  ticker: FDS
+  reference_input: '## Thesis · 为什么买
+
+    FactSet = 金融数据与分析订阅平台，深度嵌入买卖方工作流、转换成本高、ASV（年化订阅）经常性强、续约率高。价值角度：高黏性订阅 + 稳定现金流的「卖铲子」生意。
+
+
+    ## 加仓价 / 安全边际
+
+    加仓信号 · TTM P/E 法（单钥匙 16x）：ADD 只在 TTM P/E 跌破 16x 时亮，每次复查按最新 10-Q 的四季 GAAP 摄薄 EPS 重算，不写死价格。① TTM 每股利润＝最近四季 GAAP 摄薄 EPS 加总（别单季×4）。② P/E＝现价 ÷ TTM EPS；低于 16x 且 thesis 未破、在能力圈内，才算 ADD 候选。③ reverse DCF 只做锈、不进线，但 FDS 这只锈很稳：现价约 9.2B 市值、TTM FCF 约 575M，无论 r=9% 还是 10%，隐含永续 FCF 增速都只有 ~2.75%–3.75%，远低于 ASV ~6% + 回购减股 ~3% 的实际轨迹——两种折现率下都便宜，比 MCO 那次稳。注：FDS 调整后 EPS（剔收购无形资产摊销）比 GAAP 高约 12%，所以线踩 GAAP 偏保守；若改用调整/forward 口径门槛会更低。当前读数 2026-06-06：TTM GAAP EPS 约 15.66 美元（Q1FY26 4.06 + Q2FY26 3.59 + FY25 后两季），现价约 253 美元≈16.2x，forward P/E 约 13–14x；已距 52 周高 464 腾斩、比十年均值（约 28x）低约 55%。门槛 16x≈251 美元≈现价，即现价已在加仓门口，越跌越买。'
+  fields:
+  - field: holding_reason_raw
+    model_output: FactSet = 金融数据与分析订阅平台，深度嵌入买卖方工作流、转换成本高、ASV（年化订阅）经常性强、续约率高。价值角度：高黏性订阅 + 稳定现金流的「卖铲子」生意。
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[0]
+    model_output: 深度嵌入买卖方工作流、转换成本高
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[1]
+    model_output: ASV（年化订阅）经常性强、续约率高
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[2]
+    model_output: 高黏性订阅 + 稳定现金流的「卖铲子」生意
+    acceptable: null
+    reason: ''
+  - field: mirrors[0]
+    model_output: 客户切换平台的意愿增强或成本降低
+    acceptable: null
+    reason: ''
+  - field: mirrors[1]
+    model_output: ASV 下降或续约率显著降低
+    acceptable: null
+    reason: ''
+  - field: mirrors[2]
+    model_output: 业务模式被颠覆或现金流不稳定
+    acceptable: null
+    reason: ''
+- case: 2
+  ticker: MCO
+  reference_input: '## Thesis · 为什么买
+
+    穆迪是评级双寡头（Moody''s / S&P）之一，核心评级业务护城河强（监管准入 + 网络效应 + 客户黏性），现金流稳定。策略：逆势、越跌越买。
+
+
+    ## 加仓价 / 安全边际
+
+    加仓信号 · TTM P/E 法（单钥匙 25x）：ADD 只在 TTM P/E 跌破 25x 时亮，每次复查按最新 10-Q 的四季 GAAP 摄薄 EPS 重算，不写死价格。① TTM 每股利润＝最近四季 GAAP 摄薄 EPS 加总（MCO 收益干净、无 GOOGL 那种股权公允值大额波动，不需特别剔除）。② P/E＝现价 ÷ TTM EPS；低于 25x 且 thesis 未破、在能力圈内，才算 ADD 候选。③ reverse DCF 只做一次性锈——不进线（对折现率极敏感：9% 算便宜、9% 以上就变满价）。参考锈：现价约 450 美元隐含「未来十年 FCF 年增 ~9% + 永续 3%」，跳到 25x 隐含增速降到 ~7%、明显低于 MCO 低双位数的轨迹，才算真有安全边际。当前读数 2026-07-24（按 Q2 2026 10-Q 滚动重算）：TTM GAAP 摊薄 EPS ≈ 15.76 美元〔= 旧 TTM 13.94 − Q2''25 GAAP 3.21 + Q2''26 GAAP 5.03；Q2''25 3.21 系一手 Moody''s 2Q25 业绩稿（q4cdn 2Q25 Earnings Release PDF）摊薄 EPS，与 Q2''26 +57% YoY 互洽〕；25x 加仓线≈394 美元（较 6/06 旧线 349 上抬约 13%）；现价约 475 美元（今日简报）≈30x，未触发，距加仓线约 −17%。'
+  fields:
+  - field: holding_reason_raw
+    model_output: 穆迪是评级双寡头（Moody's / S&P）之一，核心评级业务护城河强（监管准入 + 网络效应 + 客户黏性），现金流稳定。策略：逆势、越跌越买。
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[0]
+    model_output: 监管准入 + 网络效应 + 客户黏性
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[1]
+    model_output: 现金流稳定
+    acceptable: null
+    reason: ''
+  - field: mirrors[0]
+    model_output: 监管政策变化导致准入门槛降低或出现新竞争者
+    acceptable: null
+    reason: ''
+  - field: mirrors[1]
+    model_output: 核心评级业务收入大幅下滑或出现重大亏损
+    acceptable: null
+    reason: ''
+- case: 3
+  ticker: GOOGL
+  reference_input: '## Thesis · 为什么买
+
+    按 Benedict Evans「模型商品化 → 价值沉淀到分发+应用层」的推导:基础模型大概率走电力/平板屏的路(造起来难、却没定价权),AI 的胜负手不是 benchmark 而是分发。Alphabet 握着全世界最深的分发——Search / Chrome / Android / Workspace / YouTube 数十亿默认入口,把 Gemini 嵌进每个用户的选择时刻,不需要赢模型质量,只需「足够好 + 默认在位」。买 GOOGL = 押「分发护城河」这个 job,而不是押「谁家模型最强」这个会被商品化的 task。
+
+
+    ## 加仓价 / 安全边际
+
+    加仓信号 · 归一化运营 P/E 法（单钥匙 25x）：ADD 只在归一化运营 P/E 跌破 25x 时亮，每次复查按最新一手 10-Q 重算，不写死价格。① 归一化运营每股利润＝运营利润（Income from operations，已剔除 OI&E 里波动的股权公允值收益）×（1−正常税率约 17%）÷ 摊薄股数；用 TTM 四季加总，别单季 ×4。② 归一化 P/E＝现价 ÷ 归一化运营每股利润；低于 25x 且 thesis 未破、在能力圈内，才算 ADD 候选。③ 不用 FCF / owner-earnings 当线——2026 capex 指引 1800–1900 亿美元、大头是增长性 capex，会把 FCF 压到失真（Q2''26 单季 FCF 已转负 -58.6 亿），分母会骗人。
+
+
+    当前读数 2026-07-23（按 Q2''26 一手 8-K/10-Q 重算）：TTM 运营利润＝FY25 1,290.4 亿 + H1''26 804.7 亿 − H1''25 618.8 亿＝约 1,476 亿；×(1−17%)＝约 1,225 亿；÷ 摊薄股约 122.5 亿股＝归一化每股运营利润约 10.0 美元（较 6/06 的约 9.8 微升，源于 Search +17% 加速、Cloud 营业利润率 20.7%→35.6%、合并营业利润率升至 34%）。现价约 325 美元 ≈ 32.5x（较 6/06 的 37x 回落，价格跌 + 盈利升双驱动），未触发；25x≈250 美元，距现价约 −23%。⚠ 买入价 379.67 美元 ≈ 38x，属满估值区、非安全边际；ADD 线不锢买入价、只锢最新一手基本面（买入价是沉没成本，与重估无关）。
+
+
+    （历史）当前读数 2026-06-06：运营利润 Q1 约 397 亿，归一化每股运营利润约 9.8 美元，现价约 359 美元≈37x，未触发；25x≈245 美元，距现价约 −32%。'
+  fields:
+  - field: holding_reason_raw
+    model_output: 按 Benedict Evans「模型商品化 → 价值沉淀到分发+应用层」的推导:基础模型大概率走电力/平板屏的路(造起来难、却没定价权),AI 的胜负手不是 benchmark 而是分发。Alphabet 握着全世界最深的分发——Search / Chrome / Android / Workspace / YouTube 数十亿默认入口,把 Gemini 嵌进每个用户的选择时刻,不需要赢模型质量,只需「足够好 + 默认在位」。买 GOOGL = 押「分发护城河」这个 job,而不是押「谁家模型最强」这个会被商品化的 task。
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[0]
+    model_output: Alphabet 拥有全球最深的分发渠道，包括 Search、Chrome、Android、Workspace 和 YouTube 等数十亿默认入口。
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[1]
+    model_output: Gemini 能够嵌入每个用户的选择时刻，无需在模型质量上取胜，只需达到「足够好 + 默认在位」。
+    acceptable: null
+    reason: ''
+  - field: mirrors[0]
+    model_output: Alphabet 的分发渠道被其他公司超越或替代，导致其无法维持当前的市场主导地位。
+    acceptable: null
+    reason: ''
+  - field: mirrors[1]
+    model_output: Gemini 无法有效嵌入用户的选择时刻，或被其他更优的 AI 模型取代。
+    acceptable: null
+    reason: ''
+- case: 4
+  ticker: NVDA
+  reference_input: '## Thesis · 为什么买
+
+    NVIDIA = AI 算力的事实标准。护城河不在单颗 GPU，而在 CUDA 软件生态 + 开发者锁定 + 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）——训练与推理工作流深度绑定 CUDA，迁移成本极高。买 NVDA = 押「AI 基础设施的卖铲人」这个 job：只要算力需求持续扩张、且生态锁定不被打破，就持续收税；而不是押「哪一代模型最强」这个会被商品化的 task。（caca 2026-06-11 审定：框架照此定稿。）
+
+
+    ## 加仓价 / 安全边际
+
+    深价线 ≈ $130（方法 B·穿越周期归一化：中枢 EPS 用 S1 温和消化 ~$5.9 × 22x；caca 2026-06-10 审定）。现价 ~$203 高出约 36% → 默认 HOLD，不在此价加仓；仅当回落至 ~$130 带、且 thesis 未破时才重估 ADD。注：中枢基准取 TTM GAAP EPS $6.53（含投资收益、偏慷慨），故此线已偏保守。方法演变：A『forward P/E 信增长延续』经 steelman B 自检未通过（caca 判定『扛不住』，疑为可得性偏差），弃用 → 改用 B。'
+  fields:
+  - field: holding_reason_raw
+    model_output: NVIDIA = AI 算力的事实标准。护城河不在单颗 GPU，而在 CUDA 软件生态 + 开发者锁定 + 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）——训练与推理工作流深度绑定 CUDA，迁移成本极高。买 NVDA = 押「AI 基础设施的卖铲人」这个 job：只要算力需求持续扩张、且生态锁定不被打破，就持续收税；而不是押「哪一代模型最强」这个会被商品化的 task。
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[0]
+    model_output: CUDA 软件生态 + 开发者锁定 + 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[1]
+    model_output: 训练与推理工作流深度绑定 CUDA，迁移成本极高
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[2]
+    model_output: 算力需求持续扩张
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[3]
+    model_output: 生态锁定不被打破
+    acceptable: null
+    reason: ''
+  - field: mirrors[0]
+    model_output: CUDA 生态被替代或出现更优替代方案
+    acceptable: null
+    reason: ''
+  - field: mirrors[1]
+    model_output: 训练与推理工作流不再依赖 CUDA 或迁移成本大幅降低
+    acceptable: null
+    reason: ''
+  - field: mirrors[2]
+    model_output: 算力需求停滞或下降
+    acceptable: null
+    reason: ''
+  - field: mirrors[3]
+    model_output: 生态锁定被打破或出现更强竞争者
+    acceptable: null
+    reason: ''
+- case: 5
+  ticker: VEEV
+  reference_input: '## Thesis · 为什么买
+
+    Veeva = 生命科学行业的垂直 SaaS（CRM + 临床/质量/监管云），深嵌药企合规与监管流程、转换成本高、行业垄断地位。价值角度：垂直护城河 + 监管刚需 + 高利润订阅。
+
+
+    ## 加仓价 / 安全边际
+
+    加仓信号 · TTM GAAP P/E 法（单钥匙 25x）：ADD 只在 TTM GAAP P/E 跌破 25x 时亮，每次复查按最新财报的四季 GAAP 摄薄 EPS 重算，不写死价格。① 特别注意——VEEV 线踩 GAAP 而不是 Non-GAAP：Veeva 的 Non-GAAP 主要加回股权激励 SBC（约 5 亿美元/年），SBC 是真实成本（通过增发稀释你的股权，只是不走现金），用 Non-GAAP 算会把这笔稀释当不存在、把估值美化成「只有 20x」。踩 GAAP 是把 SBC 当成本算进去，跟 MCO/FDS 一个口径，也不自欺。② TTM 每股利润＝最近四季 GAAP 摄薄 EPS 加总（别单季×4；Veeva 财年截止 1 月 31 日）。③ P/E＝现价 ÷ TTM GAAP EPS；低于 25x 且 thesis 未破、在能力圈内，才算 ADD 候选。④ reverse DCF 只做锈不进线：现价约 29B 市值、owner earnings（GAAP 净利 ~0.9B、已含 SBC）盈利收益率 ~3.1%，r=9% 时隐含永续增速 ~5.9%，低于实际 ~14% 增长——「合理偏便宜」但不是 FDS 那种白菜价，所以溢价成长股要个像样折价再加。当前读数 2026-06-06：TTM GAAP EPS 约 5.65 美元，现价约 180 美元≈32x（forward Non-GAAP 约 20x），未触发；25x≈141 美元，距现价约 −22%（接近 52 周低 148）。股价较 52 周高 310 已跌约 37%，但绝对估值仍不低。'
+  fields:
+  - field: holding_reason_raw
+    model_output: Veeva = 生命科学行业的垂直 SaaS（CRM + 临床/质量/监管云），深嵌药企合规与监管流程、转换成本高、行业垄断地位。价值角度：垂直护城河 + 监管刚需 + 高利润订阅。
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[0]
+    model_output: 垂直护城河
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[1]
+    model_output: 监管刚需
+    acceptable: null
+    reason: ''
+  - field: key_assumptions[2]
+    model_output: 高利润订阅
+    acceptable: null
+    reason: ''
+  - field: mirrors[0]
+    model_output: Veeva 的垂直 SaaS 模式被其他平台替代或出现更优解决方案
+    acceptable: null
+    reason: ''
+  - field: mirrors[1]
+    model_output: 生命科学行业对 Veeva 的合规与监管流程依赖减弱
+    acceptable: null
+    reason: ''
+  - field: mirrors[2]
+    model_output: Veeva 的订阅模式盈利能力下降或出现竞争性定价策略
+    acceptable: null
+    reason: ''

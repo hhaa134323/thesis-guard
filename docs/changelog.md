@@ -2,6 +2,21 @@
 
 > 规则：每次迭代写清楚——依据哪条用户反馈、砍了什么、为什么砍。KILL 判据体检结果也记这里。
 
+## v0.0.11 — 2026-08-02 — 话术生成层 + §2.5 前端 round-1（React+Vite+shadcn）+ W2 盲评模板/collect
+
+**做了什么**
+- 话术生成层 `src/thesis_watch/dialogue.py`：每轮对话文案 LLM 生成（追问/拒判说透为什么——锐利、有解释力，过 redline.guard）；**复述确认段保模板逐字保真**（确认卡文字与入库一致）。`entry_loop` 在 extracted/menu/confirm_card 三处接入 `generate_dialogue` + 模板兜底；抽取仍单次结构化调用（话术是独立呈现层调用）。
+- §2.5 前端 round-1（`frontend/` React + Vite + shadcn/ui + Tailwind）：形态 C（居中对话 680px + 右抽屉 340px 滑入/滑出）；8 验收点（菜单 option 卡 / 三阶段进度行 / 抽屉软蓝高亮「刚填入」/ 拒判橙边卡三段式 / 行话 tooltip / 确认入库绿态 / 浅色蓝点缀 / 打字机逐字）；构建产物 → `static/` 由 FastAPI 托管。旧 vanilla 挪 `frontend/legacy/`。设计基线 `docs/frontend-design-v1.md`。
+- W2 盲评流程（W1 同款模板+collect）：`evals/run_w2.py` 加 `template`/`collect` 子命令。`template` 读 `w2_converged_cards.yaml` + `load_input_text` → 铺 `evals/blind_verdicts_w2.yaml`（逐字段 model_output + `acceptable:null`/`reason:""`，含 reference_input 供对照，单模型 mode A 无 pick）。`collect` 算收敛后接受率 + 写 `eval-report.md` §7.1。
+
+**依据**
+- 作者 2026-08-02 补充：① 话术生成层（追问/拒判 LLM，复述确认模板逐字）；② 前端 8 验收点 + 打字机；③ 盲评不在对话口头，按 W1 模板+collect（填评人只看 blind_verdicts_w2.yaml 一个文件）。
+
+**自测**
+- 42 测试绿；前端 build 2.4s → `static/`；GET / React 页面（`id="root"`）；POST HSBC 话术 LLM 生成（解释价格图形型为什么核不了、能改成什么样）；`template` 生成 5 case / 33 字段盲评模板。
+
+**状态**：前端 round-1 待作者目检（预期 2 轮以上迭代）；W2 盲评模板已生成（`acceptable:null`），作者填后跑 `collect`。
+
 ## v0.0.10 — 2026-08-02 — 前端栈修订：React+Vite+shadcn/ui（作废无构建链约束）+ 设计基线 v1
 
 **做了什么**

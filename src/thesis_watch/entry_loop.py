@@ -17,6 +17,7 @@ from typing import Any
 from .schema import EntryExtraction
 from .entry_agent import build_agent, extract
 from .menu import build_menu_agent, generate_menu
+from .dialogue import build_dialogue_agent, generate_dialogue
 from .agent import build_card_from_extraction
 from .tier_map import lookup_tier
 from .conditions import is_price_pattern
@@ -73,15 +74,18 @@ class EntrySession:
     error: str | None = None
     _extract_agent: Any = None
     _menu_agent: Any = None
+    _dialogue_agent: Any = None
     _filer: Any = None
     _filer_src: str | None = None
 
-    def _agents(self) -> tuple[Any, Any]:
+    def _agents(self) -> tuple[Any, Any, Any]:
         if self._extract_agent is None:
             self._extract_agent, _, _ = build_agent(self.cfg)
         if self._menu_agent is None:
             self._menu_agent, _, _ = build_menu_agent(self.cfg)
-        return self._extract_agent, self._menu_agent
+        if self._dialogue_agent is None:
+            self._dialogue_agent, _, _ = build_dialogue_agent(self.cfg)
+        return self._extract_agent, self._menu_agent, self._dialogue_agent
 
     def _resolve_filer(self, ext):
         """filer_type 确定性查表（filer_type_lookup.yaml）→ 模型兜底 → 待确认。
@@ -112,7 +116,7 @@ class EntrySession:
     def start(self, reason: str) -> dict:
         self.conversation.append({"role": "user", "text": reason})
         self.metrics["turns"] += 1
-        ea, _ = self._agents()
+        ea, _, da = self._agents()
         res = extract(ea, reason, self.cfg, mode="A")  # §6.8 暂只 mode A；W2 eval 改收敛后测
         self.ext = res["extraction"]
         if self.ext is None:
@@ -127,7 +131,9 @@ class EntrySession:
             tier=lookup_tier(self.ticker), filer_type=self._filer)
         self._filer_open_question(self._filer_src)
         price_hit = is_price_pattern(reason)
-        a = redline.guard(self._present_extraction(price_hit))
+        dlg = generate_dialogue(da, self._ctx_extracted(price_hit), self.cfg)
+        a = dlg["text"] if dlg["ok"] and dlg["text"].strip() else self._present_extraction(price_hit)
+        a = redline.guard(a)
         self.conversation.append({"role": "assistant", "text": a})
         return self._view(assistant=a)
 
@@ -178,7 +184,7 @@ class EntrySession:
     # ------------------------------------------------------------------ #
     def _do_menu(self) -> dict:
         self.metrics["clarification_rounds"] += 1
-        _, ma = self._agents()
+        _, ma, da = self._agents()
         reason = self.conversation[0]["text"] if self.conversation else ""
         r = generate_menu(ma, self.ticker, reason, self.cfg)
         if not r["ok"] or r["menu"] is None:
@@ -189,7 +195,9 @@ class EntrySession:
             return self._view(assistant=a)
         self.menu = r["menu"]
         self.stage = S_MENU
-        a = redline.guard(self._present_menu())
+        dlg = generate_dialogue(da, self._ctx_menu(), self.cfg)
+        a = dlg["text"] if dlg["ok"] and dlg["text"].strip() else self._present_menu()
+        a = redline.guard(a)
         self.conversation.append({"role": "assistant", "text": a})
         return self._view(assistant=a)
 
@@ -218,8 +226,11 @@ class EntrySession:
             tier=lookup_tier(self.ticker), filer_type=self._filer)
         self._consistency_check(chosen_a, chosen_b)
         self.stage = S_CONFIRM
-        note = f"⚠️ 一致性存疑：{self.open_questions[-1]['reason']}。" if self.open_questions else ""
-        a = redline.guard(f"做成了确认卡（右侧）。{note}可点改字段，确认后入库。")
+        _, _, da = self._agents()
+        dlg = generate_dialogue(da, self._ctx_confirm(chosen_a, chosen_b), self.cfg)
+        fallback = ("做成了确认卡（右侧）。" + (f"⚠️ 一致性存疑：{self.open_questions[-1]['reason']}。" if self.open_questions else "") + "可点改字段，确认后入库。")
+        a = dlg["text"] if dlg["ok"] and dlg["text"].strip() else fallback
+        a = redline.guard(a)
         self.conversation.append({"role": "assistant", "text": a})
         return self._view(assistant=a)
 
@@ -258,6 +269,38 @@ class EntrySession:
                 c.next_verdict.source_note = nv["source_note"]
         if "position_cap_tier" in edits:
             c.position_cap_tier = edits["position_cap_tier"]
+
+    def _ctx_extracted(self, price_hit: bool) -> dict:
+        ext = self.ext
+        return {
+            "stage": "extracted", "ticker": self.ticker,
+            "holding_reason_raw": ext.holding_reason_raw,
+            "key_assumptions": [a.text for a in (ext.key_assumptions or [])],
+            "mirrors": [m.mirror_text for m in (ext.mirrors or [])],
+            "entry_anchor": ({"type": ext.entry_anchor.anchor_type, "value": ext.entry_anchor.anchor_value, "note": ext.entry_anchor.note} if ext.entry_anchor else None),
+            "next_verdict": ({"event": ext.next_verdict.event, "date": ext.next_verdict.date} if ext.next_verdict else None),
+            "manual_items": [{"text": m.text, "reason": m.reason} for m in (ext.manual_items or [])],
+            "price_pattern": price_hit,
+            "instruction": "复述买入逻辑原话 + 抽到的假设/镜像 + 估值锚/裁判日；价格图形型说透为什么核不了、能改成什么样才核得了；问用户确认或回「无法确定」要候选菜单",
+        }
+
+    def _ctx_menu(self) -> dict:
+        m = self.menu
+        return {
+            "stage": "menu", "ticker": self.ticker,
+            "candidates_A_assumptions": list(m.candidate_assumptions),
+            "candidates_B_mirrors": [{"assumption": b.assumption, "mirror_text": b.mirror_text} for b in m.candidate_mirrors],
+            "instruction": "介绍候选菜单（A 你信什么 / B 破的条件，每条我能从公告核对），让用户在右侧勾选后提交",
+        }
+
+    def _ctx_confirm(self, chosen_a, chosen_b) -> dict:
+        return {
+            "stage": "confirm_card", "ticker": self.ticker,
+            "picked_assumptions": chosen_a,
+            "picked_mirrors": [{"assumption": b.assumption, "mirror_text": b.mirror_text} for b in chosen_b],
+            "open_questions": self.open_questions,
+            "instruction": "告知做成确认卡（右侧可点改）；若信的假设与勾的破条件不对应，说透为什么这是一致性存疑（但默认处理仍执行）",
+        }
 
     # ------------------------------------------------------------------ #
     # 呈现（系统输出，过 redline.guard）
