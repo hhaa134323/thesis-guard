@@ -58,7 +58,9 @@ CREATE INDEX IF NOT EXISTS idx_results_card ON check_results(card_id);
 class ThesisStore:
     def __init__(self, db_path: str = ":memory:"):
         self.db_path = db_path
-        self.conn = sqlite3.connect(db_path)
+        # check_same_thread=False：FastAPI 线程池跨线程用同一连接（本地自用串行足够；
+        # 多用户/上云需改连接池或 threading.Lock 串行化写——TODO）。
+        self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self._init()
 

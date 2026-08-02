@@ -14,6 +14,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import enum
+import types
 import typing
 
 
@@ -37,6 +38,7 @@ class FilerType(str, enum.Enum):
     """
     FOREIGN_ISSUER_20F_6K = "foreign_issuer_20f_6k"
     DOMESTIC_10K = "domestic_10k"
+    ETF_FUND = "etf_fund"
     OTHER = "other"
 
 
@@ -139,6 +141,22 @@ class ManualCheckItem:
 
 
 @dataclasses.dataclass
+class EntryAnchorData:
+    """录入估值锚（确认卡字段；存储层 dataclass，与 schema.EntryAnchor 同构）。"""
+    anchor_type: str = ""
+    anchor_value: float | None = None
+    note: str = ""
+
+
+@dataclasses.dataclass
+class NextVerdictData:
+    """下次能证伪 thesis 的事件+日期（确认卡字段；与 schema.NextVerdict 同构）。"""
+    event: str = ""
+    date: str | None = None
+    source_note: str = ""
+
+
+@dataclasses.dataclass
 class Confirmation:
     paraphrased: bool = False
     confirmed_at: str | None = None
@@ -167,6 +185,9 @@ class ThesisCard:
     key_assumptions: list[Assumption] = dataclasses.field(default_factory=list)
     broken_conditions: list[BrokenCondition] = dataclasses.field(default_factory=list)
     manual_check_items: list[ManualCheckItem] = dataclasses.field(default_factory=list)
+    entry_anchor: EntryAnchorData | None = None
+    next_verdict: NextVerdictData | None = None
+    position_cap_tier: str | None = None
     confirmation: Confirmation = dataclasses.field(default_factory=Confirmation)
     created_at: str = dataclasses.field(default_factory=_now_iso)
     updated_at: str = dataclasses.field(default_factory=_now_iso)
@@ -198,7 +219,7 @@ def _coerce(tp: typing.Any, val: typing.Any) -> typing.Any:
     if origin is list:
         (inner,) = typing.get_args(tp)
         return [_coerce(inner, x) for x in val]
-    if origin is typing.Union:
+    if origin is typing.Union or origin is types.UnionType:
         args = [a for a in typing.get_args(tp) if a is not type(None)]
         if len(args) == 1:
             return _coerce(args[0], val)
@@ -239,6 +260,7 @@ def to_json(obj: typing.Any) -> str:
 __all__ = [
     "FilerType", "ConditionLayer", "CondStatus", "RedlineTemplate", "ResolveAction",
     "HistoricalExample", "Assumption", "Evidence", "BrokenCondition",
-    "ManualCheckItem", "Confirmation", "CheckResult", "ThesisCard",
+    "ManualCheckItem", "EntryAnchorData", "NextVerdictData",
+    "Confirmation", "CheckResult", "ThesisCard",
     "to_dict", "from_dict", "to_json",
 ]

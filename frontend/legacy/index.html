@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thesis Watch · 持仓条件录入</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <h1>Thesis Watch</h1>
+  <span class="tag">持仓条件核对 Agent · 录入（判断权永远归你）</span>
+</header>
+<main>
+  <section class="pane left">
+    <h2>对话</h2>
+    <div id="conv" class="conv"></div>
+    <div id="start-form" class="start-form">
+      <input id="ticker" placeholder="ticker（如 HSBC）" autocomplete="off">
+      <textarea id="reason" placeholder="你为什么买它？（原话，越细越好）" rows="3"></textarea>
+      <button id="start-btn">开始录入</button>
+    </div>
+    <div id="turn-form" class="turn-form hidden">
+      <textarea id="msg" placeholder='回复（如「确认」或「无法确定」要候选菜单）' rows="2"></textarea>
+      <button id="send-btn">发送</button>
+    </div>
+    <div id="error" class="error"></div>
+    <div id="status" class="status"></div>
+  </section>
+  <section class="pane right">
+    <h2>确认卡 <span class="dim">（字段可点改）</span></h2>
+    <div id="menu-panel" class="menu-panel hidden"></div>
+    <div id="card" class="card empty">（开始录入后这里实时渲染确认卡）</div>
+    <div id="confirm-bar" class="confirm-bar hidden">
+      <button id="confirm-btn">确认入库</button>
+    </div>
+  </section>
+</main>
+<script src="/static/app.js"></script>
+</body>
+</html>

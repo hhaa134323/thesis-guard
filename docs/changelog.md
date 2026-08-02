@@ -2,6 +2,111 @@
 
 > 规则：每次迭代写清楚——依据哪条用户反馈、砍了什么、为什么砍。KILL 判据体检结果也记这里。
 
+## v0.0.10 — 2026-08-02 — 前端栈修订：React+Vite+shadcn/ui（作废无构建链约束）+ 设计基线 v1
+
+**做了什么**
+- 前端栈修订：React + Vite + shadcn/ui（作者 2026-08-02 弹窗拍板）。**作废**此前「单 HTML + 原生 JS、不引入构建链」约束（v0.0.7）。构建产物为静态文件，由 FastAPI 托管，部署中立不变；接口契约不变。
+- 落 `docs/frontend-design-v1.md` 设计基线：形态 C（居中对话 + 右侧确认卡抽屉）、浅色蓝点缀、7 施工验收点、分工铁律（组件库管皮肤，交互结构以基线为准）、交互分布铁律（对话承载语言/当次选择，抽屉承载累积卡/确认）、明确不做（不改 loop/prompt/schema、无深色/移动端/dashboard、无买卖建议 UI）。
+- 同步 PRD §9 / harness-design §1.3 / README 技术约束（无构建链 → React+Vite+shadcn）。
+
+**依据**
+- 作者 2026-08-02 弹窗拍板：组件库管皮肤（提速+一致性），交互结构以基线为准不随库变；构建产物仍静态由 FastAPI 托管，部署中立不破。
+
+**砍了什么 / 为什么**
+- 砍「单 HTML+原生 JS 无构建链」：组件库一致性 + 开发效率 > 无构建链极简（原约束为防 CDN 白屏 + 部署中立，现构建产物静态托管仍满足）。
+
+**状态**：施工中（按 frontend-design-v1.md §1 七验收点）。完成后停下等作者目检（预期两轮以上），通过后记 §2.5 前端打磨完成条目。
+
+## v0.0.9 — 2026-08-02 — W2 §2.3+§2.4+§2.5：核对 agent + 输出层 + W2 eval harness
+
+**做了什么**
+- §2.3 核对 agent（`src/thesis_watch/check_agent.py`）：逐卡逐条件核对 SEC filings → 三态 + 证据；evidence_self_check 回放不过降 watch；redline.guard 仅校验 LLM reasoning（不校验 SEC 引用）；E1-E8 落日志；CheckResult 存 store。Option A（一次 LLM 调用判全卡，基于 filings metadata），R5 合规（excerpt=SEC primaryDocDescription，url=filings index，self_check 验 excerpt 在 index 页）。
+- port `fetchers/sec_edgar.py`（从 pre-market-briefing 搬 + 适配）：按 filer_type 路由 form types（foreign→20-F/6-K 主渠道，不沿用本土 6-K 降级；etf→全 manual）。CIK 复用 filer_type_lookup.yaml（运行时不拉 5MB company_tickers.json，慢链路不超时）。evidence fetcher 30s+重试容忍 SEC 慢。
+- §2.4 输出层（`src/thesis_watch/notify.py`）：render_briefing（命中单独邮件附原文链接 / 静默日一行存活「已检查 N/0 触发/最近裁判日」）+ smtplib SMTP_SSL（app password，env creds，无 creds dry-run）。render 用 run_check summary 的 triggered（当前轮，不读历史避免重复列）。
+- §2.5 W2 eval harness（`evals/run_w2.py`）：跑录入 loop 收敛 → 测 平均澄清轮数/收敛失败率（auto）+ 导出 converged cards 供作者盲评 收敛后接受率（pending）。entry_loop 埋 metrics（turns/clarification_rounds/converged）。
+- models.py `_coerce` 修 PEP 604 union（`X|None` origin 是 types.UnionType 非 typing.Union）——entry_anchor/next_verdict 读回来原本是 dict 没重建，现修好。
+
+**依据**
+- 作者 2026-08-02 W2 开工指令 §2.3/§2.4/§2.5 + 断点②。pre-market-briefing 仓库 clone 到 `D:\AgentProjects\pre-market-briefing`（作者提供路径）。
+- mail_sender.py 在 pre-market-briefing 是 TODO stub → 本模块用 smtplib 实现（非 port）。thesis.py 是 Notion 读 → 不搬（R7）；notion_writer*.py 不搬（R7）。
+
+**自测**
+- 42 测试绿；sec_edgar 真连 SEC 拉 HSBC 7 条 6-K（CIK 走 lookup）；check_agent HSBC 端到端：1 watch（"HSBC TO SELL AUS HOME" 命中「亚洲剥离」镜像，判 watch 非触发——R6 不替结论）+ 2 untriggered，evidence_self_check 通过（excerpt 在 index 页验到，checked_ok=True），CheckResult 存 store。notify 静默日 + 命中邮件两 render 路径 + dry-run send 通。W2 harness 5 case（FDS/NVDA/MCO/GOOGL/VEEV，qwen-turbo，mode A）：平均澄清轮数 0.00、收敛失败率 0.00%、5 张 converged 卡导出待盲评。
+
+**砍了什么 / 为什么**
+- CIK 不拉 company_tickers.json（5MB 慢链路超时）→ 复用 filer_type_lookup.yaml 的 CIK。新 ticker 不在表 → 需先跑 fetch_filer_type 入表（runtime 不兜底）。
+- redline.guard 不校验 SEC 引用摘录（仅校验 LLM reasoning）——R3 只管系统输出，引用是原文。
+
+**断点②**：W2 §2.3+§2.4+§2.5 完成，等作者 review + 收敛后接受率盲评（5 张 converged 卡在 `evals/w2_converged_cards.yaml`）。
+
+## v0.0.8 — 2026-08-02 — 断点①三处修：filer_type 录入侧查表 + 前端进度态 + 菜单候选≥3
+
+**做了什么**
+- filer_type 录入侧改确定性查表：`entry_loop._resolve_filer` 复用 `evals/filer_type_lookup.yaml`（SEC EDGAR 拉取）；ticker 在表 → 用查表值；不在表 → 模型 ext.filer_type 兜底 + open_question「模型兜底建议复核」；都缺 → OTHER + open_question「待确认」。`build_card_from_extraction` 加 `filer_type` 参数。HSBC 从 `other` → `foreign_issuer_20f_6k`（查表命中，无 open_question）；AAPL（不在表、模型给 other）→ pending + open_question。
+- 前端进度态：`index.html` 加 `#status`；`app.js` `setStatus` 在 抽取/生成候选/渲染卡片/入库 各阶段给明确提示（5–45s 不空白沉默）；`applyView` 按 stage 显示完成态。
+- 菜单候选偏少：`menu.py` MENU_PROMPT 调强（A/B 必须 3 条最多 4 条；A 从 ticker 基本面出发即使用户没明说也给；少于 3 不合格）。实测 qwen-turbo 给 A=3/B=3（修前 A=1/B=3）——**调 prompt 即生效，无需换模型**。
+
+**依据**
+- 作者 2026-08-02 断点①判决：① filer_type 判断决定 SEC 表单路由不该交给模型猜（同 position_cap_tier 的 tier_map 先例）；② 5–45s 等待不能空白沉默；③ 菜单每条假设至少 3 候选，glm 保守则换 qwen-plus 或调 prompt（实测调 prompt 即生效）。
+
+**砍了什么 / 为什么**
+- 砍 filer_type 的 LLM 主导：改查表为主、模型仅兜底。确定性信息不该交给模型猜。
+
+**不变**
+- 录入 8 屏 / 状态机 / 可用性验收（≤5min、阻断≤3）/ 一致性校验 / 确认卡字段 / confirmed_by_user→SQLite 不变；红线不变；工程纪律不变。
+
+**自测**
+- 42 测试绿；`_resolve_filer` 三路径单测（lookup 命中 / model_fallback / pending）全通；HSBC 端到端（in-process + HTTP urllib UTF-8）：filer=foreign_issuer_20f_6k、菜单 A=3/B=3、picks、confirm 全通；AAPL pending+open_question HTTP 验证；GET / 含 #status。
+
+## v0.0.7 — 2026-08-02 — 形态修订：桌面 CLI → 桌面 localhost 单页（同日第二次形态决策）+ 部署中立约束
+
+**做了什么**
+- 形态修订：桌面 CLI → **桌面 localhost 单页（对话 + 确认卡）**。录入交互改为本地 Web 页面承载：FastAPI + 单 HTML，配 Windows 启动脚本（.bat：起服务 + 自动开浏览器），用户全程不碰 shell。页面布局：左侧对话流，右侧实时渲染的确认卡，卡片字段可直接点改。
+- 补部署中立约束：代码随时能原样上公网——配置一律走环境变量（不写死 localhost/127.0.0.1、不留本机绝对路径），启动脚本与主程序解耦，目录按「一个命令可容器化」组织。本轮仍只跑本地、不加登录层（本地自用），不做云部署。
+- 文档同步：README/PRD §9+§11 沿革+§14/changelog/entry-agent-spec/harness-design §1.3/demo-walkthrough 抬头，把「桌面 CLI」修订为「桌面 localhost 单页」；沿革记录同日两次形态决策（托管 PWA → 桌面 CLI → 桌面 localhost 单页）及各自理由。
+
+**依据**
+- 作者 2026-08-02 第二次拍板（同日修订 v0.0.6 的 CLI 形态）。CLI→localhost 页理由：① 目标用户是非技术投资者，shell 门槛与受众错配（与 R7「Notion 使用者不多」同一逻辑）；② 当前阶段形态服务于叙事与 demo，页面对面试官更直观；③ 界面传统、交互 AI——追问/复述/确认的录入引擎完全不变，只换承载层；④ 录入 8 屏原本就是图形化对话流程，本次回归原设计非新增。
+- 部署中立：作者补充约束——代码随时能原样部署到公网，配置走 env，不写死本机；前端不引入构建链，第三方库须下载到本地 static/ 引用（作者踩过 CDN 无 fallback 白屏的坑）。
+
+**砍了什么 / 为什么**
+- 砍桌面 CLI 形态（同日 v0.0.6）：shell 门槛与目标受众（非技术投资者）错配。
+- exe 打包暂缓：启动脚本（.bat）即可，本轮不做 exe。
+
+**不变**
+- R7 不绑 Notion；录入 loop 排第一；断点 ①② 不变（断点 ① 改页面演示）。
+- 录入引擎（追问/复述/确认状态机、可用性验收、一致性校验、确认卡字段、confirmed_by_user→SQLite）不变，只换承载层（CLI→HTTP+HTML）。
+- 技术栈沿用 PydanticAI 单次结构化调用 + 现有 models/redline/store；工程纪律不变。
+
+**本轮明确不做**
+- L2 eval、localhost 之外的页面、任何 Notion 写入、券商/行情接入、ETF 支持、exe 打包、云部署、登录层。
+
+## v0.0.6 — 2026-08-02 — 形态 pivot：托管 PWA → 桌面 CLI + R7 维持 + 实施顺序（录入 loop 第一）
+
+**做了什么**
+- 形态 pivot：托管 PWA（移动端优先）→ **桌面 CLI**。录入交互用纯 CLI 多轮对话承载，不做 PWA 壳；localhost 单页暂缓（仅当端到端跑通且时间允许时再加，且只渲染确认卡展示+修正，不是操作台）。
+- R7 维持原样：产品自包含，核对结果不写回作者 Notion 台账。
+- 实施顺序定：**录入 loop 排第一** → 核对 agent loop → 输出层 → W2 eval 改造；带断点 ①（录入 loop 演示）②（W2 报告），到点停等作者指令。
+- 文档同步：README 形态行 + 项目状态 + 技术分发约束 + 触达；PRD 版本/状态 + §9 + §11 沿革 + §14 决策状态 + §12 W2 重排脚注；harness-design §1.3 PWA 选型作废；demo-walkthrough 抬头改 CLI。
+
+**依据**
+- 作者 2026-08-02 拍板（W2 开工指令）。砍 PWA 三理由：① 交互本质是对话（说+拍板）+推送（有事叫我）+检查面（确认卡+eval 报告），GUI 只是皮肤，砍 PWA 是设计决策不是缺口；② 建设者侧核心交付是 harness + 双层 eval + error analysis 闭环，PWA 从来不是卖点；③ 每天 1 分钟体检哲学是「不要刷、等它叫你」，与 PWA 打开刷形态根本矛盾。
+- R7 维持：目标用户 Notion 占比低，自包含便于日后转 public。
+- 录入 loop 第一：依 eval-report §6.8——W2 三指标（收敛后接受率/平均澄清轮数/收敛失败率）测量对象是多轮澄清对话，loop 不做 W2 无测量对象。
+
+**砍了什么 / 为什么**
+- 砍 PWA 壳（含 Vite+React / Jinja 两选型）：GUI 只是皮肤，与「不要刷、等它叫」哲学矛盾。
+- 不绑 Notion（R7 维持，非新增）：自包含。
+- localhost 页面暂缓：端到端跑通且时间允许才加，且只渲染确认卡。
+
+**不变**
+- 红线 R1–R9 全部不变（R7 仅重申不绑 Notion）。
+- 录入 8 屏内容（demo-walkthrough）作为 loop 映射基准不变。
+- 工程纪律不变：eval 串行 + 429 退避不并发；gate 失败按 eval-plan §6 分类不私降门槛；里程碑结束写 changelog。
+
+**本轮明确不做**
+- L2 eval（GT 须作者手标 R8，单独开棒）、localhost 页面、任何 Notion 写入、券商/行情接入、ETF 支持。
+
 ## v0.0.5 — 2026-08-02 — PRD 定位修正（撤决策入口 + 价值形态 + W2 重排）
 
 **做了什么**

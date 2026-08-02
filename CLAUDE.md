@@ -18,7 +18,7 @@
 6. 判断权归用户：只呈现「条件 X 今天出现了对应事件」，不替用户结论
 7. **禁止写入用户的 Notion 工作区任何页面/数据库**
 8. **eval ground truth 每字段必须标注来源 source**——合法来源：外部权威数据 / 原始输入文本 / 规则表 / 用户本人；**禁止来源**：被测系统输出 / 同类语言模型自由生成。harness 读独立文件 `evals/ground_truth.yaml`（与代码和模型产物完全分离），缺失或字段为空 → 报错退出，**绝不允许用模型输出兜底**。理由：凭记忆填客观字段的 LLM 与被测模型可能相关性错误（如同时误判 QQQ 单位投资信托的申报类型），一致率虚高但双方都错
-9. **仓库转 public / 对外分享 / 作品集展示前，必须移除或脱敏**：`assets/`、`evals/ground_truth.yaml`、`evals/blind_verdicts.yaml`、`evals/blind_pairs.yaml`、及任何含真实持仓/真实 thesis/真实金额的文件；**新增此类文件时必须同步更新本清单**
+9. **仓库转 public / 对外分享 / 作品集展示前，必须移除或脱敏**：`assets/`、`evals/ground_truth.yaml`、`evals/blind_verdicts.yaml`、`evals/blind_pairs.yaml`、`evals/w2_converged_cards.yaml`、`evals/w2_blind_verdicts.yaml`、及任何含真实持仓/真实 thesis/真实金额的文件；**新增此类文件时必须同步更新本清单**
 
 ## Notion 用法（只读快照，禁止写入）
 

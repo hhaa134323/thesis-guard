@@ -23,11 +23,14 @@
 - **理由**：复用 fetchers 是 Python；「后端从简、单数据库」；SQLite 单文件便于 5 人 beta 托管与备份。
 - **职责**：PWA 静态托管、预置账号、thesis 卡 CRUD、邮件调度、触发核对 Agent headless。
 
-### 1.3 前端：PWA
+### 1.3 前端：~~PWA~~ → 桌面 localhost 单页（2026-08-02 形态定稿，见 PRD §11/§14）
 
-- **方案 A（倾向）**：Vite + React + PWA 插件。对话式录入是核心交互，组件化对话 UI 体验更好；真 PWA（manifest + service worker）。
-- **方案 B**：FastAPI + Jinja 服务端渲染 + manifest。最简，无构建步骤。
-- **决策点**：待作者拍。
+> ⚠️ **本节 PWA 选型已作废**（2026-08-02 形态定稿为桌面 localhost 单页；**前端栈 2026-08-02 再修订为 React+Vite+shadcn/ui**，见 `docs/frontend-design-v1.md`）。录入交互用本地 Web 页面承载：FastAPI 托管前端构建产物 + .bat 启动，用户不碰 shell；形态 C——居中对话 + 右侧确认卡抽屉。部署中立（配置走 env，不写死 localhost）。以下历史方案留档。
+
+- **方案 A（原倾向，已废）**：Vite + React + PWA 插件。对话式录入是核心交互，组件化对话 UI 体验更好；真 PWA（manifest + service worker）。
+- **方案 B（已废）**：FastAPI + Jinja 服务端渲染 + manifest。最简，无构建步骤。
+- **方案 C（已拍，2026-08-02；前端栈同日修订）**：桌面 localhost 单页——FastAPI 托管 React+Vite+shadcn 构建产物 + .bat 启动；部署中立（env 驱动）；形态 C（居中对话 + 右侧确认卡抽屉）。见 PRD §14 + `docs/frontend-design-v1.md`。
+- **决策点**：~~待作者拍~~ → 已拍：桌面 localhost 单页（方案 C，见 PRD §14）。
 
 ### 1.4 触达：复用 `src/sinks/`（Gmail SMTP）
 

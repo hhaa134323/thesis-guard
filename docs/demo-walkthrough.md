@@ -3,12 +3,14 @@
 > 用途：动手写实现前，让你确认「作为用户看到什么」。**全部是 mockup，不含实现代码、未跑任何东西。**
 > 输入基线：`assets/onboarding_dryrun_0731.md` 的 HSBC 真实 6 轮 transcript。
 > 确认后我再按 PydanticAI 单次结构化调用 + pydantic-evals 往下做。
+>
+> **2026-08-02 更新**：形态已定稿为桌面 localhost 单页（见 PRD §11）。8 屏内容作为 W2 录入 loop 对话环节的映射基准，不变；承载层 = FastAPI + 单 HTML。
 
 ---
 
 ## Part 1 · 录入 Agent 终端交互（HSBC 真实 transcript 逐屏）
 
-> 模拟移动端 PWA 的对话式录入。每屏一个代码块，左边是助手，`>` 后是用户输入。
+> 模拟桌面 localhost 单页对话式录入（2026-08-02 形态定稿；原「移动端 PWA」→「桌面 CLI」→「localhost 单页」同日两改）。每屏一个代码块，左边是助手，`>` 后是用户输入。
 
 ### 屏 1 · 开场
 
@@ -259,3 +261,23 @@ A 选几项？B 勾哪几条？
   - eval mockup：逐字段一致率 + A/B + exposure(seen/clean) + under-fill + 台账模糊字段数 + root_cause/fix_action → Part 2
 - ✅ gate 5/5（glm-5.2-fast-preview + lenient fix；qwen-turbo 5/5）；CLI `entry_cli.py` 可运行。
 - ⏳ 等 `evals/ground_truth.yaml`（作者填 `ground_truth.template.yaml`）→ 跑 L1：qwen-turbo 第一轮 → glm 基线 → 两组并排进 eval-report。
+
+---
+
+## Part 3 · 正式演示脚本（两场戏，2026-08-02 定）
+
+> 正式演示固定两场戏，分别展示录入 Agent 的两个核心能力。承载层 = 桌面 localhost 单页（见 PRD §14）。
+
+### 场戏 1 · 基本面 thesis — 展示追问深度
+
+- 标的：一条**基本面厚**的当前持仓（建议 FDS / MCO 等台账字段全、有估值锚 + 下次裁判日的；具体待作者定）。
+- 用户输入完整买入逻辑（moat / 财务 / 竞争…）→ extract 抽出多假设 + 镜像 + 估值锚 + 下次裁判日。
+- 重点展示：可判定性追问把模糊条件编译成可被一手披露击中的事件；确认卡字段（估值锚 / 下次裁判日 / 仓位档）齐全可点改。
+- 验收：单票 ≤5min、阻断式澄清 ≤3 次（spec §10）。
+
+### 场戏 2 · 价格图形型薄输入 — 展示拒判与降级边界
+
+- 标的：**HSBC**（保留，作本场景用）。用户输入「股价稳健上升的形状」（价格图形型薄输入）。
+- extract 把价格图形降级为 `manual_check_items`（每月提醒，不进自动核对）+ 红线默认包兜底；filer_type 查表 = `foreign_issuer_20f_6k`（不交给模型猜）。
+- 用户回「无法确定」→ `generate_menu` 给候选 A/B（各 ≥3 条）；勾选 → 一致性校验 → 确认卡 → 入库。
+- 重点展示：价格图形型降级边界（不接行情、明示人工自查）+「无法确定」候选菜单 + 红线兜底。

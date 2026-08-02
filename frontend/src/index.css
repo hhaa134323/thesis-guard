@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 15% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 15% 12%;
+    --primary: 211 74% 51%;            /* #2783DE 主色 */
+    --primary-foreground: 0 0% 100%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 16% 47%;
+    --border: 214 20% 90%;
+    --softblue: 205 85% 95%;          /* #E5F2FC 软蓝高亮底 */
+    --amber: 28 64% 53%;              /* #D5803B 橙边 */
+    --amber-soft: 30 75% 93%;         /* #FBEBDE 橙底 */
+    --success: 152 39% 45%;           /* #46A171 绿 */
+    --success-soft: 135 25% 93%;      /* #E8F1EC 绿底 */
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground; font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; }
+}
+
+/* 抽屉滑入/滑出（验收点 3） */
+.drawer-enter { transform: translateX(0); }
+.drawer-exit { transform: translateX(100%); }
+.transition-drawer { transition: transform 0.25s ease; }
+
+/* 软蓝高亮「刚填入」标签（验收点 3） */
+.just-filled { @apply bg-softblue; }

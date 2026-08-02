@@ -232,3 +232,19 @@ GT 15 条含 3 只已清仓标的（CGNX/SPGI/GDXU），本轮通过分组处理
 `run_l1.py` 中 `extract()` 写死 `mode='A'`（eval-plan §9.6 暂缓）。产品形态是多轮澄清对话——模型产出初稿，用户在对话中补充修正，最终 thesis 是收敛后的产物。本轮测量的是**零轮对话下的单轮初稿质量**，与产品实际输出不是同一个对象。
 
 因此 §3.2 的 75% 不应直接对 85% 门槛判定达标与否：**尺子与被测物错配**。W2 应改测三个指标：收敛后接受率、平均澄清轮数、收敛失败率。其中平均澄清轮数对应 PRD §4-B 的时长约束，是真实用户成本度量。
+
+## 7. W2 eval（收敛后质量，2026-08-02）
+
+W1 §6.8 指出 mode A 单轮初稿与产品多轮收敛错配。W2 建 `evals/run_w2.py` harness，跑录入 loop 的收敛后质量，三指标：
+
+| 指标 | 测法 | 本轮结果（model=qwen-turbo，mode=confirm，n=5：FDS/NVDA/MCO/GOOGL/VEEV） |
+|---|---|---|
+| 平均澄清轮数 | loop.metrics['clarification_rounds'] 均值（auto） | **0.00**（rich GT thesis text → 直接确认，0 阻断澄清；菜单路径 mode B 见下） |
+| 收敛失败率 | 1 - converged/total（auto） | **0.00%**（5/5 收敛；extract 全 pass） |
+| 收敛后接受率 | 作者盲评 converged cards（同 W1 blind_verdicts） | **pending**——5 张 converged 卡导出 `evals/w2_converged_cards.yaml`，待作者盲评 |
+
+**mode A 说明**：rich GT thesis text 是当前持仓的自然输入（用户有完整 thesis），loop 1 轮确认收敛（0 澄清）——这本身是发现：对清晰 thesis 用户，loop 收敛快。菜单路径（mode B：稀疏输入 → 无法确定 → 候选菜单 → 勾选 → 收敛，1 澄清轮）已在 §2.1 HSBC 演练跑通，系统化测量列 W2.5 后续（需稀疏输入样本集）。
+
+**收敛后接受率 pending**：与 W1 主观盲评同构——作者对 5 张 converged 卡逐字段 pick A/B/都不对 + acceptable yes/no。填 `evals/w2_blind_verdicts.yaml`（模板待建）后跑 `run_w2.py collect`（待实现）算接受率。本轮 n=5 + 作者盲评 pending，不作达标判定。
+
+**W2.5 后续**：① mode B（菜单路径）系统化测量（稀疏输入样本 + clarification_rounds=1 的收敛后接受率）；② 全量 15 case 跑（本轮 n=5 demo）；③ 收敛后接受率盲评模板 + collect 子命令。

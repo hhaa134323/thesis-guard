@@ -24,6 +24,8 @@
 
 代码落点：`entry_agent.extract`（单次结构化调用产出 `EntryExtraction`）；`entry_cli.py`（CLI 封装）；`tier_map.lookup_tier`（position_cap_tier 规则查表）。
 
+> **W2 录入 loop 承载层 = 桌面 localhost 单页**（FastAPI + 单 HTML + .bat 启动，见 PRD §14）；状态机/对话环节/可用性验收不变，只换承载层。`entry_cli.py` 仍是 W1 eval 的单次 CLI 程序（R8：eval 跑程序非内联，不动）。
+
 ## 2. 两层条件结构 【发现 1】
 
 - **Layer 1 mirror**：关键假设的镜像条件，抓「我的逻辑错了」（个性化）。`schema.MirrorSpec`。

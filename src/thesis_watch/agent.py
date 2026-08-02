@@ -31,6 +31,8 @@ from .models import (
     Confirmation,
     FilerType,
     ManualCheckItem,
+    EntryAnchorData,
+    NextVerdictData,
     ThesisCard,
     to_dict,
 )
@@ -127,6 +129,63 @@ def build_card(user_id: str, ticker: str, filer_type: FilerType,
         broken_conditions=broken,
         manual_check_items=manual,
         confirmation=Confirmation(paraphrased=False, confirmed_by_user=False),
+    )
+
+
+def build_card_from_extraction(ext, *, user_id: str, ticker: str,
+                               tier, filer_type=None,
+                               user_thresholds: dict | None = None,
+                               enabled_redlines: list[str] | None = None) -> ThesisCard:
+    """EntryExtraction（pydantic LLM 输出，schema.py）→ ThesisCard（dataclass 存储，models.py）。
+
+    录入 loop 把单次 extract() 的结构化输出落成卡片：
+    - 镜像文本经 redline.guard（R3：系统生成内容）；
+    - Layer 2 红线默认包叠加（conditions.default_redline_pack，可去重）；
+    - 价格图形型兜底进 manual_check_items（is_price_pattern）；
+    - entry_anchor / next_verdict / position_cap_tier 落确认卡字段；
+    - confirmation 置未确认（用户复述确认后才 True，由 loop 改）。
+    """
+    raw = (ext.holding_reason_raw or "") if ext is not None else ""
+    assumptions = [Assumption(text=a.text, judgeable=a.judgeable)
+                  for a in (ext.key_assumptions or [])] if ext is not None else []
+
+    broken: list[BrokenCondition] = []
+    for m in (ext.mirrors or []) if ext is not None else []:
+        a = next((x for x in assumptions if x.text == m.assumption_text), None)
+        if a is None:
+            a = Assumption(text=m.assumption_text)
+            assumptions.append(a)
+        redline.guard(m.mirror_text)
+        broken.append(make_mirror(a, m.mirror_text))
+    broken.extend(default_redline_pack(user_thresholds, enabled_redlines))
+
+    manual = [ManualCheckItem(text=m.text, reason=m.reason, cadence=m.cadence)
+              for m in (ext.manual_items or [])] if ext is not None else []
+    if ext is not None and is_price_pattern(raw) and not any(is_price_pattern(m.text) for m in manual):
+        manual.append(to_manual_check(raw))
+
+    ft = filer_type if filer_type is not None else (
+        FilerType(ext.filer_type.value) if ext is not None and ext.filer_type else FilerType.OTHER)
+    ea = None
+    if ext is not None and ext.entry_anchor:
+        ea = EntryAnchorData(anchor_type=ext.entry_anchor.anchor_type,
+                             anchor_value=ext.entry_anchor.anchor_value,
+                             note=ext.entry_anchor.note)
+    nv = None
+    if ext is not None and ext.next_verdict:
+        nv = NextVerdictData(event=ext.next_verdict.event,
+                             date=ext.next_verdict.date,
+                             source_note=ext.next_verdict.source_note)
+
+    return ThesisCard(
+        user_id=user_id, ticker=ticker, filer_type=ft,
+        holding_reason_raw=raw,
+        key_assumptions=assumptions,
+        broken_conditions=broken,
+        manual_check_items=manual,
+        entry_anchor=ea, next_verdict=nv,
+        position_cap_tier=tier.value if tier is not None else None,
+        confirmation=Confirmation(paraphrased=True, confirmed_by_user=False),
     )
 
 
