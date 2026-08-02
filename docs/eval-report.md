@@ -97,3 +97,7 @@ gate 过后跑：16 台账 case + HSBC transcript，A/B 对照（A 不澄清直�
 - 每个数字标注 model + version（见 §1 表）。
 - gate 用 `config.yaml` 的 `task_model`；会话模型（glm-5.2）与任务模型分离（见 `docs/changelog.md` v0.0.4）。
 - 429 与其它错误分开计数（§1 per-call `retries_429` + status 列）。**本轮实测 1 次 429**（glm-5.2-fast-preview run 1，退避后通过，retries_429=1）——限流风险真实，**批量 eval 必须串行 + 退避，不许并发**（见 `docs/eval-plan.md` §7）。
+- **评估者能力圈分层**（主观盲评接受率解读，2026-08-02 加）：
+  - **口径 / 会计逻辑类判断**（如「该用 P/TBV 还是 P/E」「调整后 vs GAAP」）→ 评估者具备专业背景（CPA 会计科目已通过），盲评接受率**有效**（反映正确性）。
+  - **具体倍数 / 目标价类判断**（如「$130 是否合理」「P/E 16x 对不对」）→ 评估者自述能力不足，接受率反映**「合理性感知」而非正确性**，须单独标注 + 打折解读。
+  - harness 按此分层标注每个主观字段（holding_reason / key_assumptions / mirrors 的各条）属于哪一类。

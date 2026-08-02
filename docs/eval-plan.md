@@ -33,18 +33,31 @@
 ### 2.3 用户收尾
 - `user_resolve`（confirmed_broken | false_alarm | ignored）
 
-### 2.4 留存与决策影响（KILL 判据输入）
-- `app_open_daily`（每日打开，7 天窗口）
-- `decision_influence`（用户自报「这次核对影响了我对这只票的判断」——埋点按钮）
+### 2.4 留存与决策影响（KILL 判据输入，见 §3 重设）
+- `app_open`（打开事件，用于 K2 连续 30 天零打开判定；**不再要求日频**——PRD §4-B 一周不查无实质损失）
+- `decision_influence`（用户自报「这次核对影响了判断」——K3）
+- `missed_trigger`（系统报告无事但实际已触发——K1，靠事后复盘 / 用户反馈）
+- **decision_influence 定性基线**（2026-08-02 记）：CGNX 为系统建立前历史持仓，系统上线后依据其输出分批减仓至清仓——**首个完整闭环案例**（定性基线，非自报数据）。
 
 ### 2.5 eval 自动沉淀
 - 误报 / 确认 → 自动写入 eval 标注集（`review_notes`），扩充后续 eval 基准。
 
-## 3. KILL 判据（W4 体检）
+### 2.7 HITL 有效性（防橡皮图章；2026-08-02 加）
 
-- 7 天内打开少于 5 天 → 停。
-- 没有一次 `decision_influence` → 停。
-- 命中其一即停掉不养老，结果记 `docs/changelog.md`。
+- **人工否决率**：用户在 AI 提供的候选方案中，选择**非首选项** 或 **要求重出方案** 的比例。
+- 用途：检验 HITL 是否退化为橡皮图章（全盘接受 AI 首选 = 无效监督）。
+- **已有基线证据**：11 只持仓使用 6 种不同估值口径（非全跟 AI 首选）；NVDA 存在一次记录在案的方法层否决（方法 A 经 steelman 自检未通过后弃用，见 `assets/notion/thesis/NVDA.md`）。
+- 目标：人工否决率 > 0（非零即 HITL 有效）；趋近 0 = 橡皮图章风险，需复盘。
+
+## 3. KILL 判据（W4 体检；2026-08-02 重设）
+
+- **K1 漏报（硬 KILL）**：出现任意一次「系统报告无事，但该标的的破局条件实际已触发」。一次即触发 KILL 级复盘——这是产品价值形态（PRD §2「我替你查过了，没事」）的直接否定项。
+- **K2 弃用（软 KILL）**：连续 30 天零打开，且无外部客观原因（出行 / 断网 / 休市长假）。窗口 30 天而非 7 天，理由：数据更新季频，一个月零打开才说明真不需要它。
+- **K3 决策无关（软 KILL）**：连续两个月，实际买卖动作中系统被参考的比例 <50%（= `decision_influence`）。
+- 时长约束（日常 ≤3min、录入 ≤15min）保留为**退化指标**，超标记为产品退化，**不作为 KILL**。
+- 命中 K1 即停（硬）；K2/K3 命中即停掉不养老，结果记 `docs/changelog.md`。
+
+> 旧 `app_open_daily`（7 天打开 <5 天 → 停）已**删除**——与 PRD §4-B「一周不查看无实质损失」冲突（会把正确周看的用户误杀）。
 
 ## 4. 评估口径定义
 
@@ -126,11 +139,13 @@ under-fill 直接量（与一致率分开报，qwen-turbo vs glm-5.2-fast-previe
 - 每条 case 标 `input_type: ai_polished | raw`。现有 15 条台账输入全部 `ai_polished`（AI 已结构化）。
 - **Limitation**（必进 eval-report）：当前一致率/接受率基于 AI 已结构化输入，面向真实用户原始口语输入时预期下降；W3 引入真实用户后须重测（`raw` 组）。
 
-### 9.3 客观字段：GT 一致率（保持原做法）
+### 9.3 客观字段：GT 一致率
 
-- 作者手写标准答案（`filer_type` / `entry_anchor` / `next_verdict` / `manual_items`），harness 判 agent 输出 vs GT 一致率。客观可查证，与「想法模糊」无关。
+- **手标（用户填，标 source）**：`entry_anchor`（买入锚点只有用户知道）；记不清填 null，不硬编。
+- **脚本/规则推导（不手标）**：`filer_type`（`scripts/fetch_filer_type.py` 从 SEC EDGAR submissions API 拉 → `evals/filer_type_lookup.yaml`）、`next_verdict`（从 thesis 原文机械提取，未写明填 null、不推测）、`manual_items`（`condition_classify.classify_condition` 规则推导，不手标）。
 - §8.1 exposure（seen/clean，报三数、clean 为准）+ §8.2 null/open_questions（剔除分母 + 统计模糊数）继续适用。
 - 两模型（qwen-turbo / glm-5.2-fast-preview）各跑，一致率分开报。
+- **X5 history 抽取不全**：文本中存在 N 个时点读数，只抽到 M<N，或把方法层变更误记为数值层滚动。entry-agent 取值规则：全抽进 `history` 数组（entry-agent-spec §18，不再「取最新丢弃旧值」）。**MCO / GOOGL 这两条单独看 case 明细，不只看总一致率。**
 
 ### 9.4 主观字段：盲评（人类偏好评估）
 

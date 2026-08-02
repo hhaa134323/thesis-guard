@@ -24,7 +24,7 @@
 | R5 | 每条事实必须附一手原文链接 | 禁止「市场预期」「据传」等无源表述 |
 | R6 | 判断权归用户 | 只呈现「你定的条件 X 今天出现了对应事件」，不替用户结论 |
 | R7 | 禁止写入用户的 Notion 工作区任何页面/数据库 | Notion 资产以本 repo `assets/` 快照为准 |
-| R8 | eval ground truth 必须由作者手工标注，不许模型生成/推断/兜底 | harness 读独立 `evals/ground_truth.yaml`；缺失或字段为空 → 报错退出，不用模型输出兜底 |
+| R8 | eval ground truth 每字段须标注来源 source | 合法来源：外部权威数据 / 原始输入文本 / 规则表 / 用户本人；**禁止**：被测系统输出 / 同类 LLM 自由生成。harness 读独立 `evals/ground_truth.yaml`；缺失/空 → 报错退出，不兜底。理由：凭记忆填客观字段的 LLM 与被测模型可能相关性错误（双方都错，一致率虚高） |
 | R9 | 仓库转 public / 对外分享 / 作品集展示前，必须移除或脱敏真实持仓文件 | `assets/`、`evals/ground_truth.yaml`、`evals/blind_verdicts.yaml`、`evals/blind_pairs.yaml`、及任何含真实持仓/thesis/金额的文件；新增此类文件须同步更新本清单 |
 
 红线源自复用资产 `pre-market-briefing/README.md` 的「AI 边界（硬规则）」表（4 条可以 vs 5 条不可以），原样沿用并扩充。

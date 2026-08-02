@@ -28,7 +28,7 @@ sys.path.insert(0, str(ROOT / "src"))
 import yaml  # noqa: E402
 
 from thesis_watch.config import load_config  # noqa: E402
-from thesis_watch.conditions import is_price_pattern  # noqa: E402
+from thesis_watch.condition_classify import classify_condition, is_v1_auto  # noqa: E402
 from thesis_watch.entry_agent import build_agent, extract  # noqa: E402
 from thesis_watch.tier_map import lookup_tier  # noqa: E402
 
@@ -83,6 +83,32 @@ def load_ground_truth() -> list[dict]:
     return cases
 
 
+def check_snapshot_ref(args) -> None:
+    """校验当前 assets/ git ref 与 GT snapshot_ref；不一致 → 警告，需 --allow-stale-gt 才继续。
+    防 assets/ 重新拉取后拿旧 GT 跑出假的不一致率。"""
+    if not GT_PATH.exists():
+        return  # R8（load_ground_truth）会先报错
+    data = yaml.safe_load(GT_PATH.read_text(encoding="utf-8")) or {}
+    gt_ref = data.get("snapshot_ref")
+    if not gt_ref:
+        print("⚠️ ground_truth.yaml 无 snapshot_ref——跳过快照校验（建议补 snapshot_ref 锁版本）")
+        return
+    import subprocess
+    try:
+        r = subprocess.run(["git", "log", "-1", "--format=%H", "--", "assets/"],
+                           cwd=str(ROOT), capture_output=True, text=True, timeout=10)
+        current_ref = r.stdout.strip()
+    except Exception as e:  # noqa: BLE001
+        print(f"⚠️ 无法获取 assets/ git ref（{e}）——跳过快照校验")
+        return
+    if current_ref and current_ref != gt_ref:
+        msg = (f"⚠️ 快照版本不一致：GT snapshot_ref={gt_ref[:12]}，当前 assets/={current_ref[:12]}。\n"
+               "  GT 可能基于旧快照，跑出假的不一致率。重新核对 GT 或加 --allow-stale-gt 跳过本检查。")
+        if not getattr(args, "allow_stale_gt", False):
+            sys.exit(msg)
+        print(msg + "\n  (--allow-stale-gt 已给，继续)")
+
+
 def load_input_text(ticker: str) -> str:
     p = THESIS_DIR / f"{ticker}.md"
     if p.exists():
@@ -107,6 +133,38 @@ def load_input_text(ticker: str) -> str:
     return m.group(1).strip() if m else sec.strip()
 
 
+def load_break_conditions(ticker: str) -> str:
+    """从台账快照读「Thesis 破的条件」段（manual_items GT 规则推导用）。"""
+    p = THESIS_DIR / f"{ticker}.md"
+    if p.exists():
+        text = p.read_text(encoding="utf-8")
+    else:
+        schema = THESIS_DIR / "00_schema_and_small_rows.md"
+        if not schema.exists():
+            return ""
+        s = schema.read_text(encoding="utf-8")
+        i = s.find(f"## {ticker}")
+        if i < 0:
+            return ""
+        j = s.find("\n## ", i + 3)
+        text = s[i: j if j > 0 else len(s)]
+    h = "## Thesis 破的条件"
+    i = text.find(h)
+    if i < 0:
+        return ""
+    start = i + len(h)
+    j = text.find("\n## ", start)
+    return text[start: j if j > 0 else len(text)].strip()
+
+
+def _split_conditions(text: str) -> list[str]:
+    """粗粒度切分破条件（与 scripts/classify_conditions.py 同逻辑）。"""
+    if not text:
+        return []
+    parts = re.split(r"[①②③④⑤⑥⑦⑧⑨⑩•；;\n]", text)
+    return [p.strip(" -—·：:（）()，,。 \t") for p in parts if len(p.strip(" -—·：:（）()，,。 \t")) > 4]
+
+
 def _bigrams(text: str) -> set[str]:
     t = re.sub(r"\s+", "", text or "")
     if len(t) < 2:
@@ -123,9 +181,10 @@ def _oq_map(gt: dict) -> dict:
     return {q.get("field"): q.get("reason", "") for q in (gt.get("open_questions") or []) if isinstance(q, dict)}
 
 
-def score_objective(ext: dict | None, gt: dict, thesis_text: str) -> dict:
+def score_objective(ext: dict | None, gt: dict, break_conditions: str) -> dict:
     """客观字段评分。手标字段（filer_type/entry_anchor/next_verdict）GT null → ambiguous（剔除分母）；
-    规则推导字段（manual_items）由 is_price_pattern(thesis_text) 推导 GT，不手标。"""
+    规则推导字段（manual_items）由 classify_condition(break_conditions) 推导 GT（非 is_price_pattern——
+    is_price_pattern 判断方向错，见 condition_classify.py + docs/condition-classification.md），不手标。"""
     ext = ext or {}
     oqs = _oq_map(gt)
     fields: dict = {}
@@ -138,14 +197,19 @@ def score_objective(ext: dict | None, gt: dict, thesis_text: str) -> dict:
     else:
         fields["filer_type"] = ext.get("filer_type") == gt_v
 
-    # manual_items: 规则推导 GT（不手标）。ETF/fund → 全 manual（v1 不接 index/fund/price 数据，data-sources.md）；
-    # 个股 → is_price_pattern(thesis_text)（价格图形型 → manual）。
+    # manual_items: 规则推导 GT（condition_classify，不手标）。
+    # ETF/fund → 全 manual（v1 不接 index/fund/price）；个股 → 任一破条件非 v1-auto（classify_condition）→ 期望 manual。
     a_mi = ext.get("manual_items", []) or []
     if gt.get("filer_type") == "etf_fund":
-        fields["manual_items"] = len(a_mi) > 0
+        expected = True
     else:
-        gt_has_pattern = is_price_pattern(thesis_text)
-        fields["manual_items"] = (len(a_mi) > 0) == gt_has_pattern
+        expected = False
+        for c in _split_conditions(break_conditions):
+            info = classify_condition(c)
+            if info is not None and not is_v1_auto(info):
+                expected = True
+                break
+    fields["manual_items"] = (len(a_mi) > 0) == expected
 
     # entry_anchor: anchor_type 匹配
     gt_ea = gt.get("entry_anchor")
@@ -190,6 +254,7 @@ def _aggregate(rows: list[dict]) -> dict:
 
 
 def cmd_run(args) -> int:
+    check_snapshot_ref(args)
     cfg = load_config(str(ROOT / args.config))
     gt_cases = load_ground_truth()
     rng = random.Random(20260802)  # 确定性随机（无 Math.random 限制——这是 stdlib，可用）
@@ -206,6 +271,7 @@ def cmd_run(args) -> int:
     for gc in gt_cases:
         ticker = gc["ticker"]
         text = load_input_text(ticker)
+        break_conds = load_break_conditions(ticker)
         extractions[ticker] = {}
         per_model_obj = {}
         per_model_subj = {}
@@ -218,7 +284,7 @@ def cmd_run(args) -> int:
                 "in_tok": res.get("in_tok"), "out_tok": res.get("out_tok"),
                 "retries_429": res.get("retries_429"), "error": res.get("error"),
             }}
-            per_model_obj[m] = score_objective(ext_d, gc, text)
+            per_model_obj[m] = score_objective(ext_d, gc, break_conds)
             per_model_subj[m] = {f: (ext_d or {}).get(f) for f in SUBJECTIVE}
             obj_rows.append({
                 "ticker": ticker, "exposure": gc.get("exposure"), "input_type": gc.get("input_type"),
@@ -325,6 +391,7 @@ def main() -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("run", help="两模型跑 case → 客观一致率 + 导出盲评对照")
     r.add_argument("--config", default="config.yaml")
+    r.add_argument("--allow-stale-gt", action="store_true", help="assets/ git ref 与 GT snapshot_ref 不一致时仍继续（GT 可能过时）")
     sub.add_parser("collect", help="读盲评裁决 → 接受率 + 胜率")
     args = ap.parse_args()
     if args.cmd == "run":

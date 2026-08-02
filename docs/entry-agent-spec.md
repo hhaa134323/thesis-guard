@@ -48,7 +48,7 @@
 
 ## 7. 静默日推送策略 【发现 6】
 
-命中当天单独发邮件（附原文链接）；未命中合并进每日简报一行。**无事那行不许空**——必须写明「已检查 N 只 / 0 触发 / 最近一个裁判日：X 的 Y 月 Z 日」，让用户确认系统活着（不猜）。触达层 W2 接入。
+命中当天单独发邮件（附原文链接）；未命中合并进简报一行。**无事那行不许空**——必须写明「已检查 N 只 / 0 触发 / 最近一个裁判日：X 的 Y 月 Z 日」，让用户确认系统活着（不猜）。触达层 W2 接入。
 
 ## 8. FPI 申报方路由 【发现 7】
 
@@ -142,3 +142,13 @@ python -m thesis_watch.entry_cli --ticker FDS --input thesis.txt --mode A|B
   - `schema.py`（pydantic，LLM 输出契约 `EntryExtraction`）：新增 `next_verdict`、`entry_anchor` 两个 LLM 抽取字段；`position_cap_tier` **不进 LLM 契约**（按 ticker 规则查表 `tier_map.py`，因台账无档位信息、属确定性信息不该交给模型猜——glm-5.2 把 FDS 判成「中」、实际「硬thesis」坐实）。
   - `llm.py` `LenientOpenAIChatModel`：覆写 pydantic-ai `_validate_completion` 容错非标 `finish_reason`（SDK 层，不动 schema/tool_choice/gate）。
 - 理由均记 `docs/changelog.md` v0.0.4。
+
+## 18. 取值规则（entry_anchor 多时点读数 → 全抽进 history）
+
+台账 thesis 文本可能含**多个时点读数**（MCO 加仓价 6/06 线 $349 与 7/24 重算 $394 并列；GOOGL 正文后附「（历史）当前读数 2026-06-06」整段）。这些**不是污染**，是用户刻意保留的重估轨迹（审计轨迹，不清除）。
+
+- **不再「取最新、丢弃旧值」**——把文本中**所有时点读数全部抽进 `history` 数组**（含明确标注「（历史）」的段落，不跳过）。
+- 日期无法判定的条目 → open_questions，不猜。
+- **方法层变更**（method 变，如 NVDA forward P/E → 穿越周期归一化）记 `method_change_log`，不混进 history。
+- entry_anchor 两层结构（method / history / current + method_change_log）见 `docs/thesis-card-schema.md` §5。
+- 防止 **X5「history 抽取不全」**（eval-plan §9.3）：文本有 N 个时点只抽到 M<N，或把方法层变更误记为数值层滚动。

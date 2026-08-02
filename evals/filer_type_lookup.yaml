@@ -1,0 +1,327 @@
+fetched_at: '2026-08-02'
+user_agent: Thesis-Watch thesis-guard@example.com
+source: SEC EDGAR submissions API
+tickers:
+  NVDA:
+    cik: 1045810
+    filer_type: domestic_10k
+    forms:
+    - 10-K
+    - 10-Q
+    - 13F-HR
+    - '144'
+    - 144/A
+    - '3'
+    - '4'
+    - 4/A
+    - 424B5
+    - '5'
+    - 5/A
+    - 8-K
+    - 8-K/A
+    - ARS
+    - CORRESP
+    - DEF 14A
+    - DEFA14A
+    - EFFECT
+    - FWP
+    - N-PX
+    note: ''
+  VEEV:
+    cik: 1393052
+    filer_type: domestic_10k
+    forms:
+    - 10-K
+    - 10-Q
+    - '144'
+    - '3'
+    - '4'
+    - 4/A
+    - 8-K
+    - 8-K/A
+    - ARS
+    - CORRESP
+    - DEF 14A
+    - DEFA14A
+    - PRE 14A
+    - S-8
+    - SC 13G
+    - SC 13G/A
+    - SCHEDULE 13G
+    - SCHEDULE 13G/A
+    - UPLOAD
+    note: ''
+  MCO:
+    cik: 1059556
+    filer_type: domestic_10k
+    forms:
+    - 10-K
+    - 10-Q
+    - 11-K
+    - '144'
+    - '3'
+    - 3/A
+    - '4'
+    - 4/A
+    - 424B2
+    - 424B5
+    - '5'
+    - 8-A12B
+    - 8-K
+    - ARS
+    - CERT
+    - D
+    - DEF 14A
+    - DEFA14A
+    - FWP
+    - PRE 14A
+    note: ''
+  GOOGL:
+    cik: 1652044
+    filer_type: domestic_10k
+    forms:
+    - 10-K
+    - 10-Q
+    - 13F-HR
+    - '144'
+    - 144/A
+    - '3'
+    - '4'
+    - 4/A
+    - 424B2
+    - 424B5
+    - '5'
+    - 8-A12B
+    - 8-K
+    - ARS
+    - CERT
+    - DEF 14A
+    - DEFA14A
+    - FWP
+    - IRANNOTICE
+    - N-PX
+    note: ''
+  CGNX:
+    cik: 851205
+    filer_type: domestic_10k
+    forms:
+    - 10-K
+    - 10-Q
+    - '144'
+    - 144/A
+    - '3'
+    - 3/A
+    - '4'
+    - 4/A
+    - '5'
+    - 8-A12B
+    - 8-K
+    - 8-K/A
+    - ARS
+    - CORRESP
+    - DEF 14A
+    - DEFA14A
+    - NT 10-Q
+    - PRE 14A
+    - S-8
+    - S-8 POS
+    note: ''
+  NOW:
+    cik: 1373715
+    filer_type: domestic_10k
+    forms:
+    - 10-K
+    - 10-Q
+    - '144'
+    - 144/A
+    - '3'
+    - 305B2
+    - '4'
+    - 4/A
+    - 424B2
+    - 424B3
+    - 424B7
+    - '425'
+    - 8-K
+    - ARS
+    - CORRESP
+    - D
+    - DEF 14A
+    - DEFA14A
+    - DEFR14A
+    - DEL AM
+    note: ''
+  NFLX:
+    cik: 1065280
+    filer_type: domestic_10k
+    forms:
+    - 10-K
+    - 10-Q
+    - '144'
+    - 144/A
+    - '3'
+    - 3/A
+    - '4'
+    - 4/A
+    - 424B2
+    - 424B5
+    - '425'
+    - 8-K
+    - 8-K/A
+    - ARS
+    - DEF 14A
+    - DEFA14A
+    - DFAN14A
+    - FWP
+    - PX14A6G
+    - S-3ASR
+    note: ''
+  CRM:
+    cik: 1108524
+    filer_type: domestic_10k
+    forms:
+    - 10-K
+    - 10-Q
+    - 13F-HR
+    - '144'
+    - '3'
+    - '4'
+    - 4/A
+    - 424B2
+    - 8-K
+    - ARS
+    - DEF 14A
+    - DEFA14A
+    - FWP
+    - PRE 14A
+    - PX14A6G
+    - S-3ASR
+    - S-8
+    - S-8 POS
+    - SC 13G
+    - SC 13G/A
+    note: ''
+  FIS:
+    cik: 1136893
+    filer_type: domestic_10k
+    forms:
+    - 10-K
+    - 10-Q
+    - '144'
+    - 25-NSE
+    - '3'
+    - 3/A
+    - 305B2
+    - '4'
+    - 4/A
+    - 424B3
+    - 424B5
+    - '425'
+    - 8-A12B
+    - 8-K
+    - 8-K/A
+    - ARS
+    - CERT
+    - CERTNYS
+    - CORRESP
+    - DEF 14A
+    note: ''
+  FDS:
+    cik: 1013237
+    filer_type: domestic_10k
+    forms:
+    - 10-K
+    - 10-Q
+    - '144'
+    - 144/A
+    - '3'
+    - 305B2
+    - '4'
+    - 4/A
+    - 424B5
+    - '5'
+    - 5/A
+    - 8-K
+    - 8-K/A
+    - ARS
+    - CORRESP
+    - CT ORDER
+    - DEF 14A
+    - DEFA14A
+    - FWP
+    - PRE 14A
+    note: ''
+  HSBC:
+    cik: 1089113
+    filer_type: foreign_issuer_20f_6k
+    forms:
+    - 20-F
+    - 25-NSE
+    - '3'
+    - '4'
+    - 424B2
+    - 424B5
+    - 6-K
+    - 6-K/A
+    - 8-A12B
+    - CERT
+    - F-3ASR
+    - F-N
+    - F-N/A
+    - FWP
+    - IRANNOTICE
+    - SC 13G
+    - SC 13G/A
+    - SCHEDULE 13G
+    - SCHEDULE 13G/A
+    note: ''
+  BRK.B:
+    cik: 1067983
+    filer_type: domestic_10k
+    forms:
+    - 10-K
+    - 10-Q
+    - 11-K
+    - 11-K/A
+    - 13F-HR
+    - 13F-HR/A
+    - '144'
+    - 25-NSE
+    - '3'
+    - 3/A
+    - '4'
+    - 4/A
+    - 424B2
+    - 424B5
+    - '5'
+    - 8-A12B
+    - 8-K
+    - 8-K/A
+    - ARS
+    - CERT
+    note: ''
+  QQQ:
+    cik: 1067839
+    filer_type: etf_fund
+    forms:
+    - 24F-2NT
+    - 40-17G
+    - 40-6C
+    - 40-6C/A
+    - 485APOS
+    - 485BPOS
+    - 485BXT
+    - '497'
+    - 497J
+    - 497K
+    - 8-A12B
+    - 8-A12G
+    - 8-K
+    - CORRESP
+    - DEF 14A
+    - DEFA14A
+    - N-30B-2
+    - N-8A
+    - N-8A/A
+    - N-8B-2
+    note: ''

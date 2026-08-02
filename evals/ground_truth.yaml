@@ -39,6 +39,12 @@
 #   - manual_items：按 docs/data-sources.md 规则推导（is_price_pattern W1）。
 #   - position_cap_tier：按 ticker 查 tier_map。
 #   - holding_reason / key_assumptions / mirrors：走盲评（eval-plan §9.4）。
+#
+# 快照版本锁定（2026-08-02 加）：
+snapshot_ref: 3a48370c78c6ec27271451a392f2a1b512f87a48   # 本 GT 依据的 assets/ git ref
+snapshot_date: 2026-08-01
+# 说明：本 GT 依据上述 assets/ 快照标注。assets/ 重新拉取后，GT 必须重新核对，不得跨快照版本复用。
+# harness（run_l1.py）启动时校验当前 assets/ git ref 与本 snapshot_ref；不一致 → 警告 + 需 --allow-stale-gt 才继续。
 
 cases:
   - ticker: FDS
@@ -119,7 +125,9 @@ cases:
     filer_type: ""
     entry_anchor: null
     next_verdict: null
-    open_questions: []
+    open_questions:
+      - field: entry_anchor
+        reason: "系统建立前买入的历史持仓，台账并列起步加仓线与安全边际线两条；现已全部清仓，该字段不影响当前产品"
 
   - ticker: NVDA
     exposure: clean

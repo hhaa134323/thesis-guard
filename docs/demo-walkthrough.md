@@ -231,6 +231,7 @@ A 选几项？B 勾哪几条？
 | … | … | … | … | … | … | … | … | … | … | … |
 
 > root_cause_hypothesis + fix_action 两列由作者填（非模型）——没这两列，error analysis 只是错误统计。
+> **X5 history 抽取不全**（MCO/GOOGL 多时点读数）：文本 N 个时点只抽到 M<N，或方法层变更误记为数值层滚动 → 全抽进 history（entry-agent-spec §18）；这两条单独看 case 明细。
 
 ### per-call 指标
 

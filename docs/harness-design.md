@@ -12,7 +12,7 @@
 
 - **方案 A（首选）**：用 Claude Agent SDK（Claude Code 的 SDK 形态）跑两个 agent（录入 / 核对），自定义工具集（包装复用 fetchers），系统提示词编码红线 + 拒判 + 证据自检。
   - **理由**：目标明确要求「用 Claude Code 原生能力实现 agent loop，不引入 Dify/LangChain，除非证明原生不够」。Agent SDK 即原生 tool-use loop，自带 tool 调度、权限、中断恢复，无需自造轮子，最贴近「原生」。
-  - **风险**：作为服务端 daily agent 跑 5 用户，成本与速率限制需评估；headless 调用稳定性需压测。
+  - **风险**：作为服务端核对 agent 跑 5 用户（数据更新时触发，非日频轮询），成本与速率限制需评估；headless 调用稳定性需压测。
 - **方案 B（备选）**：Anthropic Python SDK 手搓 tool-use loop。
   - **理由**：复用 fetchers 是 Python，同语言栈；完全可控，便于实现拒判/证据自检的自定义控制流。
   - **风险**：自造 loop 的重试/中断/并行调度需自实现，偏离「原生优先」倾向；仅当 A 证明不够才用。
@@ -31,7 +31,7 @@
 
 ### 1.4 触达：复用 `src/sinks/`（Gmail SMTP）
 
-- 命中当天单独邮件；未命中合并进每日简报。
+- 命中当天单独邮件；未命中合并进简报。
 
 ### 1.5 数据源：复用 `sec_edgar.py` + `news.py`
 
@@ -51,15 +51,15 @@
   └ 输出: thesis 确认卡（待用户复述确认）→ confirm 后入库
 ```
 
-### 2.2 核对 Agent（check agent）— daily
+### 2.2 核对 Agent（check agent）— 数据更新时触发
 
 ```
-调度器(daily, 每用户每 ticker) → 加载 thesis 卡 → [LLM 主循环]
+触发（数据更新时：财报 / 公告 / 监管进展 / 新闻，每用户每 ticker）→ 加载 thesis 卡 → [LLM 主循环]
   ├ 工具: sec_edgar_fetch(ticker, form_type, since) / news_rss(ticker) / read_thesis_card / write_check_result
   ├ 对每条 broken_condition: 检索-深读 → 判定状态(untriggered|watch|triggered)
   ├ 证据自检: 每条命中必须附一手链接 + 原文摘录；evidence_self_check 回放校验
   ├ 拒判: 证据不足/歧义/无一手源 → 置 watch 或「无法判定」，不替用户结论
-  └ 输出: 状态机卡片 + 触达决策（命中→单独邮件；未中→并入每日简报）
+  └ 输出: 状态机卡片 + 触达决策（命中→单独邮件；未中→并入简报）
 ```
 
 ## 3. 工具清单（初版）
@@ -73,7 +73,7 @@
 | `evidence_self_check(url, excerpt)` | 校验链接可达 + 摘录与原文一致 | 自建 |
 | `lookup_filer_type(ticker)` | 查申报方类型（决定 6-K vs 10-K 路由） | 自建（基于 EDGAR） |
 | `lookup_historical_example(cond_template)` | 查历史事件示例（录入时给候选） | 自建 |
-| `render_briefing(user_id)` | 渲染每日简报 | 参考 `src/render/thesis_section.py` |
+| `render_briefing(user_id)` | 渲染简报 | 参考 `src/render/thesis_section.py` |
 | `send_email(to, subject, body)` | Gmail SMTP | `src/sinks/` |
 
 > 工具签名在 A/B 两方案下保持一致，便于切换。
