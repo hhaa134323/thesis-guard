@@ -336,7 +336,7 @@ def cmd_run(args) -> int:
             per_model_subj[m] = {f: (ext_d or {}).get(f) for f in SUBJECTIVE}
             obj_rows.append({
                 "ticker": ticker, "exposure": gc.get("exposure"), "input_type": gc.get("input_type"),
-                "model": m, **per_model_obj[m]["fields"], "ambiguous": per_model_obj[m]["ambiguous"],
+                "model": m, "fields": per_model_obj[m]["fields"], "ambiguous": per_model_obj[m]["ambiguous"],
                 "status": res.get("status"),
             })
             print(f"{ticker:8s} {gc.get('exposure'):5s} {m:22s} {res.get('status'):8s} "

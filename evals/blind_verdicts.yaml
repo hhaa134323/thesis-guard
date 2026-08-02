@@ -1,0 +1,210 @@
+- case: FDS
+  fields:
+    holding_reason_raw:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    key_assumptions:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    mirrors:
+      pick: ''
+      acceptable: ''
+      reason: ''
+- case: HSBC
+  fields:
+    holding_reason_raw:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    key_assumptions:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    mirrors:
+      pick: ''
+      acceptable: ''
+      reason: ''
+- case: BRK.B
+  fields:
+    holding_reason_raw:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    key_assumptions:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    mirrors:
+      pick: ''
+      acceptable: ''
+      reason: ''
+- case: MCO
+  fields:
+    holding_reason_raw:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    key_assumptions:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    mirrors:
+      pick: ''
+      acceptable: ''
+      reason: ''
+- case: GOOGL
+  fields:
+    holding_reason_raw:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    key_assumptions:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    mirrors:
+      pick: ''
+      acceptable: ''
+      reason: ''
+- case: NOW
+  fields:
+    holding_reason_raw:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    key_assumptions:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    mirrors:
+      pick: ''
+      acceptable: ''
+      reason: ''
+- case: NFLX
+  fields:
+    holding_reason_raw:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    key_assumptions:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    mirrors:
+      pick: ''
+      acceptable: ''
+      reason: ''
+- case: CRM
+  fields:
+    holding_reason_raw:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    key_assumptions:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    mirrors:
+      pick: ''
+      acceptable: ''
+      reason: ''
+- case: FIS
+  fields:
+    holding_reason_raw:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    key_assumptions:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    mirrors:
+      pick: ''
+      acceptable: ''
+      reason: ''
+- case: CGNX
+  fields:
+    holding_reason_raw:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    key_assumptions:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    mirrors:
+      pick: ''
+      acceptable: ''
+      reason: ''
+- case: NVDA
+  fields:
+    holding_reason_raw:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    key_assumptions:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    mirrors:
+      pick: ''
+      acceptable: ''
+      reason: ''
+- case: VEEV
+  fields:
+    holding_reason_raw:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    key_assumptions:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    mirrors:
+      pick: ''
+      acceptable: ''
+      reason: ''
+- case: QQQ
+  fields:
+    holding_reason_raw:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    key_assumptions:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    mirrors:
+      pick: ''
+      acceptable: ''
+      reason: ''
+- case: SPGI
+  fields:
+    holding_reason_raw:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    key_assumptions:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    mirrors:
+      pick: ''
+      acceptable: ''
+      reason: ''
+- case: GDXU
+  fields:
+    holding_reason_raw:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    key_assumptions:
+      pick: ''
+      acceptable: ''
+      reason: ''
+    mirrors:
+      pick: ''
+      acceptable: ''
+      reason: ''

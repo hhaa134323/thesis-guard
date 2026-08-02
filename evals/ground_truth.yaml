@@ -2,51 +2,22 @@
 # Claude/任何模型不许生成、推断、或用模型产出去填。
 #
 # Eval 设计 v2（eval-plan §9）：主观字段（holding_reason / key_assumptions / mirrors）**不进 GT**，
-
+# 走盲评（§9.4）。`manual_items` 也**不进 GT**——按 `docs/data-sources.md` 规则推导。
+# 与 position_cap_tier 同类（规则推导，不交人/模型猜）。本文件只标**有唯一可查证答案的客观字段**。
+#
 # R8 边界（2026-08-02）：
 #   不进 GT — 有独立第三方权威来源、机械可查的字段（filer_type / manual_items / position_cap_tier）
 #   必须进 GT — 依赖对台账文本的理解与取舍、无外部权威表可查的字段（entry_anchor / next_verdict）
 #   R8 禁止的是「模型自由生成或推断」，不是「有证据链的自动取数」。
-# 走盲评（§9.4）。`manual_items` 也**不进 GT**——按 `docs/data-sources.md` 规则推导（价格图形型 → manual），
-# 与 position_cap_tier 同类（规则推导，不交人/模型猜）。本文件只标**有唯一可查证答案的客观字段**。
 #
-# 用法：填全后 harness（`evals/run_l1.py run`）才跑。
-# 输入 harness 自动从 assets/notion/thesis/<ticker>.md 的「Thesis · 为什么买」段读（你不用填输入）。
-#
-# exposure（必填）：seen = 你看过该 ticker 抽取结果（仅参考，不进 85% 判定）；clean = 未看过（进判定）。
-#   → FDS、HSBC 标 seen；其余 13 条标 clean。
-# input_type（必填）：ai_polished = 台账 AI 结构化输入（现有 15 条全属此类）；raw = 真实用户口述（W3 引入）。
-#   → 15 条全 ai_polished。Limitation：当前分数基于 AI 结构化输入，面向 raw 预期下降，W3 重测。
-#
-# 客观字段（填什么 / 判断标准 / 留空条件）。⚠️ 说明无示例值，不用其他 ticker 举例——避免锚定。
-#
-#   filer_type : 填申报方类型，取值四选一：
-#     domestic_10k            = 美国本土公司，10-K 申报方
-#     foreign_issuer_20f_6k   = 外国发行人，20-F/6-K 申报方
-#     etf_fund                = ETF/ETN/基金/信托（无 10-K/20-F；QQQ/GDXU 等。v1 不支持自动核对 → harness 全 manual）
-#     other                    = 其余
-#     留空条件：无（每个 ticker 都有申报方类型）。null 须配 open_questions。
-#
-#   entry_anchor : 填录入估值锚 {anchor_type, anchor_value, note}。
-#     判断：估值型破条件用；锚类型由 thesis 类型定（现金流类 / 控股投资类 / 指数类各不同）；value 无数据留 null。
-#     留空条件：台账无估值锚信息 → null（optional，不强制 open_questions，但鼓励写原因）。
-#
-#   next_verdict : 填下一个能证伪 thesis 的事件+日期 {event, date, source_note}。
-#     判断：下一次有新证据能让 thesis 被推翻的时点（财报日 / 监管裁定日 等），不等于「下次复盘日」。
-#     留空条件：台账无此信息 → null（optional）。
-#
-#   open_questions : 列你标 null 的字段 + 原因，每条 {field: <字段名>, reason: <台账为何信息不足>}。
-#     harness 见 null + open_questions → 该字段从一致率分母剔除，单独统计「台账模糊字段数」（产品发现）。
-#     required 客观字段（filer_type）若 null 但无 open_questions → harness 报错退出（R8）。
-#     optional 客观字段（entry_anchor / next_verdict）null 不强制 open_questions。
-#
-# 不在本文件（规则推导 / 盲评，都不手标）：
-#   - manual_items：按 docs/data-sources.md 规则推导（is_price_pattern W1）。
-#   - position_cap_tier：按 ticker 查 tier_map。
-#   - holding_reason / key_assumptions / mirrors：走盲评（eval-plan §9.4）。
+# provenance（2026-08-02，作者手工核验落笔）：
+entry_anchor_verified_by: caca
+entry_anchor_verified_at: '2026-08-02'
+entry_anchor_source: Notion 台账「🧭 持仓 Thesis · 价值投资台账」加仓价 / 安全边际列，快照 assets/notion/thesis/
+next_verdict_source: 同上，复盘备注列
 #
 # 快照版本锁定（2026-08-02 加）：
-snapshot_ref: 3a48370c78c6ec27271451a392f2a1b512f87a48   # 本 GT 依据的 assets/ git ref
+snapshot_ref: 3a48370c78c6ec27271451a392f2a1b512f87a48
 snapshot_date: 2026-08-01
 # 说明：本 GT 依据上述 assets/ 快照标注。assets/ 重新拉取后，GT 必须重新核对，不得跨快照版本复用。
 # harness（run_l1.py）启动时校验当前 assets/ git ref 与本 snapshot_ref；不一致 → 警告 + 需 --allow-stale-gt 才继续。
@@ -55,64 +26,64 @@ cases:
   - ticker: FDS
     exposure: seen
     input_type: ai_polished
-    entry_anchor: null
-    next_verdict: null
+    entry_anchor: {anchor_type: ttm_gaap_pe, anchor_value: 16, note: "16x ≈ $251"}
+    next_verdict: {event: "Q4 FY26 财报", date: "2026-09", source_note: "台账复盘备注"}
     open_questions: []
 
   - ticker: HSBC
     exposure: seen
     input_type: ai_polished
-    entry_anchor: null
+    entry_anchor: {anchor_type: p_tbv, anchor_value: 1.3, note: "1.3x ≈ $61（ADR）"}
     next_verdict: null
     open_questions: []
 
   - ticker: BRK.B
     exposure: clean
     input_type: ai_polished
-    entry_anchor: null
+    entry_anchor: {anchor_type: operating_multiple_2col, anchor_value: 8, note: "巴菲特两栏法，运营倍数 <8x"}
     next_verdict: null
     open_questions: []
 
   - ticker: MCO
     exposure: clean
     input_type: ai_polished
-    entry_anchor: null
-    next_verdict: null
+    entry_anchor: {anchor_type: ttm_gaap_pe, anchor_value: 25, note: "25x ≈ $394（2026-07-24 按 TTM GAAP EPS 15.76 重算，非 6/06 的 $349）"}
+    next_verdict: {event: "Q3 2026 财报", date: "2026-10", source_note: "台账复盘备注"}
     open_questions: []
 
   - ticker: GOOGL
     exposure: clean
     input_type: ai_polished
-    entry_anchor: null
+    entry_anchor: {anchor_type: normalized_operating_pe, anchor_value: 25, note: "25x ≈ $250（2026-07-23 读数）"}
     next_verdict: null
     open_questions: []
 
   - ticker: NOW
     exposure: clean
     input_type: ai_polished
-    entry_anchor: null
+    entry_anchor: {anchor_type: forward_non_gaap_pe, anchor_value: 22, note: "22x ≈ $88"}
     next_verdict: null
     open_questions: []
 
   - ticker: NFLX
     exposure: clean
     input_type: ai_polished
-    entry_anchor: null
+    entry_anchor: {anchor_type: normalized_fwd_gaap_pe, anchor_value: 22, note: "22x ≈ $68（已剔 WBD 一次性）"}
     next_verdict: null
     open_questions: []
 
   - ticker: CRM
     exposure: clean
     input_type: ai_polished
-    entry_anchor: null
+    entry_anchor: {anchor_type: ttm_gaap_pe, anchor_value: 18, note: "18x ≈ $140"}
     next_verdict: null
     open_questions: []
 
   - ticker: FIS
     exposure: clean
     input_type: ai_polished
-    entry_anchor: null
-    next_verdict: null
+    entry_anchor: {anchor_type: p_fcf, anchor_value: 9, note: "9x ≈ $37"}
+    next_verdict: {event: "Q2 2026 财报", date: "2026-08-04", source_note: "台账复盘备注"}
     open_questions: []
 
   - ticker: CGNX
@@ -127,15 +98,17 @@ cases:
   - ticker: NVDA
     exposure: clean
     input_type: ai_polished
-    entry_anchor: null
-    next_verdict: null
-    open_questions: []
+    entry_anchor: {anchor_type: normalized_pe, anchor_value: null, note: "深价线 ≈ $130（方法 B）；台账未记录对应倍数"}
+    next_verdict: {event: "Q2 FY27 财报", date: "2026-08-26", source_note: "台账复盘备注"}
+    open_questions:
+      - field: entry_anchor
+        reason: "台账记录深价线为美元价格 $130，未记录对应的 normalized P/E 倍数；anchor_value 语义为倍数，故置 null。该条 value 分母剔除，仅参与 anchor_type 判定。"
 
   - ticker: VEEV
     exposure: clean
     input_type: ai_polished
-    entry_anchor: null
-    next_verdict: null
+    entry_anchor: {anchor_type: ttm_gaap_pe, anchor_value: 25, note: "25x ≈ $141，踩 GAAP 口径"}
+    next_verdict: {event: "Q2 FY27 财报", date: "2026-08", source_note: "台账复盘备注"}
     open_questions: []
 
   - ticker: QQQ
