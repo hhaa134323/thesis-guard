@@ -27,6 +27,23 @@ TICKERS = ["NVDA", "VEEV", "MCO", "GOOGL", "CGNX", "NOW", "NFLX", "CRM",
 ETF_FALLBACK = {
     "GDXU": "杠杆 ETN（MicroSectors Gold Miners 3X），申报主体为发行商，v1 不支持自动核对",
 }
+def _load_dotenv() -> None:
+    """用标准库解析仓库根 .env（不引入 python-dotenv）；仅补未设的环境变量。"""
+    env_path = Path(__file__).resolve().parents[1] / ".env"
+    if not env_path.exists():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, val = line.partition("=")
+        key = key.strip()
+        val = val.strip().strip("'\"")
+        if key and key not in os.environ:
+            os.environ[key] = val
+
+
+_load_dotenv()
 UA = os.environ.get("SEC_USER_AGENT")  # 真实「姓名 邮箱」；未设 → main() 报错退出（不硬编码，R9 脱敏）
 HEADERS = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"} if UA else {}
 FUND_FORMS = {"N-CSR", "N-PORT", "N-CEN", "NSAR", "485", "497", "24F-2"}

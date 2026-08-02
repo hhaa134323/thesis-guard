@@ -40,11 +40,20 @@ def load_break_conditions(ticker: str) -> str:
         text = s[i: j if j > 0 else len(s)]
     h = "## Thesis 破的条件"
     i = text.find(h)
-    if i < 0:
-        return ""
-    start = i + len(h)
-    j = text.find("\n## ", start)
-    return text[start: j if j > 0 else len(text)].strip()
+    if i >= 0:
+        start = i + len(h)
+        j = text.find("\n## ", start)
+        return text[start: j if j > 0 else len(text)].strip()
+    # 00_schema bullet 格式：- **Thesis 破的条件**：...
+    b = text.find("**Thesis 破的条件**")
+    if b >= 0:
+        start = text.find("：", b) + 1
+        # 到下一个 - ** 字段 或 ## 段落
+        j = text.find("\n- **", start)
+        k = text.find("\n## ", start)
+        end = min(x for x in [j, k, len(text)] if x > 0)
+        return text[start:end].strip()
+    return ""
 
 
 def main() -> None:
@@ -63,7 +72,7 @@ def main() -> None:
         bc = load_break_conditions(t)
         lines.append(f"## {t}")
         if not bc:
-            lines.append("（台账无破条件）\n")
+            lines.append("（台账确认为空——该标的无「Thesis 破的条件」字段）\n")
             continue
         conds = _split_conditions(bc)
         if not conds:

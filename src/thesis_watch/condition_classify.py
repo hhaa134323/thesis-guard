@@ -36,12 +36,18 @@ V1_AUTO = {InfoType.XBRL_STRUCTURED, InfoType.PRESS_RELEASE_TEXT}
 # negation sentinels：仅排除性说明（注：...不算破），不含「区别于」（那是条件内澄清，非否定）
 _NEGATION_SENTINELS = ["不算破", "不构成破局", "不构成破", "不算破局", "不算破的条件"]
 
-# 结构行前缀（剥离，不作为条件）
+# 结构行前缀（剥离，不作为条件）——v0.4 补全：• \d+） A./B. －
 _STRUCTURE_PREFIXES = re.compile(
-    r"^(量化滞后线|领先代理|A\.|B\.|【|注[：:]|①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩)"
+    r"^(①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩|量化滞后线|领先代理|A\.|B\.|【|注[：:]|⚠|基线[：:]|取数[：:]|｜|可量化翻转)"
 )
 # 章节归属关键词
-_TIER_KEYWORDS = {"量化滞后线": "lagging", "领先代理": "leading"}
+_TIER_KEYWORDS = {"量化滞后线": "lagging", "领先代理": "leading", "A.": "lagging", "B.": "leading", "可量化翻转": "lagging"}
+# 切分符（全）：①②③… \d+） \d+) • － A. B.
+_SPLIT_RE = re.compile(r"([①②③④⑤⑥⑦⑧⑨⑩]|[A-B]\.|\d+[）)]|•|－|｜)")
+# metadata 行（不作为条件，不分类，但保留展示）
+_METADATA_RE = re.compile(r"^(注[：:]|⚠|基线[：:]|取数[：:]|｜|可量化翻转)")
+# 续行合并结尾符
+_CONTINUATION_ENDINGS = ("）", "，", "、", "；", "且", "或", "：", "。")
 
 
 def strip_negation(text: str) -> str:
@@ -57,25 +63,30 @@ def strip_negation(text: str) -> str:
 
 
 def _split_conditions(text: str) -> list[tuple[str, str]]:
-    """改进切分（v0.3）：按 ①②③④⑤+；+\n 切（不切 •——子项属条件内），
-    剥离结构行（量化滞后线/A./B./【/注：），保留 condition_tier(lagging|leading)，续行合并。
+    """改进切分（v0.4）：按 ①②③…\d+）\d+)•－A.B. 切（【十二】补全），
+    剥离结构行+metadata（注：/⚠/基线：/取数：/｜），保留 condition_tier，续行合并。
     返回 [(condition_text, condition_tier), ...]。"""
     if not text:
         return []
-    # 按 ①②③④⑤⑥⑦⑧⑨⑩ + ； + \n 切（条件级标记；不切 • 子项）
-    raw_parts = re.split(r"([①②③④⑤⑥⑦⑧⑨⑩])", text)
-    # 重组：序号开头的是新条件，其余是续行
+    # 按所有切分符切（保留 marker 用于 tier 检测）
+    raw_parts = _SPLIT_RE.split(text)
     chunks: list[str] = []
     for p in raw_parts:
         p = p.strip()
         if not p:
             continue
-        if re.match(r"^[①②③④⑤⑥⑦⑧⑨⑩]", p):
+        # 如果是切分符本身（①②③/A.B./•/－/1）)，作为新 chunk 的前缀
+        if _SPLIT_RE.fullmatch(p):
             chunks.append(p)
-        elif chunks:
-            chunks[-1] += p  # 续行合并到上一条
+        elif chunks and not _SPLIT_RE.fullmatch(chunks[-1][-1:] if chunks[-1:] else ""):
+            # 续行合并：上一条以续行结尾符结尾
+            if chunks[-1].endswith(_CONTINUATION_ENDINGS):
+                chunks[-1] += p
+            else:
+                chunks.append(p)
         else:
-            chunks.append(p)  # 序号前的引导段（可能含 tier）
+            chunks.append(p)
+    # 处理 chunks：tier 检测 + 结构/metadata 剥离
     conditions: list[tuple[str, str]] = []
     current_tier = ""
     for chunk in chunks:
@@ -84,11 +95,16 @@ def _split_conditions(text: str) -> list[tuple[str, str]]:
             if kw in chunk:
                 current_tier = tier
                 break
-        # 剥离纯结构行（量化滞后线标题/A./B./【/注：——不含条件内容）
-        stripped = re.sub(r"^(量化滞后线|领先代理)[^：]*[：:].*", "", chunk)
-        stripped = re.sub(r"^(A\.|B\.)\s*(硬滞后线|领先代理|量化)?[^：]*[：:]", "", stripped)
+        # 剥离 metadata 行（注：/⚠/基线：/取数：/｜）→ 不作为条件
+        if _METADATA_RE.match(chunk):
+            continue
+        # 剥离纯结构行（量化滞后线标题/A.B.标题/【标题】）
+        stripped = re.sub(r"^(量化滞后线|领先代理)[^：]*[：:]", "", chunk)
+        stripped = re.sub(r"^([A-B]\.)\s*(硬滞后线|领先代理|量化)?[^：]*[：:]", "", stripped)
         stripped = re.sub(r"^【[^】]*】", "", stripped)
-        stripped = re.sub(r"^注[：:][^；;\n]*", "", stripped)
+        stripped = re.sub(r"^[①②③④⑤⑥⑦⑧⑨⑩]\s*", "", stripped)
+        stripped = re.sub(r"^([A-B]\.|•|－)\s*", "", stripped)
+        stripped = re.sub(r"^\d+[）)]\s*", "", stripped)
         stripped = stripped.strip(" ；;，,。")
         if len(stripped) >= 5:
             conditions.append((stripped, current_tier))

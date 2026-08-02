@@ -2,6 +2,11 @@
 # Claude/任何模型不许生成、推断、或用模型产出去填。
 #
 # Eval 设计 v2（eval-plan §9）：主观字段（holding_reason / key_assumptions / mirrors）**不进 GT**，
+
+# R8 边界（2026-08-02）：
+#   不进 GT — 有独立第三方权威来源、机械可查的字段（filer_type / manual_items / position_cap_tier）
+#   必须进 GT — 依赖对台账文本的理解与取舍、无外部权威表可查的字段（entry_anchor / next_verdict）
+#   R8 禁止的是「模型自由生成或推断」，不是「有证据链的自动取数」。
 # 走盲评（§9.4）。`manual_items` 也**不进 GT**——按 `docs/data-sources.md` 规则推导（价格图形型 → manual），
 # 与 position_cap_tier 同类（规则推导，不交人/模型猜）。本文件只标**有唯一可查证答案的客观字段**。
 #
@@ -50,7 +55,6 @@ cases:
   - ticker: FDS
     exposure: seen
     input_type: ai_polished
-    filer_type: ""
     entry_anchor: null
     next_verdict: null
     open_questions: []
@@ -58,7 +62,6 @@ cases:
   - ticker: HSBC
     exposure: seen
     input_type: ai_polished
-    filer_type: ""
     entry_anchor: null
     next_verdict: null
     open_questions: []
@@ -66,7 +69,6 @@ cases:
   - ticker: BRK.B
     exposure: clean
     input_type: ai_polished
-    filer_type: ""
     entry_anchor: null
     next_verdict: null
     open_questions: []
@@ -74,7 +76,6 @@ cases:
   - ticker: MCO
     exposure: clean
     input_type: ai_polished
-    filer_type: ""
     entry_anchor: null
     next_verdict: null
     open_questions: []
@@ -82,7 +83,6 @@ cases:
   - ticker: GOOGL
     exposure: clean
     input_type: ai_polished
-    filer_type: ""
     entry_anchor: null
     next_verdict: null
     open_questions: []
@@ -90,7 +90,6 @@ cases:
   - ticker: NOW
     exposure: clean
     input_type: ai_polished
-    filer_type: ""
     entry_anchor: null
     next_verdict: null
     open_questions: []
@@ -98,7 +97,6 @@ cases:
   - ticker: NFLX
     exposure: clean
     input_type: ai_polished
-    filer_type: ""
     entry_anchor: null
     next_verdict: null
     open_questions: []
@@ -106,7 +104,6 @@ cases:
   - ticker: CRM
     exposure: clean
     input_type: ai_polished
-    filer_type: ""
     entry_anchor: null
     next_verdict: null
     open_questions: []
@@ -114,7 +111,6 @@ cases:
   - ticker: FIS
     exposure: clean
     input_type: ai_polished
-    filer_type: ""
     entry_anchor: null
     next_verdict: null
     open_questions: []
@@ -122,7 +118,6 @@ cases:
   - ticker: CGNX
     exposure: clean
     input_type: ai_polished
-    filer_type: ""
     entry_anchor: null
     next_verdict: null
     open_questions:
@@ -132,7 +127,6 @@ cases:
   - ticker: NVDA
     exposure: clean
     input_type: ai_polished
-    filer_type: ""
     entry_anchor: null
     next_verdict: null
     open_questions: []
@@ -140,7 +134,6 @@ cases:
   - ticker: VEEV
     exposure: clean
     input_type: ai_polished
-    filer_type: ""
     entry_anchor: null
     next_verdict: null
     open_questions: []
@@ -148,7 +141,6 @@ cases:
   - ticker: QQQ
     exposure: clean
     input_type: ai_polished
-    filer_type: ""
     entry_anchor: null
     next_verdict: null
     open_questions: []
@@ -156,7 +148,6 @@ cases:
   - ticker: SPGI
     exposure: clean
     input_type: ai_polished
-    filer_type: ""
     entry_anchor: null
     next_verdict: null
     open_questions: []
@@ -164,7 +155,6 @@ cases:
   - ticker: GDXU
     exposure: clean
     input_type: ai_polished
-    filer_type: ""
     entry_anchor: null
     next_verdict: null
     open_questions: []
