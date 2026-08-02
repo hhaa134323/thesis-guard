@@ -31,10 +31,30 @@ email_sink:
   app_password: ""        # Gmail 应用专用密码，勿提交
   # 命中邮件模板与每日简报模板见 src/thesis_watch/render（待接入）
 
-# Agent loop 选型确认后启用
+# Agent loop 选型确认（2026-08-01）：PydanticAI 单次结构化调用（非 Claude Agent SDK）。
+# 会话模型与任务模型分离——两个独立配置项，不复用同一字段：
+#   - session_model：作者会话产 spec/schema/prompt 用（Anthropic 协议端点，glm-5.2）
+#   - task_model   ：录入抽取 + eval（OpenAI 协议端点，轻量 flash）
+# 分离理由见 docs/changelog.md v0.0.4（避免争抢额度 / 消除 eval 自评污染 / 批量成本）。
+# API key 一律走 env（api_key_env 指向变量名），不进 config、不进提交。
 llm:
-  model: "claude-sonnet-4-6"
-  # A: Claude Agent SDK 原生 / B: 手搓 SDK loop（见 docs/harness-design.md §1.1）
+  session_model:
+    provider: anthropic
+    base_url: "https://dashscope.aliyuncs.com/apps/anthropic"
+    model: "glm-5.2"
+    api_key_env: "ANTHROPIC_AUTH_TOKEN"
+  task_model:
+    provider: openai
+    base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    model: "qwen-turbo"   # 日常迭代模型（3min/轮）；glm-5.2-fast-preview 作质量基线只跑一次（--model 覆盖）
+    api_key_env: "ANTHROPIC_AUTH_TOKEN"
+  max_tokens: 8192
+  # 限流防护（eval 批跑用；429 与其它错误分开计数进 per-call 指标表）
+  request_interval_sec: 0.5
+  max_retries_429: 5
+  backoff_base_sec: 2.0
+  backoff_cap_sec: 60.0
+  max_concurrency: 1   # eval 批跑：串行（=1）或限制并发，不并发打满
 
 # 预置账号（5 人 beta，无注册系统；email 在 store.SEED 后由作者填）
 preset_users:
