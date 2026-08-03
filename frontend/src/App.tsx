@@ -7,13 +7,16 @@ import { Message, MessageScroller, SendButton } from "@/components/ai/chat";
 import { Loader2 } from "lucide-react";
 
 // ──────────────────────────────── types ────────────────────────────────
-type Stage = "opening" | "extracted" | "menu" | "confirm_card" | "confirmed";
+type Stage = "opening" | "ticker_clarify" | "extracted" | "menu" | "confirm_card" | "confirmed";
 interface Evidence { url: string; excerpt: string; }
-interface Cond { id: string; layer: "mirror" | "redline"; text: string; threshold?: any; template?: string | null; }
+interface Cond { id: string; layer: "mirror" | "redline"; text: string; threshold?: any; template?: string | null; source_type?: string; }
 interface Assumption { id: string; text: string; }
 interface ManualItem { id: string; text: string; reason: string; cadence: string; }
 interface Anchor { anchor_type: string; anchor_value: number | null; note: string; }
 interface NextVerdict { event: string; date: string | null; source_note: string; }
+interface Source { form: string; date: string; url: string; note: string; }
+interface OpenQ { field: string; reason: string; text?: string; }
+interface Coverage { total: number; excluded: number; reasons: string[]; excluded_items: { mirror_text: string; reasons: string[] }[]; }
 interface CardT {
   card_id: string; ticker: string; filer_type: string; holding_reason_raw: string;
   key_assumptions: Assumption[]; broken_conditions: Cond[]; manual_check_items: ManualItem[];
@@ -21,10 +24,10 @@ interface CardT {
   holding_horizon: string | null;
   confirmation: { confirmed_by_user: boolean };
 }
-interface MenuT { assumptions: string[]; mirrors: { assumption: string; mirror_text: string }[]; }
+interface MenuT { assumptions: string[]; mirrors: { assumption: string; mirror_text: string }[]; coverage?: Coverage; }
 interface View {
   stage: Stage; assistant: string; card: CardT | null; menu: MenuT | null;
-  open_questions: { field: string; reason: string }[]; ticker: string; error: string | null;
+  open_questions: OpenQ[]; ticker: string; ticker_title?: string | null; sources?: Source[]; error: string | null;
   metrics?: { turns: number; clarification_rounds: number; converged: boolean };
   session_id?: string;
 }
@@ -129,7 +132,9 @@ export default function App() {
   const [conv, setConv] = useState<Msg[]>([]);
   const [card, setCard] = useState<CardT | null>(null);
   const [menu, setMenu] = useState<MenuT | null>(null);
-  const [openQs, setOpenQs] = useState<{ field: string; reason: string }[]>([]);
+  const [openQs, setOpenQs] = useState<OpenQ[]>([]);
+  const [tickerTitle, setTickerTitle] = useState<string | null>(null);
+  const [sources, setSources] = useState<Source[]>([]);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [justFilled, setJustFilled] = useState<Set<string>>(new Set());
@@ -144,6 +149,8 @@ export default function App() {
     setCard(v.card);
     setMenu(v.menu);
     setOpenQs(v.open_questions || []);
+    setTickerTitle(v.ticker_title ?? null);
+    setSources(v.sources ?? []);
     setError(v.error ? "⚠️ " + v.error : "");
     const byStage: Record<string, string> = {
       extracted: "抽取完成 · 确认或回「无法确定」要候选菜单",
@@ -235,10 +242,11 @@ export default function App() {
 
   // F2：字段逐格点亮。working=fetch 进行中→全字段 in-progress；否则 populated→done、空→pending。
   const working = !!status && (status.includes("正在") || status.includes("处理中"));
+  const rejectedAssumptions = openQs.filter((q) => q.field === "key_assumptions");
   const populated = card ? {
     ticker: !!card.ticker,
     holding_reason: !!card.holding_reason_raw,
-    assumptions: card.key_assumptions.length > 0,
+    assumptions: card.key_assumptions.length > 0 || rejectedAssumptions.length > 0,
     broken: card.broken_conditions.length > 0,
     manual: (card.manual_check_items?.length ?? 0) > 0,
     anchor: !!card.entry_anchor,
@@ -333,6 +341,26 @@ export default function App() {
                         ))}
                       </div>
                       <Button size="sm" onClick={submitPicks}>提交勾选</Button>
+                      {menu.coverage?.excluded ? (
+                        <div className="text-[11px] text-muted-foreground border-t border-border/40 pt-2 mt-2 space-y-0.5">
+                          <div>已排除 {menu.coverage.excluded} 个方向（共 {menu.coverage.total}）：</div>
+                          {menu.coverage.excluded_items?.map((it, i) => (
+                            <div key={i}>· {it.mirror_text} — {it.reasons?.join("、")}</div>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {sources.length ? (
+                    <div className="my-2 rounded-md border border-border bg-card px-3 py-2 text-xs">
+                      <div className="border-b border-border/40 pb-1 mb-1 text-[11px] text-muted-foreground">来源</div>
+                      {sources.map((s, i) => (
+                        <a key={i} href={s.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 py-0.5 hover:underline">
+                          <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
+                          <span className="text-muted-foreground">{s.form} · {s.date}</span>
+                          {s.note ? <span className="text-muted-foreground/70">— {s.note}</span> : null}
+                        </a>
+                      ))}
                     </div>
                   ) : null}
                 </MessageScroller>
@@ -368,7 +396,13 @@ export default function App() {
             {card ? (
               <>
                 <DrawerField label="标的（ticker）" hint="抽错了在这里改，确认时按新 ticker 重查 filer_type / 仓位档" state={fst(populated.ticker)} action={actionText}>
-                  <input className={inputCls} defaultValue={card.ticker} onChange={(e) => setEdit("ticker", e.target.value)} />
+                  <div className="space-y-1">
+                    <input className={inputCls} defaultValue={card.ticker} onChange={(e) => setEdit("ticker", e.target.value)} />
+                    <div className="flex items-center gap-2">
+                      {tickerTitle ? <span className="text-xs text-muted-foreground truncate">{tickerTitle}</span> : <span className="text-xs text-muted-foreground/60">（公司全名待 resolve）</span>}
+                      <Badge variant="success" className="shrink-0 ml-auto">✓ 一手核对</Badge>
+                    </div>
+                  </div>
                 </DrawerField>
                 <DrawerField label="买入逻辑（原话）" justFilled={justFilled.has("holding_reason_raw")} state={fst(populated.holding_reason)} action={actionText}>
                   <textarea className={inputCls} rows={3} defaultValue={card.holding_reason_raw}
@@ -379,16 +413,39 @@ export default function App() {
                   <div className="text-sm space-y-1">
                     {card.key_assumptions.map((a) => <div key={a.id} className={justFilled.has("assumption_" + a.id) ? "just-filled rounded px-1" : ""}>{a.text}</div>)}
                   </div>
+                  {rejectedAssumptions.length ? (
+                    <div className="mt-2 text-[11px] text-muted-foreground border-t border-border/40 pt-1.5 space-y-0.5">
+                      <div>{rejectedAssumptions.length} 条候选未通过：</div>
+                      {rejectedAssumptions.map((q, i) => (
+                        <div key={i}>「{q.text || "—"}」→ {q.reason}</div>
+                      ))}
+                    </div>
+                  ) : null}
                 </DrawerField>
 
                 <DrawerField label="破局条件（两层）" state={fst(populated.broken)} action={actionText}>
-                  <div className="text-sm space-y-1">
-                    {card.broken_conditions.map((c) => (
-                      <div key={c.id} className={justFilled.has("cond_" + c.id) ? "just-filled rounded px-1" : ""}>
-                        <Badge variant={c.layer === "mirror" ? "softblue" : "amber"}>{c.layer === "mirror" ? "镜像" : "红线"}</Badge> {c.text}
-                        {c.threshold?.amount_usd ? <span className="text-xs text-muted-foreground">（≥ {c.threshold.amount_usd} 美元）</span> : null}
-                      </div>
-                    ))}
+                  <div className="text-sm space-y-2">
+                    {card.broken_conditions.map((c) => {
+                      const thr = c.threshold || {};
+                      const thrLabel = c.layer === "redline" && thr.amount_usd != null
+                        ? `≥ ${Number(thr.amount_usd).toLocaleString()} 美元`
+                        : thr.metric ? `${thr.metric} ${thr.operator || ""} ${thr.value ?? ""}`.trim() : "";
+                      const srcLabel = c.source_type === "sec_filing_field" ? "SEC filing" : (c.source_type || "");
+                      return (
+                        <div key={c.id} className={justFilled.has("cond_" + c.id) ? "just-filled rounded px-1" : ""}>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <Badge variant={c.layer === "mirror" ? "softblue" : "amber"} className="shrink-0">{c.layer === "mirror" ? "M" : "R"}</Badge>
+                            <span>{c.text}</span>
+                          </div>
+                          {(thrLabel || srcLabel) ? (
+                            <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
+                              {thrLabel ? <span>阈值：{thrLabel}</span> : null}
+                              {srcLabel ? <span>· {srcLabel}</span> : null}
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
                   </div>
                 </DrawerField>
 

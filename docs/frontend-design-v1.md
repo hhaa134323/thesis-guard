@@ -71,3 +71,20 @@ F3（卡片字段补全）挂起——entry_anchor §5 结构 / holding_horizon 
 **自检**：每项 `npm run build` 过；视觉自检 chromium `--headless --screenshot` 截 `http://127.0.0.1:8001`（http.server 托管 static/，不走 serve.py 免 import 并行改的 src/），qwen3-vl-plus 跑固定 rubric（`scripts/vision_check.py` 传 rubric 作 question）。F4 空态截图 rubric 8/9 yes（#1 两栏/竖线、#2 进度行已删、#3 N/8+条、#5 待生成、#6 发送键、#7 中性无高饱和蓝、#8 无溢出、#9 无大片空白 全 yes）；#4（in-progress 字段行：灰底+左竖条）no——空态无 fetch、字段 pending 非 in-progress，该态只在 fetch 进行时出现，静态空态截不到，代码已实现（`working`→全字段 in-progress），验它需 live session。
 
 **changelog 不再由前端写**：改动摘要列文字给作者，由后端窗口统一写 `docs/changelog.md`。
+
+## 7. 2026-08-03 F3 卡片字段补全（v0.0.15 view 形状落地）
+
+后端 v0.0.15（4230bc4 本地、push 待 B1）给齐 F3 数据：`broken_conditions[].source_type`+`threshold`(mirror={metric,operator,value}/redline={amount_usd|roles|forms})、`open_questions[].text`(被拒候选原文)、`menu.coverage={total,excluded,reasons[],excluded_items[{mirror_text,reasons[]}]}`、`view.ticker_title`(公司全名)、`view.sources=[{form,date,url,note}]`(confirm-SEC-ask 命中时)。
+
+**改了什么**（App.tsx）：
+- 接口对齐 v0.0.15：Stage+ticker_clarify、Cond+source_type、Source/Coverage/OpenQ 接口、MenuT+coverage、View+ticker_title+sources+open_questions→OpenQ[]；state 加 tickerTitle+sources；applyView 设之。
+- #3 破局条件：每条 M/R 徽标 + 阈值（redline amount_usd→`≥ N 美元`；mirror→`metric operator value`；事件型 redline 无数值阈值只显来源）+ 数据来源（source_type=sec_filing_field→"SEC filing"）。
+- #4 关键假设下：`open_questions` filter field==key_assumptions →「N 条候选未通过：原文→理由」；assumptions populated 算上 rejected（有被拒=已处理=done，免 pending 盖掉被拒块）。
+- #5 菜单区：`menu.coverage` →「已排除 N 个方向（共 M）：· mirror_text — reasons」。
+- #6 标的行：`ticker_title` 公司全名 + ✓一手核对（input 独占一行、title/badge 另起一行，免 w-full input 挤掉 title）。
+- 来源块 R5：`view.sources` 非空时 chat 区渲来源块（分隔线+绿点+form·date+可点 URL）。
+- #1 entry_anchor / #2 holding_horizon：base（bf19d0f）已渲染，不动。
+
+**自检**：build 过；live session（NVDA→extracted）+ qwen3-vl-plus：#3/#5/#6 live 验过 ✅；#4（被拒条目）code 正确但 LLM 非确定、本轮没产被拒→未 live 验到被拒数据；#7（sources）code 正确但仅 confirm-SEC-ask 命中时有、本流程不触发→未 live 验。pre-existing：橙色提示框长文本偶发溢出（数据依赖），F3 没碰这俩组件，记下不顺手改。
+
+**开口**：A-filter（menu A 不过滤只过滤 B→4A+1B 不对称）作者定、前端按现状（A 全展示+coverage 说清排除数）；交易所 SEC 数据无→#6 不显（不硬造）；后端 ticker_resolver 在 flux（未提交 src/ticker_resolver.py：NVDA→ONDS、HSBC→clarify），作者 mid-fix，前端不受影响按 view 渲。
