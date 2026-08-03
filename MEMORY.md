@@ -1,15 +1,20 @@
 # MEMORY — 跨 AI 交接（2026-08-03）
 
 > 本文件给协作 AI 拉取进度。Claude（本会话）维护，提交到 GitHub。
-> 详细变更见 `docs/changelog.md`（v0.0.12 P0–P5 + v0.0.13 P2 条件4）；本文是 digest + 当前状态 + 开口项 + 硬规则。
+> 详细变更见 `docs/changelog.md`（v0.0.12 P0–P5 + v0.0.13 P2 条件4 + v0.0.14 真 bug 修）；本文是 digest + 当前状态 + 开口项 + 硬规则。
 > 读这一个文件就能接上。
 
 ## 当前状态
-- 分支 `main`。已 push 到 `bf19d0f`（v0.0.12）。本地新增 `e651a4b`（本文件）+ v0.0.13（P2 条件4）——这两次 push 受 B1 GitHub 间歇 reset 阻塞，待网络恢复再推。
-- v0.0.12（P0–P5）+ v0.0.13（P2 条件4 backstop）已落地；目检 5 过 + P2 已修（v0.0.13，待复跑确认）。
-- serve 在跑（PID 28688，http://127.0.0.1:8000/，v0.0.12+v0.0.13 后端 + 前端窗口最新 build `index-CnCgShHx.js`）。前端窗口自检服在 :8001（http.server）。
+- 分支 `main`。已 push 到 `bf19d0f`（v0.0.12）。本地新增 `e651a4b`（本文件）+ v0.0.13（P2 条件4）+ v0.0.14（真 bug 修）——push 受 B1 GitHub 间歇 reset 阻塞，待网络恢复再推。
+- v0.0.12（P0–P5）+ v0.0.13（P2 条件4 backstop）+ v0.0.14（真跑发现的 2 bug 修）已落地；端到端验过（curl 真跑 SK海力士：Bug #1 无 AI/HBM 误命中、Bug #2 filer=other 一致）。
+- serve 在跑（http://127.0.0.1:8000/，v0.0.12–v0.0.14 后端 + 前端窗口最新 build）。前端窗口自检服在 :8001（http.server）。
 - **不重跑 eval**（等 key_assumptions 定义经作者目检后再说）。
 - **两窗口并行**：本窗口 = `src/` `docs/`（除 `docs/frontend-design-v1.md` 归前端窗口）`tests/` + 仓库根（含本文件、CLAUDE.md）；前端窗口 = `frontend/` + `static/` + `docs/frontend-design-v1.md`（构建产物，谁改 frontend/src 谁 build 谁提交）。本窗口不读不改不 git add 前端域。
+
+## v0.0.14 做了什么（真跑 smoke 发现的 2 bug 修，2026-08-03）
+- **Bug #1 ticker token 扫描误命中**：`ticker_resolver` 去掉句中 ticker 词扫描（论据里的 AI/HBM 凑巧是真 SEC ticker 会被误当候选）。只剩「整串精确 + 英文公司名模糊」。删死代码 `_scan_ticker_tokens`/`_ticker_set`/`_TOKEN_RE`/`import re`。+ 回归测试。
+- **Bug #2 filer_type LLM 兜底没去干净**：`agent.build_card_from_extraction` 里 `filer_type=None → FilerType.OTHER`（不再回退 `ext.filer_type`，与 P0「filer_type 不经 LLM」对齐）。
+- 79 测试绿。真跑验过。
 
 ## v0.0.13 做了什么（P2 条件4 backstop，2026-08-03）
 - `entry_loop._apply_key_assumption_rejection` 加条件4（不可证伪）确定性 backstop：抽出的 key_assumption 过 `condition_classify`+`is_v1_auto`，**非 auto 的假设（其镜像必也非 auto、无可判定阈值）→ 转 open_question**。与菜单路径（P4 `filter_executable_mirrors`）同款，两路径对齐。条件3（`is_paraphrase`）先跑、条件4 后跑。
@@ -38,7 +43,8 @@
 ## 开口项（等作者定夺，**未动**）
 1. **P1 CIK 复用缺口**：`fetch_latest_filing` 走 `filer_type_lookup.yaml`（16 预置 ticker，无 SKHY）→ 「查不到」；但 `ticker_resolver` 已从 `company_tickers.json` 拿到 SKHY 的 CIK（2120882）。fetcher 回退用 resolver 的缓存就能给新 ticker 拉 filing + 链接，而不是「查不到」。验收算过（「明确查不到」达标），质量能更好。
 2. **未测分支**：P1 的「带 SEC 链接」分支（用 MCO/FDS 等在 lookup 里的票问「下次财报什么时候」）；P3-B 的「有数据显示」分支（输入带加仓价，如「我持有 MCO，加仓价 $394，安全边际 16x」）。
-3. **P2 条件4 复跑确认**：v0.0.13 已加条件4 backstop（`condition_classify`+`is_v1_auto` 接进 `_apply_key_assumption_rejection`，非 auto 假设转 open_question），单测过；等真实复跑 SK海力士 确认 ASP/份额/结构性 进 open_question。注意近似：condition_classify 关键词规则，定性假设可能过拒（但符合工单 condition4「不可证伪」语义）。
+3. **P2 条件4 复跑确认**：v0.0.13 已加条件4 backstop（`condition_classify`+`is_v1_auto` 接进 `_apply_key_assumption_rejection`，非 auto 假设转 open_question），单测过；等真实复跑 SK海力士 确认 ASP/份额/结构性 进 open_question。注意近似：condition_classify 关键词规则，定性假设可能过拒（但符合工单 condition4「不可证伪」语义）。注：真跑短输入时 LLM 自判条件3 把候选全拒了（key_assumptions=0），条件4 backstop 没机会触发——要触发得用 LLM 保留多条假设的输入。
+4. **菜单 A/B 不对称**（v0.0.14 真跑发现）：`menu.assumptions=4` 但 `menu.mirrors=1`（P4 只过滤 B 镜像，A 假设不过滤）。按工单「候选过滤」字面只指 B，可能不算 bug；但前端会渲染 4 个 A 勾选框 + 1 个 B，怪。要不要把 A 也按「有无存活镜像」过滤，作者定。
 
 ## 硬规则（必须遵守）
 - **测试改动**：让测试**更难过**→直接做 + 说一声；**更容易过**→停下问。（本轮 P3 改 `make_mirror` 签名，`test_conditions.py` 3 处调用跟着改 + 加 `assert m.threshold/source_type` + 新增 `test_make_mirror_rejects_missing_threshold_or_source`，是更难过，已做已说、作者已放行。）
@@ -61,5 +67,5 @@
 
 ## serve / 运行
 - 起 serve：`PYTHONUTF8=1 PYTHONPATH=src python -m thesis_watch.serve`（bash；UA env `THESIS_SEC_USER_AGENT`；host/port `THESIS_HOST`/`THESIS_PORT` 默认 127.0.0.1:8000）。
-- pytest：`PYTHONUTF8=1 python -m pytest -q`（78 绿：基线 42 + 新增 36；v0.0.12 +32 / v0.0.13 +4 条件4）。**注意**：Windows 下 pip 读 requirements.txt 需 `PYTHONUTF8=1`（否则 GBK 解码报错）。
+- pytest：`PYTHONUTF8=1 python -m pytest -q`（79 绿：基线 42 + 新增 37；v0.0.12 +32 / v0.0.13 +4 条件4 / v0.0.14 +1 Bug#1 回归）。**注意**：Windows 下 pip 读 requirements.txt 需 `PYTHONUTF8=1`（否则 GBK 解码报错）。
 - 装依赖：`PYTHONUTF8=1 python -m pip install -r requirements.txt`。

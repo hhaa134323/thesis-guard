@@ -181,8 +181,9 @@ def build_card_from_extraction(ext, *, user_id: str, ticker: str,
     if ext is not None and is_price_pattern(raw) and not any(is_price_pattern(m.text) for m in manual):
         manual.append(to_manual_check(raw))
 
-    ft = filer_type if filer_type is not None else (
-        FilerType(ext.filer_type.value) if ext is not None and ext.filer_type else FilerType.OTHER)
+    # P0 审计：filer_type 是事实，不经 LLM——filer_type=None（查表无）→ OTHER + open_question，
+    # 不取 ext.filer_type（LLM 猜的，与「不经 LLM」矛盾；Bug #2 修）
+    ft = filer_type if filer_type is not None else FilerType.OTHER
     ea = None
     if ext is not None and ext.entry_anchor:
         ea = EntryAnchorData(anchor_type=ext.entry_anchor.anchor_type,

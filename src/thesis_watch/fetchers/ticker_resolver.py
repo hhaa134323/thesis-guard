@@ -6,8 +6,8 @@
 远程失败回退陈旧缓存（好过空）。SEC fair-access：User-Agent 须含真实联系邮箱，
 复用 sec_edgar.USER_AGENT（env THESIS_SEC_USER_AGENT）。
 
-resolve(query) 三档（调用方据档决定：1→用 / >1→问选 / 0→问，不允许猜）：
-- 精确 ticker：整串 == 某 ticker，或句中独立 ticker 词（带 CJK 紧贴守卫）
+resolve(query) 两档（调用方据档决定：1→用 / >1→问选 / 0→问，不允许猜）：
+- 精确 ticker：整串 == 某 ticker（含点如 BRK.B）
 - 公司名模糊匹配：difflib top 3（带 ticker / 全名 / CIK）
 - 无匹配：空列表
 
@@ -15,15 +15,14 @@ resolve(query) 三档（调用方据档决定：1→用 / >1→问选 / 0→问�
 不该交给 LLM 猜——glm 把「SK海力士」猜成 SKHCF（Sonic Healthcare，澳洲 OTC），
 正确是 SKHY（SK Hynix ADR，CIK 2120882）。改为查 SEC 官方表；查不到就问用户，宁缺勿猜。
 
-CJK 紧贴守卫：从「我持有SK海力士」抽 ASCII 串会得到 "SK"，若 "SK" 恰是某 ticker
-则误命中。守卫：ticker 词后不得紧贴 CJK 表意字符（海/力/士）——真实用户手打的
-ticker 其后是标点/空格/EOS，不会粘在汉字前。
+**不做句中 ticker 词扫描**——论据里的英文词（AI / HBM / capex / FCF…）凑巧匹配真实
+SEC ticker 会误命中（实测「我持有SK海力士，因为 AI 算力…HBM 需求…」被误判成
+AI / HBM 候选让用户选）。故只认整串精确 + 英文公司名模糊；中文公司名查不到 SEC 英文 title → [] → 问用户。
 """
 from __future__ import annotations
 
 import json
 import os
-import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -52,11 +51,8 @@ def _cache_ttl_days() -> int:
     except ValueError:
         return _CACHE_TTL_DAYS
 
-# CJK 表意字符范围（不含全角标点——后者是分隔符，不应触发守卫）。
+# CJK 表意字符范围（_clean_fuzzy_query 去首尾 CJK 用，让嵌在中文句里的英文公司名露出来）。
 _CJK_IDEO_RANGES = ((0x3400, 0x4DBF), (0x4E00, 0x9FFF), (0xF900, 0xFAFF))
-
-# ASCII 标识符词（含点，兼容 BRK.B / BRK.A）；首字符须为字母。
-_TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*")
 
 
 @dataclass
@@ -165,31 +161,6 @@ def _by_ticker(ticker: str) -> dict | None:
     return None
 
 
-def _ticker_set() -> set[str]:
-    return {r["ticker"] for r in _load_db()}
-
-
-def _scan_ticker_tokens(query: str) -> list[dict]:
-    """在自由文本中找独立 ticker 词（带 CJK 紧贴守卫）。去重。"""
-    found: list[dict] = []
-    seen: set[str] = set()
-    tset = _ticker_set()
-    if not tset:
-        return found
-    for m in _TOKEN_RE.finditer(query):
-        tok = m.group(0).upper()
-        if tok in tset and tok not in seen:
-            end = m.end()
-            # 守卫：词后紧贴 CJK 表意字符 → 视为汉字词的前缀片段（如 SK海力士 的 SK），弃
-            if end < len(query) and _is_cjk_ideo(query[end]):
-                continue
-            r = _by_ticker(tok)
-            if r:
-                found.append(r)
-                seen.add(tok)
-    return found
-
-
 def _fuzzy(query_lc: str, limit: int = 3, threshold: float = 0.5) -> list[dict]:
     from difflib import SequenceMatcher
 
@@ -222,9 +193,10 @@ def resolve(query: str) -> list[TickerMatch]:
     """把用户输入解析为 ticker 候选。
 
     - 整串 == 某 ticker（含点如 BRK.B）→ 1 条
-    - 句中独立 ticker 词 → 命中几个返几条（>1 走问选）
     - 公司名模糊（英文）→ top 3
     - 无匹配 → []（调用方必须问用户，不允许猜）
+
+    不做句中 ticker 词扫描——论据里的英文词（AI/HBM/capex…）凑巧匹配真实 ticker 会误命中。
     """
     q = (query or "").strip()
     if not q:
@@ -237,14 +209,7 @@ def resolve(query: str) -> list[TickerMatch]:
     if r:
         return [TickerMatch(r["ticker"], r["title"], r["cik"])]
 
-    # 2) 句中独立 ticker 词
-    toks = _scan_ticker_tokens(q)
-    if len(toks) == 1:
-        return [TickerMatch(toks[0]["ticker"], toks[0]["title"], toks[0]["cik"])]
-    if len(toks) > 1:
-        return [TickerMatch(t["ticker"], t["title"], t["cik"]) for t in toks]
-
-    # 3) 公司名模糊（英文；中文公司名查不到 SEC 英文 title → []，问用户）
+    # 2) 公司名模糊（英文；中文公司名查不到 SEC 英文 title → []，问用户）
     fq = _clean_fuzzy_query(q)
     if len(fq) >= 3:  # ≥3 防「SK海力士」清出 "sk" 误模糊命中含 sk 的 title
         hits = _fuzzy(fq)

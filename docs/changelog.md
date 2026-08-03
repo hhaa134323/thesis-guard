@@ -2,6 +2,20 @@
 
 > 规则：每次迭代写清楚——依据哪条用户反馈、砍了什么、为什么砍。KILL 判据体检结果也记这里。
 
+## v0.0.14 — 2026-08-03 — 真跑 smoke 发现的 2 个 P0 bug 修（ticker token 扫描误命中 + filer_type LLM 兜底没去干净）
+
+**做了什么**
+- **Bug #1 ticker token 扫描误命中**：`ticker_resolver` 去掉句中 ticker 词扫描（论据里的 AI/HBM/capex 凑巧匹配真实 SEC ticker 会被误当候选）。只剩「整串精确 + 英文公司名模糊」。实测「我持有SK海力士，因为 AI 算力…HBM 需求…」原被误判成 AI(C3.ai)/HBM(Hudbay) 候选让用户选，现 → [] → 通用澄清「说代码或公司名」。删死代码 `_scan_ticker_tokens`/`_ticker_set`/`_TOKEN_RE`/`import re`。+ 回归测试（fixture 加 AI/HBM，验论据词不误命中）。
+- **Bug #2 filer_type LLM 兜底没去干净**：`agent.build_card_from_extraction` 里 `filer_type=None` 时原回退 `ext.filer_type`（LLM 猜的），与 P0 审计「filer_type 不经 LLM」矛盾（卡上 filer=foreign_issuer_20f_6k + open_question 说「待确认」自相矛盾）。改 `filer_type=None → FilerType.OTHER`，卡显示 OTHER + open_question 一致。SKHY 的正确 foreign_issuer_20f_6k 要靠 `fetch_filer_type.py` 加进 `filer_type_lookup.yaml`（确定性），不靠 LLM。
+
+**依据**
+- v0.0.12+v0.0.13 后真跑一轮 SK海力士录入（curl 端到端）发现的 bug。Bug #1 是 P0 token 扫描太激进；Bug #2 是 P0 filer_type 改一半（`_resolve_filer` 去了 model_fallback 但 `build_card_from_extraction` 还回退 ext.filer_type）。
+
+**自测**
+- 79 测试绿（78 + 1 Bug #1 回归测试）。真跑验：start → 通用澄清（无 AI/HBM）；回 SKHY → card.filer_type=other + open_question「待确认」（一致）。
+
+**状态**：2 bug 修好 + 端到端验过。本地提交（push 仍受 B1 GitHub 间歇 reset 阻塞）。
+
 ## v0.0.13 — 2026-08-03 — P2 条件4 确定性 backstop（condition_classify 接进抽取拒绝）
 
 **做了什么**
