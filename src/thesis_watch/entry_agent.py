@@ -32,8 +32,17 @@ SYSTEM_PROMPT = """你是持仓条件录入助手。从用户给的 thesis 描�
 字段：
 - ticker：用户持有的股票代码（如 MCO/HSBC/NVDA/NFLX）。从用户一句话里识别标的；说不清返 null。
 - holding_reason_raw：用户原话买它的理由。**只放买入理由，不混策略表述**（如「策略：逆势、越跌越买」是操作策略不是买入理由，弃）。
-- key_assumptions：关键假设——**只放 moat + 不被颠覆的理由**（结构性主题，文本里有的都抽进）：AI 替代 / 监管 / 利率与久期 / 竞争格局 / 客户集中度。**估值机械（EPS / FCF / DCF / SBC / 倍数口径 / reverse DCF）不进这里**——属于 entry_anchor.note，进不了 anchor 的弃置。
-- mirrors：每条假设对应的镜像破局条件（assumption_text 关联对应假设原文，mirror_text 写破局事件）。
+- key_assumptions：关键假设——**只放 moat + 不被颠覆的理由**（结构性主题）：AI 替代 / 监管 / 利率与久期 / 竞争格局 / 客户集中度。**估值机械（EPS / FCF / DCF / SBC / 倍数口径 / reverse DCF）不进这里**——属于 entry_anchor.note，进不了 anchor 的弃置。
+  **四条合格判定（每条候选假设逐条过，任一不过 → 不写 key_assumptions，改写进 open_questions 向用户追问，宁缺勿凑）**：
+    1. 是关于**这门生意**的判断——不是估值口径、不是计算方法、不是价格形态
+    2. **可能为假**——存在一个可想象的世界状态，使它不成立
+    3. **比用户原话多出信息**——同义复述、拆分扩写、换词重写，一律不合格
+    4. **能对应至少一条带可判定阈值的镜像**——对应不上说明它不可证伪，不合格
+  正例（合格）：「切换成本锁定客户，竞品难蚕食份额」「监管收紧会压缩核心业务利润率」
+  反例（不合格→open_question）：「估值用 P/E 25 倍」（估值口径，违反 1）/「看好服务收入持续高增」（同义复述原话，违反 3）
+  **输入隔离**：抽 key_assumptions 时不得把「加仓价 / 安全边际」类内容当输入——该段只流向 entry_anchor。
+- open_questions：四关拒掉的候选假设改写于此（field=key_assumptions，reason=哪条不过，text=原候选）；条件 3（同义复述）另由 harness 确定性兜底（is_paraphrase）。
+- mirrors：每条假设对应的镜像破局条件。每条须含 assumption_text（关联对应假设原文）+ mirror_text（破局事件）+ **threshold（可判定数值/布尔事件，如 {"metric":"service_rev_yoy","operator":"<","value":0} 或 {"event":"ceo_departed","occurred":false}）+ source_type（sec_filing_field / news_headline / press_release_text / manual）**——P3 任一缺失则该镜像不可判定，harness make_mirror 不生成（转 open_questions），不要给残缺镜像。
 - manual_items：价格图形型等不可自动核对项。
 - filer_type：申报方类型（美国本土 10-K → domestic_10k；20-F/6-K 外国发行人 → foreign_issuer_20f_6k；ETF/ETN/基金/信托 → etf_fund）。
 - ETF/基金类（etf_fund）：无公司层面 10-K/20-F，破条件依赖指数成分/基金公告/价格规模数据，v1 数据源不覆盖 → 所有破条件记为 manual_items（人工自查），不进自动核对。

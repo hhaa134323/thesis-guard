@@ -31,15 +31,36 @@ def test_judgeable_mirror_nonprice():
 
 def test_make_mirror_structure():
     a = Assumption(text="服务收入持续高增")
-    m = make_mirror(a, mirror_text="服务收入同比转负")
+    m = make_mirror(a, mirror_text="服务收入同比转负",
+                    threshold={"metric": "service_rev_yoy", "operator": "<", "value": 0},
+                    source_type="sec_filing_field")
+    assert m is not None
     assert m.layer == ConditionLayer.MIRROR
     assert m.source_assumption_id == a.id
     assert m.judgeable is True
+    assert m.threshold["metric"] == "service_rev_yoy"
+    assert m.source_type == "sec_filing_field"
+
+
+def test_make_mirror_rejects_missing_threshold_or_source():
+    """P3：缺 threshold/source_type → 不生成镜像（返 None），调用方转 open_question。"""
+    a = Assumption(text="服务收入持续高增")
+    base_thresh = {"metric": "service_rev_yoy", "operator": "<", "value": 0}
+    assert make_mirror(a, "服务收入同比转负") is None  # 都缺
+    assert make_mirror(a, "服务收入同比转负",
+                       threshold=base_thresh) is None  # 缺 source_type
+    assert make_mirror(a, "服务收入同比转负",
+                       source_type="sec_filing_field") is None  # 缺 threshold
+    assert make_mirror(a, "服务收入同比转负",
+                       threshold={}, source_type="sec_filing_field") is None  # 空 threshold
 
 
 def test_make_mirror_price_pattern_unjudgeable():
     a = Assumption(text="股价在均线上方运行")
-    m = make_mirror(a, mirror_text="跌破60日均线")
+    m = make_mirror(a, mirror_text="跌破60日均线",
+                    threshold={"event": "break_below_ma60", "occurred": False},
+                    source_type="manual")
+    assert m is not None
     assert m.judgeable is False
 
 
@@ -64,7 +85,9 @@ def test_redline_threshold_override():
 
 def test_build_card_conditions_combines_layers():
     a = Assumption(text="服务收入持续高增")
-    mirror = make_mirror(a, "服务收入同比转负")
+    mirror = make_mirror(a, "服务收入同比转负",
+                         threshold={"metric": "service_rev_yoy", "operator": "<", "value": 0},
+                         source_type="sec_filing_field")
     broken, manual = build_card_conditions(
         assumptions=[a], mirrors=[mirror],
     )

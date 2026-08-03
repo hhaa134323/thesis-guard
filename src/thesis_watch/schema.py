@@ -47,9 +47,17 @@ class Assumption(BaseModel):
 
 
 class MirrorSpec(BaseModel):
-    """LLM 为某条假设生成的镜像条件（Layer 1）。"""
+    """LLM 为某条假设生成的镜像条件（Layer 1）。
+
+    P3：mirror 生成侧强制可判定二元组——threshold + source_type。LLM 须为每条镜像给出：
+    threshold（可判定数值/布尔事件，如 {"metric":"service_rev_yoy","operator":"<","value":0}）
+    + source_type（sec_filing_field / news_headline / press_release_text / manual）。
+    任一缺失 → harness make_mirror 返回 None，转 open_questions（不生成 threshold:null 镜像）。
+    """
     assumption_text: str = Field(description="对应假设原文")
     mirror_text: str = Field(description="镜像破局条件")
+    threshold: dict | None = Field(default=None, description="可判定阈值（数值/布尔事件）")
+    source_type: str = Field(default="", description="阈值判定数据源类型")
 
 
 class ManualCheckItem(BaseModel):
@@ -57,6 +65,18 @@ class ManualCheckItem(BaseModel):
     text: str
     reason: str = "价格图形型"
     cadence: str = "monthly"
+
+
+class OpenQuestion(BaseModel):
+    """抽取阶段被四关拒掉、转交用户追问的项（P2）。
+
+    field：来源字段（默认 key_assumptions）；reason：哪条不过 + 为什么；text：原候选文本。
+    合格的 key_assumption 须同时满足四条（见 docs/thesis-card-schema.md §7 + prompts/entry-agent.md），
+    任一不过 → 不写 key_assumptions，改写为本对象向用户追问，宁缺勿凑。
+    """
+    field: str = "key_assumptions"
+    reason: str = ""
+    text: str = ""
 
 
 class NextVerdict(BaseModel):
@@ -82,6 +102,7 @@ class EntryExtraction(BaseModel):
     ticker: str | None = None
     holding_reason_raw: str
     key_assumptions: list[Assumption] = Field(default_factory=list)
+    open_questions: list[OpenQuestion] = Field(default_factory=list)  # P2：四关拒掉的候选 → 追问
     mirrors: list[MirrorSpec] = Field(default_factory=list)
     manual_items: list[ManualCheckItem] = Field(default_factory=list)
     filer_type: FilerType = FilerType.OTHER
@@ -91,6 +112,6 @@ class EntryExtraction(BaseModel):
 
 __all__ = [
     "FilerType", "ConditionLayer", "PositionCapTier",
-    "Assumption", "MirrorSpec", "ManualCheckItem",
+    "Assumption", "MirrorSpec", "ManualCheckItem", "OpenQuestion",
     "NextVerdict", "EntryAnchor", "EntryExtraction",
 ]

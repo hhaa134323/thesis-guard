@@ -88,4 +88,48 @@ def generate_dialogue(agent: Any, ctx: dict, cfg: dict) -> dict:
                     "status": "other", "error": f"{type(e).__name__}: {str(e)[:200]}"}
 
 
-__all__ = ["DIALOGUE_PROMPT", "DialogueText", "build_dialogue_agent", "generate_dialogue"]
+__all__ = ["DIALOGUE_PROMPT", "DialogueText", "build_dialogue_agent", "generate_dialogue",
+           "classify_confirm_intent", "is_factual_fetchable"]
+
+
+# --------------------------------------------------------------------------- #
+# P1（2026-08-03）：confirm 阶段 intent 分流
+# --------------------------------------------------------------------------- #
+# 复述确认段逐字保真的代价是这个阶段整段不过 LLM，听不懂任何提问 → 答非所问原样返模板。
+# 加一层 intent 分类把提问/修改导出去，仅「确认类」走模板逐字保真。
+# 关键词分类（确定性，不经 LLM）：宁可错判为 question（应答）也不错判为 confirm（套模板）。
+
+_MODIFY_HINTS = ("改成", "改为", "换成", "换为", "改一下", "修改", "更改为", "改成：", "改成:")
+_CONFIRM_HINTS = ("对", "没问题", "入库", "确认", "可以", "好的", "没错", "行，", "ok", "OK")
+_QUESTION_HINTS = ("？", "?", "什么时候", "怎么", "为什么", "是否", "吗", "如何", "多少",
+                   "哪个", "哪些", "哪天", "几号", "什么意思", "是什么", "是不是", "能不能")
+# 一手披露可得的事实（→ 须 sec_edgar 实取附链接，R5；不许 LLM 记忆答）
+_FACTUAL_FETCHABLE_HINTS = ("财报", "季报", "年报", "filing", "10-K", "10-Q", "20-F",
+                            "6-K", "8-K", "下次", "最近一份", "最近", "披露", "申报", "财报日")
+
+
+def classify_confirm_intent(text: str) -> str:
+    """confirm 阶段用户文本 → 'confirm' | 'modify' | 'question'。
+
+    顺序：modify（最具体）→ question（问句标记）→ confirm（确认词）→ 默认 question。
+    默认 question：宁可应答也不套模板——修 P1「答非所问」的核心。
+    """
+    t = (text or "").strip()
+    if not t:
+        return "confirm"
+    if any(h in t for h in _MODIFY_HINTS):
+        return "modify"
+    if any(h in t for h in _QUESTION_HINTS):
+        return "question"
+    if any(h in t for h in _CONFIRM_HINTS):
+        return "confirm"
+    return "question"
+
+
+def is_factual_fetchable(text: str) -> bool:
+    """问题是否关于一手披露可得的事实（下次财报 / 最近 filing 等）。
+
+    是 → 调用方须走 fetchers/sec_edgar.py 实取并附一手链接（R5），取不到明说「查不到」，
+    不允许用模型记忆回答（LLM 给不出 SEC 一手链接）。
+    """
+    return any(h in (text or "") for h in _FACTUAL_FETCHABLE_HINTS)

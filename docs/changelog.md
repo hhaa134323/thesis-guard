@@ -2,6 +2,27 @@
 
 > 规则：每次迭代写清楚——依据哪条用户反馈、砍了什么、为什么砍。KILL 判据体检结果也记这里。
 
+## v0.0.12 — 2026-08-03 — SK 海力士真实运行驱动的六项修复（P0–P5）+ eval §7.1 逐字段
+
+**做了什么**
+- **P0 ticker 确定性解析 + schema 审计**：新增 `src/thesis_watch/fetchers/ticker_resolver.py`（SEC 官方 `company_tickers.json` + 本地缓存≤30d + User-Agent from env + `resolve(query)->list[TickerMatch]`，精确/模糊top3/空；CJK 紧贴守卫防「SK海力士」抽出 SK 误命中）。`entry_loop` 替换 LLM 出 ticker：1→用，>1→列候选问选，0→问，不猜（`ext.ticker` 弃用）。`filer_type` 去 LLM 兜底（查表无→pending）。`docs/thesis-card-schema.md` §6 全字段确定性审计表。验收：输入「我持有SK海力士」→ [] → 问用户 → SKHY，不出 SKHCF。
+- **P1 confirm 阶段 intent 分流**：`dialogue.py` 加 `classify_confirm_intent`（confirm/modify/question 关键词分类）+ `is_factual_fetchable`。`entry_loop` S_CONFIRM 文本输入三路：确认→模板逐字保真；修改→引导右侧点改；提问→ LLM 应答 + SEC `fetch_latest_filing` 实取附一手链接（R5），取不到明说「查不到」+ 重新输出复述确认段拉回。验收：confirm 问「下次财报什么时候」→ 带 SEC 链接答案或查不到 + 重新显示确认卡。
+- **P2 key_assumptions 定义 + 拒绝规则**：`thesis-card-schema.md` §7 + `prompts/entry-agent.md` + `entry_agent.py` SYSTEM_PROMPT 落地四条合格定义（关于这门生意/可能为假/比原话多信息/可对应带阈值镜像）+ 2 正例 2 反例（估值口径误当假设、同义复述）。`schema.py` 加 `OpenQuestion`；`entry_loop` 抽取阶段每条候选过四关（LLM 自判→ext.open_questions）+ 条件3 确定性 backstop `conditions.is_paraphrase`。输入隔离：加仓价/安全边际只流向 entry_anchor。验收：录 MCO/FDS，key_assumptions 不再换词重写，不确定转 open_question。
+- **P3 mirror 强制可判定阈值 + entry_anchor 前端渲染**：`conditions.make_mirror` 强制产 `threshold`+`source_type` 二元组，任一缺→返 None 转 open_questions（禁 threshold:null；与 default_redline_pack 对齐，redline 加 source_type=sec_filing_field）。`schema.MirrorSpec`/`menu.MenuMirror` 加 threshold+source_type；`agent.build_card_from_extraction` 返 `(card, rejected_mirrors)`，entry_loop 转 open_questions。前端 `App.tsx` entry_anchor 始终渲染（method+current+history 折叠，无数据显示「未检出」），重建 static/。
+- **P4 估值锚候选可执行性过滤 + 覆盖率显式**：`menu.py` 加 `filter_executable_mirrors`（condition_classify 驱动，跨主体/第三方/价格图形型 → 不呈现）。`entry_loop._do_menu` 过滤后 `_present_menu`/`_ctx_menu` 显式告知「原本 N 个方向，M 个无法自动核对，已排除（原因）」（PRD §4-A 不静默跳过）。
+- **P5 字段对齐文档 + holding_horizon**：`thesis-card-schema.md` §4 完整对照表（11 台账字段 + 7 card 新增字段，逐行标刻意偏离/已对齐/本轮补，0 遗留）；§1 状态改「已对齐」；§3 改写为已执行结论。`models.ThesisCard` 加 `holding_horizon`（long≥3y/mid 3m-3y/trade≤3m，录入问用户不模型猜→open_question，应影响 mirror 阈值时间尺度）。前端 drawer 加持仓周期 select，重建 static/。
+- **eval-report §7.1 逐字段**：接受率从单一总分改逐字段——mirrors 25/25(0%)、holding_reason_raw 4/5(20%)、key_assumptions 18/25(28%)，合计 47/55=85.45%；95% CI≈[76%,95%]，过线 0.45pp 小于一个字段(1.82pp)。
+- **BLOCKERS B2**：记入 2026-08-02 SK海力士真实运行为首条记录（驱动本六项）。
+- **红线 R9**：脱敏清单新增 `data/thesis.db`（SQLite store）、SK海力士真实运行 transcript/记录、新 transcript 样本。
+
+**依据**
+- 0 号用户首条真实运行记录（SK海力士，2026-08-02）暴露的六类问题，逐条对应 P0–P5。key_assumptions 失败率 28%（W2 盲评 8 条不合格中 7 条）+ 真实运行同义复述两次，根因是字段从未被定义（非 bug）。
+
+**自测**
+- 74 测试绿（基线 42 + 新增 32：ticker_resolver 10 + confirm_intent 9 + key_assumptions 6 + menu_filter 5 + holding_horizon 1 + make_mirror rejection 1）。前端 build → static/（entry_anchor + holding_horizon 渲染）。`make_mirror`/`build_card_from_extraction` 契约更新（返 `BrokenCondition|None` / `(card, rejected)`），test_conditions/test_agent 同步。
+
+**状态**：六项全部落地，等作者目检真实运行（**先重启 serve 拾起新后端代码**：`PYTHONUTF8=1 PYTHONPATH=src python -m thesis_watch.serve`；前端 static/ 已重建）。**不自行重跑 eval**——key_assumptions 定义落地并经作者目检前，重跑无意义。
+
 ## v0.0.11 — 2026-08-02 — 话术生成层 + §2.5 前端 round-1（React+Vite+shadcn）+ W2 盲评模板/collect
 
 **做了什么**

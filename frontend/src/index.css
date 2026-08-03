@@ -5,19 +5,19 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222 15% 12%;
+    --foreground: 215 25% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 222 15% 12%;
-    --primary: 211 74% 51%;            /* #2783DE 主色 */
+    --card-foreground: 215 25% 12%;
+    --primary: 215 18% 38%;             /* 中性偏冷主色：去饱和钢蓝（替 #2783DE 高饱和蓝） */
     --primary-foreground: 0 0% 100%;
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 16% 47%;
-    --border: 214 20% 90%;
-    --softblue: 205 85% 95%;          /* #E5F2FC 软蓝高亮底 */
-    --amber: 28 64% 53%;              /* #D5803B 橙边 */
-    --amber-soft: 30 75% 93%;         /* #FBEBDE 橙底 */
-    --success: 152 39% 45%;           /* #46A171 绿 */
-    --success-soft: 135 25% 93%;      /* #E8F1EC 绿底 */
+    --muted: 210 16% 96%;
+    --muted-foreground: 214 14% 44%;
+    --border: 212 16% 90%;
+    --softblue: 210 16% 94%;          /* 高亮底：冷灰（去蓝点缀，中性偏冷） */
+    --amber: 30 50% 52%;              /* 橙边（拒判）：降饱和 */
+    --amber-soft: 32 60% 94%;         /* 橙底 */
+    --success: 150 32% 40%;           /* 绿（入库）：降饱和 */
+    --success-soft: 140 26% 93%;      /* 绿底 */
     --radius: 0.5rem;
   }
 }
@@ -32,5 +32,5 @@
 .drawer-exit { transform: translateX(100%); }
 .transition-drawer { transition: transform 0.25s ease; }
 
-/* 软蓝高亮「刚填入」标签（验收点 3） */
+/* 冷灰高亮「刚填入」标签（验收点 3） */
 .just-filled { @apply bg-softblue; }

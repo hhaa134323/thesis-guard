@@ -114,7 +114,13 @@ def build_card(user_id: str, ticker: str, filer_type: FilerType,
             continue
         # 镜像文本是系统生成内容，guard 之（R3）
         redline.guard(m.get("text", ""))
-        broken.append(make_mirror(a, m["text"]))
+        m_obj = make_mirror(a, m["text"],
+                            threshold=m.get("threshold"),
+                            source_type=m.get("source_type", ""))
+        if m_obj is not None:
+            broken.append(m_obj)
+        # P3：缺 threshold/source_type → make_mirror 返 None，不生成镜像（通用 build_card 路径略 rejected；
+        #   live 路径 build_card_from_extraction 转 open_questions）
 
     broken.extend(default_redline_pack(user_thresholds, enabled_redlines))
 
@@ -135,11 +141,14 @@ def build_card(user_id: str, ticker: str, filer_type: FilerType,
 def build_card_from_extraction(ext, *, user_id: str, ticker: str,
                                tier, filer_type=None,
                                user_thresholds: dict | None = None,
-                               enabled_redlines: list[str] | None = None) -> ThesisCard:
-    """EntryExtraction（pydantic LLM 输出，schema.py）→ ThesisCard（dataclass 存储，models.py）。
+                               enabled_redlines: list[str] | None = None
+                               ) -> tuple[ThesisCard, list[dict]]:
+    """EntryExtraction（pydantic LLM 输出，schema.py）→ (ThesisCard, rejected_mirrors)。
 
     录入 loop 把单次 extract() 的结构化输出落成卡片：
     - 镜像文本经 redline.guard（R3：系统生成内容）；
+    - **P3：mirror 缺 threshold/source_type → make_mirror 返 None，不进 broken_conditions，
+      收进 rejected_mirrors 返回，由 entry_loop 转 open_questions（不生成 threshold:null 镜像）**；
     - Layer 2 红线默认包叠加（conditions.default_redline_pack，可去重）；
     - 价格图形型兜底进 manual_check_items（is_price_pattern）；
     - entry_anchor / next_verdict / position_cap_tier 落确认卡字段；
@@ -150,13 +159,21 @@ def build_card_from_extraction(ext, *, user_id: str, ticker: str,
                   for a in (ext.key_assumptions or [])] if ext is not None else []
 
     broken: list[BrokenCondition] = []
+    rejected: list[dict] = []  # P3：缺 threshold/source_type 的镜像 → open_question
     for m in (ext.mirrors or []) if ext is not None else []:
         a = next((x for x in assumptions if x.text == m.assumption_text), None)
         if a is None:
             a = Assumption(text=m.assumption_text)
             assumptions.append(a)
         redline.guard(m.mirror_text)
-        broken.append(make_mirror(a, m.mirror_text))
+        m_obj = make_mirror(a, m.mirror_text,
+                            threshold=m.threshold, source_type=m.source_type)
+        if m_obj is not None:
+            broken.append(m_obj)
+        else:
+            rejected.append({"field": "mirrors",
+                "reason": "缺 threshold/source_type，镜像不可判定（P3）",
+                "text": m.mirror_text})
     broken.extend(default_redline_pack(user_thresholds, enabled_redlines))
 
     manual = [ManualCheckItem(text=m.text, reason=m.reason, cadence=m.cadence)
@@ -177,7 +194,7 @@ def build_card_from_extraction(ext, *, user_id: str, ticker: str,
                              date=ext.next_verdict.date,
                              source_note=ext.next_verdict.source_note)
 
-    return ThesisCard(
+    card = ThesisCard(
         user_id=user_id, ticker=ticker, filer_type=ft,
         holding_reason_raw=raw,
         key_assumptions=assumptions,
@@ -187,6 +204,7 @@ def build_card_from_extraction(ext, *, user_id: str, ticker: str,
         position_cap_tier=tier.value if tier is not None else None,
         confirmation=Confirmation(paraphrased=True, confirmed_by_user=False),
     )
+    return card, rejected
 
 
 def render_summary(card: ThesisCard) -> str:
@@ -232,7 +250,9 @@ def mock_extractor(conversation: list[dict]) -> ExtractionResult:
     return ExtractionResult(
         holding_reason_raw=raw,
         assumptions=[a],
-        mirrors=[{"assumption_id": a.id, "text": "服务收入同比转负"}],
+        mirrors=[{"assumption_id": a.id, "text": "服务收入同比转负",
+                  "threshold": {"metric": "service_revenue_yoy", "operator": "<", "value": 0},
+                  "source_type": "sec_filing_field"}],
         manual_items=["跌破60日均线"],
     )
 
@@ -283,8 +303,12 @@ def hsbc_glm52_extractor(conversation: list[dict]) -> ExtractionResult:
         holding_reason_raw="按照年来看，它的股价表现稳健上升的形状",
         assumptions=[a],
         mirrors=[
-            {"assumption_id": a.id, "text": "宣布战略转向、重组叫停，或亚洲核心资产被剥离"},
-            {"assumption_id": a.id, "text": "CEO / CFO 突然离职"},
+            {"assumption_id": a.id, "text": "宣布战略转向、重组叫停，或亚洲核心资产被剥离",
+             "threshold": {"event": "strategic_pivot_announced", "occurred": False},
+             "source_type": "sec_filing_field"},
+            {"assumption_id": a.id, "text": "CEO / CFO 突然离职",
+             "threshold": {"roles": ["CEO", "CFO"], "lookback_days": 30},
+             "source_type": "sec_filing_field"},
         ],
         manual_items=["价格「形状」：年线"],
     )

@@ -17,6 +17,7 @@ interface CardT {
   card_id: string; ticker: string; filer_type: string; holding_reason_raw: string;
   key_assumptions: Assumption[]; broken_conditions: Cond[]; manual_check_items: ManualItem[];
   entry_anchor: Anchor | null; next_verdict: NextVerdict | null; position_cap_tier: string | null;
+  holding_horizon: string | null;
   confirmation: { confirmed_by_user: boolean };
 }
 interface MenuT { assumptions: string[]; mirrors: { assumption: string; mirror_text: string }[]; }
@@ -323,17 +324,30 @@ export default function App() {
                   </DrawerField>
                 ) : null}
 
-                {card.entry_anchor ? (
-                  <DrawerField label="录入估值锚" hint="锚型是估值口径（怎么算这个倍数的）" justFilled={justFilled.has("entry_anchor")}>
-                    <div className="flex gap-1 flex-wrap">
-                      <select className={inputCls} defaultValue={card.entry_anchor.anchor_type} onChange={(e) => setEdit("entry_anchor.anchor_type", e.target.value)}>
-                        {ANCHOR_TYPES.map((t) => <option key={t} value={t}>{ANCHOR_CN[t] || t}</option>)}
-                      </select>
-                      <input type="number" step="0.1" className={`${inputCls} w-20`} defaultValue={card.entry_anchor.anchor_value ?? ""} placeholder="倍数" onChange={(e) => setEdit("entry_anchor.anchor_value", e.target.value ? parseFloat(e.target.value) : null)} />
-                      <input className={inputCls} defaultValue={card.entry_anchor.note} placeholder="补充" onChange={(e) => setEdit("entry_anchor.note", e.target.value)} />
+                <DrawerField label="录入估值锚" hint="锚型是估值口径（怎么算这个倍数的）；有数据必须显示，无数据显示未检出" justFilled={justFilled.has("entry_anchor")}>
+                  {card.entry_anchor ? (
+                    <div className="space-y-1">
+                      <div className="text-xs text-muted-foreground">
+                        方法：<b>{ANCHOR_CN[card.entry_anchor.anchor_type] || card.entry_anchor.anchor_type || "—"}</b>
+                        {card.entry_anchor.anchor_value != null ? <>　当前读数：<b>{card.entry_anchor.anchor_value}</b>{card.entry_anchor.note ? <span className="text-muted-foreground">（{card.entry_anchor.note}）</span> : null}</> : null}
+                      </div>
+                      <div className="flex gap-1 flex-wrap">
+                        <select className={inputCls} defaultValue={card.entry_anchor.anchor_type} onChange={(e) => setEdit("entry_anchor.anchor_type", e.target.value)}>
+                          {ANCHOR_TYPES.map((t) => <option key={t} value={t}>{ANCHOR_CN[t] || t}</option>)}
+                        </select>
+                        <input type="number" step="0.1" className={`${inputCls} w-20`} defaultValue={card.entry_anchor.anchor_value ?? ""} placeholder="倍数" onChange={(e) => setEdit("entry_anchor.anchor_value", e.target.value ? parseFloat(e.target.value) : null)} />
+                        <input className={inputCls} defaultValue={card.entry_anchor.note} placeholder="补充" onChange={(e) => setEdit("entry_anchor.note", e.target.value)} />
+                      </div>
+                      {/* history 折叠（v0.1 单读数；多时点 history 见 schema §5，待后端落地） */}
+                      <details className="text-xs text-muted-foreground">
+                        <summary>历史读数</summary>
+                        <div className="pl-3">（v0.1 仅当前读数；多时点 history 见 schema §5，待后端落地）</div>
+                      </details>
                     </div>
-                  </DrawerField>
-                ) : null}
+                  ) : (
+                    <div className="text-sm text-muted-foreground">未检出（文本含加仓价 / 安全边际时自动抽取）</div>
+                  )}
+                </DrawerField>
 
                 {card.next_verdict ? (
                   <DrawerField label="下次裁判日" hint="下一个能证伪 thesis 的事件（不等于复盘日）" justFilled={justFilled.has("next_verdict")}>
@@ -346,6 +360,15 @@ export default function App() {
 
                 <DrawerField label="仓位上限档" hint={TIER_NOTE}>
                   <div className="text-sm font-semibold">{card.position_cap_tier || "—（查表无，待确认）"}{card.position_cap_tier ? <span className="text-xs text-muted-foreground ml-1">（柔性上限）</span> : null}</div>
+                </DrawerField>
+
+                <DrawerField label="持仓周期" hint="必须由你确认（不模型猜）；影响 mirror 阈值时间尺度：long→季频 / mid→季报 / trade→日频或 trailing stop">
+                  <select className={inputCls} defaultValue={card.holding_horizon ?? ""} onChange={(e) => setEdit("holding_horizon", e.target.value)}>
+                    <option value="">— 待你确认 —</option>
+                    <option value="long">long（≥3y，noise 阈值最高）</option>
+                    <option value="mid">mid（3m-3y，看 thesis + 季报，不止损）</option>
+                    <option value="trade">trade（≤3m，可用 trailing stop）</option>
+                  </select>
                 </DrawerField>
 
                 {openQs.length ? <div className="text-xs text-amber bg-amber-soft rounded p-2 my-2">⚠️ {openQs.map((q) => q.reason).join(" / ")}</div> : null}

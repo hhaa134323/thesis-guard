@@ -99,3 +99,15 @@ def test_roundtrip_stable_id():
     card2 = from_dict(ThesisCard, to_dict(card))
     assert card2.card_id == card.card_id
     assert card2.key_assumptions[0].id == card.key_assumptions[0].id
+
+
+def test_holding_horizon_roundtrip():
+    """P5：持仓周期字段（long/mid/trade，用户自报）serde。"""
+    card = ThesisCard(user_id="beta1", ticker="MCO",
+                      holding_reason_raw="评级双寡头", holding_horizon="long")
+    d = to_dict(card)
+    assert d["holding_horizon"] == "long"
+    card2 = from_dict(ThesisCard, d)
+    assert card2.holding_horizon == "long"
+    # 缺省 None
+    assert to_dict(ThesisCard(user_id="b", ticker="X", holding_reason_raw="r"))["holding_horizon"] is None

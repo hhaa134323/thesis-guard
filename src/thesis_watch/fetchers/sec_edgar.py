@@ -182,4 +182,53 @@ def fetch_filings(tickers: list[str], lookback_hours: int,
     return events
 
 
-__all__ = ["FilingEvent", "fetch_filings", "forms_for_filer", "FORM_TYPE_LABELS", "USER_AGENT"]
+def fetch_latest_filing(ticker: str, user_agent: str | None = None,
+                        form_types: list[str] | tuple[str, ...] | None = None
+                        ) -> FilingEvent | None:
+    """取某 ticker 最近一份 SEC filing（P1：confirm 阶段一手事实问答用，R5 附一手链接）。
+
+    命中 filer_type_lookup 的 CIK → 拉 submissions recent → 取 form_types 内最新一条
+    （不限 lookback；recent 本身倒序）。form_types=None → 任意表单。
+    无 CIK / 网络失败 → None（调用方须明说「查不到」，不猜，R5）。
+    """
+    if not ticker:
+        return None
+    ua = user_agent or USER_AGENT
+    wanted = set(form_types) if form_types is not None else None
+    try:
+        ticker_map = _load_ticker_map(ua)
+    except Exception:
+        return None
+    cik = ticker_map.get(ticker.upper())
+    if cik is None:
+        return None
+    try:
+        resp = requests.get(_submissions_url(cik), headers={"User-Agent": ua}, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception:
+        return None
+    recent = data.get("filings", {}).get("recent", {})
+    forms = recent.get("form", [])
+    accs = recent.get("accessionNumber", [])
+    dates = recent.get("filingDate", [])
+    descs = recent.get("primaryDocDescription", [])
+    best: FilingEvent | None = None
+    for i, form in enumerate(forms):
+        if wanted is not None and form not in wanted:
+            continue
+        filed_date = dates[i] if i < len(dates) else ""
+        acc_no = accs[i] if i < len(accs) else ""
+        desc = descs[i] if i < len(descs) else ""
+        filed_at = _parse_filing_time("", filed_date)  # 用 filingDate（acceptance 无精确到时）
+        if filed_at is None:
+            continue
+        if best is None or filed_at > best.filed_at:
+            url = _filing_index_url(cik, acc_no)
+            title = _build_title(form, desc)
+            best = FilingEvent(ticker.upper(), form, None, title, url, filed_at)
+    return best
+
+
+__all__ = ["FilingEvent", "fetch_filings", "fetch_latest_filing",
+           "forms_for_filer", "FORM_TYPE_LABELS", "USER_AGENT"]

@@ -42,22 +42,52 @@ def judgeable(text: str) -> bool:
     return not is_price_pattern(text)
 
 
+def is_paraphrase(cand: str, raw: str, *, threshold: float = 0.8) -> bool:
+    """key_assumption 合格条件 3 的确定性 backstop（P2）：
+    「比用户原话多出信息」——同义复述/拆分扩写/换词重写一律不合格。
+
+    启发式：候选与 holding_reason_raw 高度相似（子串包含或 difflib ratio ≥ threshold）
+    → 疑未多出信息，判不合格。条件 1/2/4 是语义判断（LLM 抽取时自判 + 进 open_questions），
+    条件 3 在此加确定性兜底，专治 W2 8 条不合格中 7 条的「同义复述」。
+    """
+    if not cand or not raw:
+        return False
+    c = cand.strip().lower()
+    r = raw.strip().lower()
+    if not c or not r:
+        return False
+    if c in r or r in c:
+        return True  # 子串/包含 → 高度相似
+    from difflib import SequenceMatcher
+    return SequenceMatcher(None, c, r).ratio() >= threshold
+
+
 def _new_id() -> str:
     return uuid.uuid4().hex
 
 
 def make_mirror(assumption: Assumption, mirror_text: str,
-                historical_example: HistoricalExample | None = None) -> BrokenCondition:
+                historical_example: HistoricalExample | None = None,
+                *, threshold: dict | None = None,
+                source_type: str = "") -> BrokenCondition | None:
     """把一条假设的镜像条件构造为 BrokenCondition（Layer 1）。
 
+    P3：mirror 生成侧强制可判定二元组——threshold（可判定数值/布尔事件）+ source_type
+    （sec_filing_field / news_headline / press_release_text / manual）。任一缺失 → 返回 None，
+    调用方转 open_questions 向用户追问。**不允许生成 threshold:null 的镜像**
+    （与 default_redline_pack 的硬编码阈值对齐，同一份代码不再两套标准）。
     mirror_text 由录入 Agent（LLM）生成；本函数负责结构与可判定性标注。
     """
+    if not threshold or not source_type:
+        return None
     return BrokenCondition(
         id=_new_id(),
         layer=ConditionLayer.MIRROR,
         source_assumption_id=assumption.id,
         text=mirror_text,
         judgeable=judgeable(mirror_text),
+        threshold=dict(threshold),
+        source_type=source_type,
         historical_example=historical_example or HistoricalExample(),
         status=CondStatus.UNTRIGGERED,
     )
@@ -133,6 +163,7 @@ def default_redline_pack(thresholds: dict | None = None,
             text=d["text"],
             judgeable=True,
             threshold=merged,
+            source_type="sec_filing_field",  # P3：红线阈值由 SEC filing 字段判定
             historical_example=d["historical_example"],
             status=CondStatus.UNTRIGGERED,
         ))
@@ -146,11 +177,12 @@ def build_card_conditions(assumptions: list[Assumption],
                           enabled_redlines: list[str] | None = None) -> tuple[list[BrokenCondition], list[ManualCheckItem]]:
     """组装一张卡的破局条件 + 人工自查项。
 
-    - mirrors：录入 Agent 已为各假设生成的镜像候选（可能为空）
+    - mirrors：录入 Agent 已为各假设生成的镜像候选（P3：缺 threshold/source_type 的已被
+      make_mirror 返回 None，此处过滤；调用方应转 open_questions）
     - 额外追加默认红线包（用户阈值可调、可关停，见 default_redline_pack）
     - 返回 (broken_conditions, manual_check_items)
     """
-    broken: list[BrokenCondition] = list(mirrors)
+    broken: list[BrokenCondition] = [m for m in list(mirrors) if m is not None]
     broken.extend(default_redline_pack(user_thresholds, enabled_redlines))
     if extra_redlines:
         broken.extend(extra_redlines)

@@ -129,6 +129,8 @@ class BrokenCondition:
     # Layer 2 (redline)
     template: RedlineTemplate | None = None
     threshold: dict[str, typing.Any] = dataclasses.field(default_factory=dict)
+    # P3：阈值将来由什么数据判定（mirror 生成侧强制；redline 默认 sec_filing_field）
+    source_type: str = ""
 
 
 @dataclasses.dataclass
@@ -188,6 +190,7 @@ class ThesisCard:
     entry_anchor: EntryAnchorData | None = None
     next_verdict: NextVerdictData | None = None
     position_cap_tier: str | None = None
+    holding_horizon: str | None = None  # P5：持仓周期 long(≥3y)/mid(3m-3y)/trade(≤3m)，用户自报不模型猜
     confirmation: Confirmation = dataclasses.field(default_factory=Confirmation)
     created_at: str = dataclasses.field(default_factory=_now_iso)
     updated_at: str = dataclasses.field(default_factory=_now_iso)

@@ -26,8 +26,10 @@ secrets/
 *.key
 *.pem
 
-# Data / DB
-data/
+# Data / DB（R9 脱敏对齐：data/*.db / data/company_tickers.json 镜像 R9 清单——
+# .gitignore 是 R9 的机械执行手段，清单加本地文件就同步加一条；不用 data/ 整个目录）
+data/*.db
+data/company_tickers.json
 *.db
 *.sqlite
 *.sqlite3
@@ -55,4 +57,5 @@ evals/w2_converged_cards.yaml  # W2 生成（含真实 thesis，可复现）
 
 # Playwright 截图（测试产物，含真实 thesis，可复现，不提交）
 screenshots/
+shots/
 frontend/screenshots/

@@ -17,10 +17,12 @@ from typing import Any
 from .schema import EntryExtraction
 from .entry_agent import build_agent, extract
 from .menu import build_menu_agent, generate_menu
-from .dialogue import build_dialogue_agent, generate_dialogue
+from .dialogue import (build_dialogue_agent, generate_dialogue,
+                       classify_confirm_intent, is_factual_fetchable)
 from .agent import build_card_from_extraction
 from .tier_map import lookup_tier
 from .conditions import is_price_pattern
+from .fetchers.ticker_resolver import resolve as resolve_ticker
 from . import redline
 from .models import ThesisCard, to_dict
 
@@ -78,6 +80,8 @@ class EntrySession:
     _dialogue_agent: Any = None
     _filer: Any = None
     _filer_src: str | None = None
+    _ticker_candidates: Any = None  # P0：resolve 返回 >1 候选时暂存，供澄清文案列出
+    _excluded_mirrors: Any = None  # P4：可执行性过滤剔除的 B 候选，覆盖率显式呈现用
 
     def _agents(self) -> tuple[Any, Any, Any]:
         if self._extract_agent is None:
@@ -89,8 +93,12 @@ class EntrySession:
         return self._extract_agent, self._menu_agent, self._dialogue_agent
 
     def _resolve_filer(self, ext):
-        """filer_type 确定性查表（filer_type_lookup.yaml）→ 模型兜底 → 待确认。
-        返回 (models.FilerType | None, src: 'lookup'|'model_fallback'|'pending')。"""
+        """filer_type 确定性查表（filer_type_lookup.yaml）→ 无则 pending。
+
+        P0 schema 审计：filer_type 是事实（SEC 申报方类型），不经 LLM——
+        查表命中→用；查表无→pending（open_question 问用户），不模型兜底。
+        返回 (models.FilerType | None, src: 'lookup'|'pending')。
+        """
         from .models import FilerType as ModelFilerType
         lookup = _load_filer_lookup()
         ft_str = lookup.get(self.ticker)
@@ -99,17 +107,12 @@ class EntrySession:
                 return ModelFilerType(ft_str), "lookup"
             except ValueError:
                 pass
-        if ext is not None and ext.filer_type and ext.filer_type.value != "other":
-            return ModelFilerType(ext.filer_type.value), "model_fallback"
         return None, "pending"
 
     def _filer_open_question(self, src: str) -> None:
-        if src == "model_fallback":
+        if src == "pending":
             self.open_questions.append({"field": "filer_type",
-                "reason": f"filer_type 模型兜底（查表无 {self.ticker}），建议复核"})
-        elif src == "pending":
-            self.open_questions.append({"field": "filer_type",
-                "reason": f"filer_type 待确认（查表无 {self.ticker} + 模型未给确定性类型）"})
+                "reason": f"filer_type 待确认（查表无 {self.ticker}）"})
 
     # ------------------------------------------------------------------ #
     # 对话入口
@@ -125,26 +128,39 @@ class EntrySession:
             a = redline.guard(f"抽取失败（{res.get('status')}）。可重试，或在右侧确认卡里手填。")
             self.conversation.append({"role": "assistant", "text": a})
             return self._view(assistant=a)
-        # 单输入框：ticker 从一句话抽取（ext.ticker）或 override（W2 eval 传 GT ticker）；识别不出 → 追问
-        resolved = (ticker_override or (self.ext.ticker if self.ext else None) or "").strip().upper()
-        if not resolved:
-            self.stage = S_TICKER_CLARIFY
-            dlg = generate_dialogue(da, self._ctx_ticker_clarify(), self.cfg)
-            a = dlg["text"] if dlg["ok"] and dlg["text"].strip() else "你持有的是哪只？说代码（如 HSBC）。"
-            a = redline.guard(a)
-            self.conversation.append({"role": "assistant", "text": a})
-            return self._view(assistant=a)
-        self.ticker = resolved
-        return self._after_ticker_resolved(is_price_pattern(text))
+        # P0：ticker 确定性解析（SEC 官方表，不经 LLM）。
+        # ticker_override = W2 eval 传 GT ticker（信任，不查）；否则 resolve(user text)。
+        # 1 命中 → 用；>1 / 0 → S_TICKER_CLARIFY（多候选列出，零候选追问），不猜。
+        if ticker_override:
+            self.ticker = ticker_override.strip().upper()
+            return self._after_ticker_resolved(is_price_pattern(text))
+        matches = resolve_ticker(text)
+        if len(matches) == 1:
+            self.ticker = matches[0].ticker
+            return self._after_ticker_resolved(is_price_pattern(text))
+        self._ticker_candidates = matches
+        self.stage = S_TICKER_CLARIFY
+        dlg = generate_dialogue(da, self._ctx_ticker_clarify(), self.cfg)
+        a = dlg["text"] if dlg["ok"] and dlg["text"].strip() else self._ticker_clarify_text()
+        a = redline.guard(a)
+        self.conversation.append({"role": "assistant", "text": a})
+        return self._view(assistant=a)
 
     def _after_ticker_resolved(self, price_hit: bool) -> dict:
         """ticker 解析后：建卡 + 复述呈现（start 与 S_TICKER_CLARIFY turn 共用）。"""
         self.stage = S_EXTRACTED
         self._filer, self._filer_src = self._resolve_filer(self.ext)
-        self.card_draft = build_card_from_extraction(
+        self.card_draft, _rejected_mirrors = build_card_from_extraction(
             self.ext, user_id=self.user_id, ticker=self.ticker,
             tier=lookup_tier(self.ticker), filer_type=self._filer)
+        for r in _rejected_mirrors:  # P3：缺 threshold/source_type 的镜像 → open_question
+            self.open_questions.append(r)
         self._filer_open_question(self._filer_src)
+        self._apply_key_assumption_rejection()  # P2：四关拒绝规则
+        # P5：holding_horizon 必须问用户（不模型猜）→ 未填则 open_question 提示
+        if not (self.card_draft and self.card_draft.holding_horizon):
+            self.open_questions.append({"field": "holding_horizon",
+                "reason": "持仓周期待你确认：long(≥3y) / mid(3m-3y) / trade(≤3m)——影响 mirror 阈值时间尺度"})
         _, _, da = self._agents()
         dlg = generate_dialogue(da, self._ctx_extracted(price_hit), self.cfg)
         a = dlg["text"] if dlg["ok"] and dlg["text"].strip() else self._present_extraction(price_hit)
@@ -152,19 +168,46 @@ class EntrySession:
         self.conversation.append({"role": "assistant", "text": a})
         return self._view(assistant=a)
 
+    def _apply_key_assumption_rejection(self) -> None:
+        """P2：key_assumptions 合格判定落地（四条，缺一不合格→open_question，宁缺勿凑）。
+
+        1) LLM 抽取时已自判四关、不过的改写进 ext.open_questions → 合并进 session.open_questions。
+        2) 条件3（同义复述）确定性 backstop：card.key_assumptions 里与原话高度相似的剔出，转 open_questions
+           （专治 W2 8 条不合格中 7 条的同义复述；条件 1/2/4 是语义判断，由 LLM 抽取时自判）。
+        """
+        if self.ext is not None:
+            for oq in (self.ext.open_questions or []):
+                self.open_questions.append(
+                    {"field": oq.field, "reason": oq.reason, "text": oq.text})
+        if self.card_draft is None or self.ext is None:
+            return
+        from .conditions import is_paraphrase
+        raw = (self.ext.holding_reason_raw or "")
+        kept: list = []
+        for a in self.card_draft.key_assumptions:
+            if is_paraphrase(a.text, raw):
+                self.open_questions.append({
+                    "field": "key_assumptions",
+                    "reason": "违反条件3（同义复述）：与原话高度相似，疑未多出信息",
+                    "text": a.text})
+            else:
+                kept.append(a)
+        self.card_draft.key_assumptions = kept
+
     def turn(self, payload: dict) -> dict:
         text = (payload.get("text") or "").strip()
         self.metrics["turns"] += 1
         if self.stage == S_TICKER_CLARIFY:
-            # 单输入框兜底：用户回的应是代码（如 HSBC）
-            resolved = (text or "").strip().upper()
+            # P0：用户回的话过 SEC 确定性解析；1→用，>1→列候选再问，0→追问，不猜
             self.conversation.append({"role": "user", "text": text})
-            if not resolved:
-                a = redline.guard("没识别到代码。再说一次，比如 HSBC。")
-                return self._view(assistant=a)
-            self.ticker = resolved
-            return self._after_ticker_resolved(
-                is_price_pattern(self.conversation[0]["text"] if self.conversation else ""))
+            matches = resolve_ticker(text or "")
+            if len(matches) == 1:
+                self.ticker = matches[0].ticker
+                return self._after_ticker_resolved(
+                    is_price_pattern(self.conversation[0]["text"] if self.conversation else ""))
+            self._ticker_candidates = matches
+            a = redline.guard(self._ticker_clarify_text())
+            return self._view(assistant=a)
         if self.stage == S_EXTRACTED:
             if any(h in text for h in UNDECIDED_HINTS) or payload.get("request_menu"):
                 self.conversation.append({"role": "user", "text": text or "无法确定"})
@@ -185,9 +228,66 @@ class EntrySession:
         if self.stage == S_CONFIRM:
             edits = payload.get("edits") or {}
             if edits:
+                # 结构化编辑（右侧确认卡点改，前端发 edits 字段）
                 self._apply_edits(edits)
-            return self._view(assistant=redline.guard("（在右侧点「确认入库」即落库。）"))
+                self.conversation.append({"role": "user", "text": f"（编辑字段：{list(edits)}）"})
+                a = redline.guard("（已按修改更新右侧确认卡。点「确认入库」即落库。）")
+                self.conversation.append({"role": "assistant", "text": a})
+                return self._view(assistant=a)
+            # P1：文本输入按 intent 分流（确认→模板逐字保真 / 修改→引导点改 / 提问→应答+拉回确认）
+            self.conversation.append({"role": "user", "text": text})
+            intent = classify_confirm_intent(text)
+            if intent == "confirm":
+                a = "好，按上面的做成确认卡（右侧）。可直接点改字段，确认后入库。"
+            elif intent == "modify":
+                a = self._modify_guide_text()
+            else:  # question
+                a = self._answer_confirm_question(text)
+            a = redline.guard(a)
+            self.conversation.append({"role": "assistant", "text": a})
+            return self._view(assistant=a)
         return self._view(assistant=redline.guard("（当前阶段无动作。）"))
+
+    def _modify_guide_text(self) -> str:
+        """P1：modify 类文本 → 引导用右侧确认卡点改（字段可点改是既定修改流程）。
+        自由文本→结构化 edits 的语义解析后置（v0.0.12 不做，避免误改字段）。"""
+        return ("要改字段请在右侧确认卡点改（可改：ticker / holding_reason_raw / "
+                "entry_anchor / next_verdict / position_cap_tier）。改完点「确认入库」即落库。")
+
+    def _answer_confirm_question(self, text: str) -> str:
+        """P1：confirm 阶段提问类应答。
+
+        - 一手披露可得的事实（财报/filing 日）→ fetchers/sec_edgar 实取 + 一手链接（R5）；
+          取不到明说「查不到」，不用模型记忆答。
+        - 其余 → dialogue LLM 应答（基于卡内容，不编造、不预测、不给建议）。
+        答完附复述确认段（模板保真）把用户拉回确认态。
+        """
+        suffix = "\n\n（确认卡见右侧，点「确认入库」即落库。）"
+        if is_factual_fetchable(text):
+            from .fetchers.sec_edgar import fetch_latest_filing
+            # 财报类问题取最近一份定期/重大事项 filing（10-K/10-Q/20-F/6-K + 修订）
+            f = fetch_latest_filing(self.ticker,
+                                    form_types=["10-K", "10-Q", "20-F", "6-K",
+                                                "10-K/A", "10-Q/A", "20-F/A", "6-K/A"])
+            if f is not None:
+                return (f"最近一份 SEC filing：{f.form_type}，{f.filed_at.strftime('%Y-%m-%d')}。"
+                        f"一手链接：{f.url}\n（下次财报日期 SEC 不预披露，需关注公司 8-K 公告。）" + suffix)
+            return (f"查不到 {self.ticker or '该标的'} 的 SEC 财报 filing"
+                    f"（CIK 未在 filer_type_lookup，或网络失败）。" + suffix)
+        # 非一手披露事实 → dialogue LLM 应答
+        _, _, da = self._agents()
+        ctx = {
+            "stage": "confirm_question", "ticker": self.ticker,
+            "user_question": text,
+            "card": to_dict(self.card_draft) if self.card_draft else None,
+            "instruction": "用户在确认阶段问了一个问题（非确认非修改）。基于已抽取卡内容回答；"
+            "不编造、不预测、不给买卖/仓位建议；一手披露事实（财报日等）由系统另路取数，你别猜；"
+            "答完不再追问，末尾把用户拉回确认（点确认入库）。",
+        }
+        dlg = generate_dialogue(da, ctx, self.cfg)
+        if dlg["ok"] and dlg["text"].strip():
+            return dlg["text"].strip() + suffix
+        return "（这条我没法确定。可在右侧确认卡手填，或点「确认入库」。）" + suffix
 
     def confirm(self, edits: dict | None = None) -> dict:
         if self.card_draft is None:
@@ -219,6 +319,10 @@ class EntrySession:
             self.conversation.append({"role": "assistant", "text": a})
             return self._view(assistant=a)
         self.menu = r["menu"]
+        # P4：可执行性过滤——不呈现无法自动核对的 B 候选；覆盖率显式告知（PRD §4-A 不静默跳过）
+        from .menu import filter_executable_mirrors
+        kept_b, self._excluded_mirrors = filter_executable_mirrors(self.menu.candidate_mirrors)
+        self.menu.candidate_mirrors = kept_b
         self.stage = S_MENU
         dlg = generate_dialogue(da, self._ctx_menu(), self.cfg)
         a = dlg["text"] if dlg["ok"] and dlg["text"].strip() else self._present_menu()
@@ -239,16 +343,19 @@ class EntrySession:
         new_ext = EntryExtraction(
             holding_reason_raw=self.ext.holding_reason_raw if self.ext else "",
             key_assumptions=[Assumption(text=x) for x in chosen_a],
-            mirrors=[MirrorSpec(assumption_text=b.assumption, mirror_text=b.mirror_text) for b in chosen_b],
+            mirrors=[MirrorSpec(assumption_text=b.assumption, mirror_text=b.mirror_text,
+                                threshold=b.threshold, source_type=b.source_type) for b in chosen_b],
             manual_items=self.ext.manual_items if self.ext else [],
             filer_type=self.ext.filer_type if self.ext else None,
             next_verdict=self.ext.next_verdict if self.ext else None,
             entry_anchor=self.ext.entry_anchor if self.ext else None,
         )
         self.ext = new_ext
-        self.card_draft = build_card_from_extraction(
+        self.card_draft, _rejected_mirrors = build_card_from_extraction(
             new_ext, user_id=self.user_id, ticker=self.ticker,
             tier=lookup_tier(self.ticker), filer_type=self._filer)
+        for r in _rejected_mirrors:  # P3：缺 threshold/source_type 的镜像 → open_question
+            self.open_questions.append(r)
         self._consistency_check(chosen_a, chosen_b)
         self.stage = S_CONFIRM
         _, _, da = self._agents()
@@ -308,12 +415,34 @@ class EntrySession:
                 c.next_verdict.source_note = nv["source_note"]
         if "position_cap_tier" in edits:
             c.position_cap_tier = edits["position_cap_tier"]
+        if "holding_horizon" in edits:
+            raw_hh = edits["holding_horizon"]
+            hh = (raw_hh or "").strip().lower() if isinstance(raw_hh, str) else ""
+            if hh in ("long", "mid", "trade"):
+                c.holding_horizon = hh
+            elif hh:
+                self.open_questions.append({"field": "holding_horizon",
+                    "reason": f"holding_horizon 非法值「{hh}」，须 long/mid/trade"})
+
+    def _ticker_clarify_text(self) -> str:
+        """S_TICKER_CLARIFY 兜底文案（dialogue LLM 调用失败时用）。
+        多候选列出 ticker+全名让用户挑或直接打代码；零候选追问。"""
+        cands = self._ticker_candidates or []
+        if len(cands) > 1:
+            lines = ["没唯一命中，候选（说哪个，或直接打代码）："]
+            for i, c in enumerate(cands, 1):
+                lines.append(f"  {i}) {c.ticker} — {c.title}")
+            return "\n".join(lines)
+        return "你持有的是哪只？说代码（如 HSBC/SKHY）或公司名。"
 
     def _ctx_ticker_clarify(self) -> dict:
         return {
             "stage": "ticker_clarify",
             "ticker": self.ticker or None,
-            "instruction": "用户说的标的识别不出代码（或没说）。追问一句：你持有的是哪只？让用户回代码（如 HSBC）。不要替猜。",
+            "candidates": [{"ticker": c.ticker, "title": c.title, "cik": c.cik}
+                           for c in (self._ticker_candidates or [])],
+            "instruction": "用户说的标的 SEC 官方表无唯一命中。多候选→列 ticker+全名让用户挑；"
+                           "零候选→追问代码/公司名。不要替猜（ticker 是事实，P0）。",
         }
 
     def _ctx_extracted(self, price_hit: bool) -> dict:
@@ -332,11 +461,16 @@ class EntrySession:
 
     def _ctx_menu(self) -> dict:
         m = self.menu
+        excl = getattr(self, "_excluded_mirrors", []) or []
         return {
             "stage": "menu", "ticker": self.ticker,
             "candidates_A_assumptions": list(m.candidate_assumptions),
             "candidates_B_mirrors": [{"assumption": b.assumption, "mirror_text": b.mirror_text} for b in m.candidate_mirrors],
-            "instruction": "介绍候选菜单（A 你信什么 / B 破的条件，每条我能从公告核对），让用户在右侧勾选后提交",
+            "excluded_count": len(excl),
+            "excluded_reasons": sorted({r for x in excl for r in x.get("reasons", [])}),
+            "instruction": "介绍候选菜单（A 你信什么 / B 破什么，每条我能从公告核对）；"
+            "若 excluded_count>0，**必须先说透**「原本 N 个破条件方向，M 个当前系统无法自动核对，已排除（原因）」"
+            "——覆盖率显式呈现（PRD §4-A），不静默跳过。让用户在右侧勾选后提交",
         }
 
     def _ctx_confirm(self, chosen_a, chosen_b) -> dict:
@@ -375,7 +509,15 @@ class EntrySession:
 
     def _present_menu(self) -> str:
         m = self.menu
-        lines = ["给你候选，挑就行（选一次填两槽）：", "A. 你信什么（右侧可多选）："]
+        lines = ["给你候选，挑就行（选一次填两槽）："]
+        excl = getattr(self, "_excluded_mirrors", None) or []
+        if excl:
+            n_excl = len(excl)
+            n_total = n_excl + len(m.candidate_mirrors)
+            reasons = " / ".join(sorted({r for x in excl for r in x.get("reasons", [])}))
+            lines.append(f"⚠️ 原本 {n_total} 个破条件方向，其中 {n_excl} 个当前系统无法自动核对，"
+                         f"已排除（{reasons}）。剩下的可勾选。")
+        lines.append("A. 你信什么（右侧可多选）：")
         for i, a in enumerate(m.candidate_assumptions, 1):
             lines.append(f"  A{i} {a}")
         lines.append("B. 破的条件（右侧勾几条，每条我能从公告核对）：")

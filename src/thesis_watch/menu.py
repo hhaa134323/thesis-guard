@@ -20,6 +20,9 @@ MENU_PROMPT = """你是持仓条件录入助手。用户持有某只美股，说
 A. 候选关键假设（**必须 3 条、最多 4 条**，从这只票的基本面出发——moat / 财务 / 竞争 / 管理层 / 监管 / 行业地位等不同角度；即使用户理由里没明说，也给出他**可能**信的根据，帮他想清楚信的到底是什么）。**少于 3 条不合格**。
 B. 候选镜像破条件（**必须 3 条、最多 4 条**，每条对应一个 A 假设）：出现什么**具体事件** = 该假设破产。
    必须能被一手公开披露击中（财报 / 公告 / 监管 / 新闻），不要价格图形型（均线 / 形态 / 突破）。
+   **P3：每条 B 必须给 threshold（可判定数值/布尔事件，如 {"metric":"service_rev_yoy","operator":"<","value":0}
+   或 {"event":"ceo_departed","occurred":false}）+ source_type（sec_filing_field / news_headline /
+   press_release_text / manual）——缺则该镜像不可判定，不要给**。
 
 红线（不可违反）：不给买卖 / 仓位建议、不预测涨跌、不出现「看涨 / 看跌 / 建议关注」；
 不编造，依据不足就少给（宁可 2 条也不凑数）。
@@ -29,6 +32,8 @@ B. 候选镜像破条件（**必须 3 条、最多 4 条**，每条对应一个 
 class MenuMirror(BaseModel):
     assumption: str = Field(description="对应 A 假设原文")
     mirror_text: str = Field(description="镜像破局条件（具体事件）")
+    threshold: dict | None = Field(default=None, description="可判定阈值（数值/布尔事件）")
+    source_type: str = Field(default="", description="阈值判定数据源类型")
 
 
 class MenuCandidates(BaseModel):
@@ -97,4 +102,28 @@ def generate_menu(agent: Any, ticker: str, reason: str, cfg: dict) -> dict:
                     "status": "other", "error": f"{type(e).__name__}: {str(e)[:300]}"}
 
 
-__all__ = ["MENU_PROMPT", "MenuMirror", "MenuCandidates", "build_menu_agent", "generate_menu"]
+__all__ = ["MENU_PROMPT", "MenuMirror", "MenuCandidates",
+           "build_menu_agent", "generate_menu", "filter_executable_mirrors"]
+
+
+def filter_executable_mirrors(mirrors: list[MenuMirror]) -> tuple[list[MenuMirror], list[dict]]:
+    """P4：可执行性过滤——每个 B 候选必须映射到已实现 fetcher（v1-auto：xbrl_structured /
+    press_release_text），否则不呈现给用户。
+
+    跨主体取数（NVDA/GOOGL/META 的 capex → cross_entity_filing）、第三方付费数据
+    （TrendForce → third_party_data）等 v1 不支持的方向，过滤掉不呈现。
+    返回 (kept, excluded)；**覆盖率须显式呈现**（PRD §4-A 不静默跳过）——调用方须把
+    excluded 的数量 + 缺口原因告诉用户（「原本 N 个方向，M 个当前无法自动核对，已排除」）。
+    """
+    from .condition_classify import classify_condition, is_v1_auto, v1_gap_reasons
+
+    kept: list[MenuMirror] = []
+    excluded: list[dict] = []
+    for b in mirrors:
+        labels = classify_condition(b.mirror_text)
+        if is_v1_auto(labels):
+            kept.append(b)
+        else:
+            excluded.append({"mirror_text": b.mirror_text,
+                             "reasons": v1_gap_reasons(labels) or ["v1 不可自动核对"]})
+    return kept, excluded
