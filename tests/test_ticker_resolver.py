@@ -1,12 +1,11 @@
 """ticker_resolver 确定性解析测试（离线，fixture 驱动，无网络）。
 
-P0 验收：输入「我持有SK海力士」→ 不出 SKHCF（无 LLM），得到 [] → 问用户；
-用户回 SKHY → 精确命中 SKHY。
+Phase 2（2026-08-03）：fuzzy 子串/公司名匹配已删（Bug #3 根因）。
+resolver 只认整串精确英文 ticker；中文/英文公司名 → []（agent loop 的 LLM 翻译后再调）。
 """
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
@@ -54,52 +53,35 @@ def test_exact_whole_ticker_with_dot(offline_db):
 
 
 def test_in_sentence_ticker_not_auto_resolved(offline_db):
-    """Bug #1 修复后：不做句中 ticker 词扫描（论据英文词凑巧匹配真 ticker 会误命中）。
-    「我持有AAPL，看好」→ [] → 调用方问用户要代码；用户回 AAPL → 整串精确命中。"""
+    """整串非精确 ticker → []（调用方问用户要代码）。「我持有AAPL，看好」→ []。"""
     matches = ticker_resolver.resolve("我持有AAPL，看好服务收入")
     assert matches == []
 
 
 def test_thesis_text_english_words_not_mistaken_as_tickers(offline_db):
-    """Bug #1 回归：论据里的 AI / HBM 凑巧是真实 SEC ticker，但句中词扫描已去 → 不误命中。
-    「我持有SK海力士，因为 AI 算力扩张驱动 HBM 需求增长」→ []（不出 AI/HBM）。"""
+    """Bug #1 回归：论据里的 AI / HBM 凑巧是真实 SEC ticker，但 resolver 只整串精确 → 不误命中。"""
     matches = ticker_resolver.resolve("我持有SK海力士，因为 AI 算力扩张驱动 HBM 需求增长")
     assert matches == []
 
 
 def test_chinese_company_in_sentence_returns_empty(offline_db):
-    """中文公司名「SK海力士」查不到 SEC 英文 title → [] → 调用方问用户要代码，不猜 SKHCF。"""
+    """中文公司名「SK海力士」非精确 ticker → []（agent loop 的 LLM 翻译成英文 ticker 后再调）。"""
     matches = ticker_resolver.resolve("我持有SK海力士")
     assert matches == []
 
 
+def test_english_company_name_returns_empty(offline_db):
+    """Phase 2：英文公司名「Apple」非精确 ticker → []（fuzzy 已删；LLM 翻译公司名→ticker）。"""
+    matches = ticker_resolver.resolve("Apple")
+    assert matches == []
+
+
 def test_resolve_skhy_when_user_types_code(offline_db):
-    # 用户被追问后回 SKHY → 精确命中（验收：得到 SKHY）
+    # 用户被追问后回 SKHY（整串精确 ticker）→ 命中
     matches = ticker_resolver.resolve("SKHY")
     assert len(matches) == 1
     assert matches[0].ticker == "SKHY"
     assert matches[0].cik == "0002120882"  # 2120882 零填充 10 位
-
-
-def test_ticker_in_sentence_resolved_via_fuzzy(offline_db):
-    """「我持有SKHY」整串非精确、不做句中扫描，但 fuzzy「skhy」命中「SK HYNIX LTD」（ratio≥0.5）→ [SKHY]。
-    句中打了 ticker、fuzzy 解析出来——正确（区别于 Bug #1 论据词 AI/HBM 误命中，那俩 fuzzy 不命中）。"""
-    matches = ticker_resolver.resolve("我持有SKHY")
-    assert len(matches) == 1
-    assert matches[0].ticker == "SKHY"
-
-
-def test_fuzzy_company_name_english(offline_db):
-    matches = ticker_resolver.resolve("Apple")
-    assert len(matches) >= 1
-    assert matches[0].ticker == "AAPL"
-
-
-def test_fuzzy_company_name_in_sentence(offline_db):
-    # 「我持有Apple，看好」清出 "apple" → 子串命中 Apple Inc.
-    matches = ticker_resolver.resolve("我持有Apple，看好")
-    assert len(matches) >= 1
-    assert matches[0].ticker == "AAPL"
 
 
 def test_no_match_returns_empty(offline_db):
