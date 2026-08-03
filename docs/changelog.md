@@ -2,6 +2,21 @@
 
 > 规则：每次迭代写清楚——依据哪条用户反馈、砍了什么、为什么砍。KILL 判据体检结果也记这里。
 
+## v0.0.13 — 2026-08-03 — P2 条件4 确定性 backstop（condition_classify 接进抽取拒绝）
+
+**做了什么**
+- `entry_loop._apply_key_assumption_rejection` 加条件4（不可证伪）确定性 backstop：抽出的 key_assumption 过 `condition_classify`+`is_v1_auto`，**非 auto 的假设（其镜像必也非 auto、无可判定阈值）→ 转 open_question**。与菜单路径（P4 `filter_executable_mirrors`）同款 `condition_classify`，两路径对齐。
+- 条件3（同义复述，`is_paraphrase`）先跑、条件4 后跑；条件 1/2 仍由 LLM 抽取时自判（进 `ext.open_questions`）。
+- 测试 +4（含 SK海力士 4 假设复现：只留毛利率，ASP/份额/结构性 转 open_question 标条件4）。
+
+**依据**
+- v0.0.12 目检（SK海力士）发现 P2 半过：条件3（同义复述）`is_paraphrase` backstop 拦住了；但条件4（不可证伪）只靠 LLM 自判没拦住——ASP/份额/结构性 3 条无 auto 镜像的假设留在 `key_assumptions`、没转 `open_questions`。菜单路径（P4）用 `condition_classify` 排除了这 3 条，抽取路径没用 → 两套标准。本轮对齐。
+
+**自测**
+- 78 测试绿（v0.0.12 的 74 + 4 新条件4 测试）。
+
+**状态**：P2 条件4 落地，serve 已加载新代码，等目检复跑（重跑 SK海力士 验 ASP/份额/结构性 进 open_question）。
+
 ## v0.0.12 — 2026-08-03 — SK 海力士真实运行驱动的六项修复（P0–P5）+ eval §7.1 逐字段
 
 **做了什么**

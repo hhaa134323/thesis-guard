@@ -172,8 +172,11 @@ class EntrySession:
         """P2：key_assumptions 合格判定落地（四条，缺一不合格→open_question，宁缺勿凑）。
 
         1) LLM 抽取时已自判四关、不过的改写进 ext.open_questions → 合并进 session.open_questions。
-        2) 条件3（同义复述）确定性 backstop：card.key_assumptions 里与原话高度相似的剔出，转 open_questions
-           （专治 W2 8 条不合格中 7 条的同义复述；条件 1/2/4 是语义判断，由 LLM 抽取时自判）。
+        2) 条件3（同义复述）确定性 backstop：与原话高度相似的剔出（is_paraphrase）。
+        3) 条件4（不可证伪）确定性 backstop：classify_condition 判非 auto 的假设剔出
+           ——其镜像必也非 auto（同主题），无可判定阈值→不可证伪→转 open_question。
+           与菜单路径（P4 filter_executable_mirrors）同款 condition_classify，两路径对齐。
+        条件 1/2 是纯语义判断，由 LLM 抽取时自判（进 ext.open_questions）。
         """
         if self.ext is not None:
             for oq in (self.ext.open_questions or []):
@@ -182,8 +185,10 @@ class EntrySession:
         if self.card_draft is None or self.ext is None:
             return
         from .conditions import is_paraphrase
+        from .condition_classify import classify_condition, is_v1_auto, v1_gap_reasons
         raw = (self.ext.holding_reason_raw or "")
-        kept: list = []
+        # 条件3：同义复述
+        after_c3: list = []
         for a in self.card_draft.key_assumptions:
             if is_paraphrase(a.text, raw):
                 self.open_questions.append({
@@ -191,7 +196,20 @@ class EntrySession:
                     "reason": "违反条件3（同义复述）：与原话高度相似，疑未多出信息",
                     "text": a.text})
             else:
+                after_c3.append(a)
+        # 条件4：不可证伪（classify 非 auto → 镜像必也非 auto，无可判定阈值）
+        kept: list = []
+        for a in after_c3:
+            labels = classify_condition(a.text)
+            if is_v1_auto(labels):
                 kept.append(a)
+            else:
+                self.open_questions.append({
+                    "field": "key_assumptions",
+                    "reason": "违反条件4（不可证伪）："
+                              + "；".join(v1_gap_reasons(labels) or ["v1 不可自动核对"])
+                              + "——改写成能被一手披露击中的可判定事件再填",
+                    "text": a.text})
         self.card_draft.key_assumptions = kept
 
     def turn(self, payload: dict) -> dict:

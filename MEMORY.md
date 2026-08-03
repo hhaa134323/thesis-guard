@@ -1,15 +1,20 @@
 # MEMORY — 跨 AI 交接（2026-08-03）
 
 > 本文件给协作 AI 拉取进度。Claude（本会话）维护，提交到 GitHub。
-> 详细变更见 `docs/changelog.md` v0.0.12；本文是 digest + 当前状态 + 开口项 + 硬规则。
+> 详细变更见 `docs/changelog.md`（v0.0.12 P0–P5 + v0.0.13 P2 条件4）；本文是 digest + 当前状态 + 开口项 + 硬规则。
 > 读这一个文件就能接上。
 
 ## 当前状态
-- 分支 `main`，最新提交 `bf19d0f`（v0.0.12），**已 push**（origin/main = bf19d0f）。
-- v0.0.12（P0–P5 入口 agent 修复）已落地 + 已目检（5 过 + P2 半过）。
-- serve 在跑（PID 29060，http://127.0.0.1:8000/，v0.0.12 后端 + 最新前端 build `index-B02o1NQI.js`——另一个窗口 rebuild 过）。
+- 分支 `main`。已 push 到 `bf19d0f`（v0.0.12）。本地新增 `e651a4b`（本文件）+ v0.0.13（P2 条件4）——这两次 push 受 B1 GitHub 间歇 reset 阻塞，待网络恢复再推。
+- v0.0.12（P0–P5）+ v0.0.13（P2 条件4 backstop）已落地；目检 5 过 + P2 已修（v0.0.13，待复跑确认）。
+- serve 在跑（PID 28688，http://127.0.0.1:8000/，v0.0.12+v0.0.13 后端 + 前端窗口最新 build `index-CnCgShHx.js`）。前端窗口自检服在 :8001（http.server）。
 - **不重跑 eval**（等 key_assumptions 定义经作者目检后再说）。
-- **两窗口并行**：本窗口 = `src/` `docs/` `tests/` + 仓库根（含本文件、CLAUDE.md）；另一窗口 = `frontend/` + `static/`（构建产物，谁改 frontend/src 谁 build 谁提交）。本窗口不读不改不 git add frontend/ + static/。
+- **两窗口并行**：本窗口 = `src/` `docs/`（除 `docs/frontend-design-v1.md` 归前端窗口）`tests/` + 仓库根（含本文件、CLAUDE.md）；前端窗口 = `frontend/` + `static/` + `docs/frontend-design-v1.md`（构建产物，谁改 frontend/src 谁 build 谁提交）。本窗口不读不改不 git add 前端域。
+
+## v0.0.13 做了什么（P2 条件4 backstop，2026-08-03）
+- `entry_loop._apply_key_assumption_rejection` 加条件4（不可证伪）确定性 backstop：抽出的 key_assumption 过 `condition_classify`+`is_v1_auto`，**非 auto 的假设（其镜像必也非 auto、无可判定阈值）→ 转 open_question**。与菜单路径（P4 `filter_executable_mirrors`）同款，两路径对齐。条件3（`is_paraphrase`）先跑、条件4 后跑。
+- 修 v0.0.12 目检发现：ASP/份额/结构性 3 条无 auto 镜像的假设原留在 key_assumptions，现转 open_question（标条件4）。
+- 测试 +4（含 SK海力士 4 假设复现：只留毛利率）。78 绿。
 
 ## v0.0.12 做了什么（P0–P5，逐条一行）
 - **P0 ticker 确定性**：`src/thesis_watch/fetchers/ticker_resolver.py`（SEC `company_tickers.json` + 本地缓存≤30d + `resolve()`，CJK 紧贴守卫防「SK海力士」误命中 SK）；`entry_loop` 替换 LLM 出 ticker（1→用 / >1→问选 / 0→问，不猜）；`filer_type` 去 LLM 兜底。
@@ -25,15 +30,15 @@
 |---|---|---|
 | P0 | ✅ | 澄清后命中 SKHY，全程无 SKHCF |
 | P1 | ✅（有缺口，见开口1） | 「查不到 SKHY 的 SEC 财报 filing」——明确查不到，没套模板 |
-| P2 | ⚠️ **半过** | 4 条假设都不是换词重写（条件3 过）；但 3 条该被条件4 拦下的没拦（见开口1） |
+| P2 | ✅（v0.0.13 修） | v0.0.12 半过（条件3 过、条件4 漏）；v0.0.13 加条件4 backstop，ASP/份额/结构性 转 open_question，待复跑确认 |
 | P3-B | ✅（半验证） | entry_anchor「未检出」正确显示（输入无加仓价）；有数据分支未测 |
 | P4 | ✅ | 「4 条假设，3 条无法自动核对，已排除」+ 逐条原因 + 25% 覆盖率 |
 | P5 | ✅ | holding_horizon 下拉 + open_question 都在 |
 
 ## 开口项（等作者定夺，**未动**）
-1. **P2 条件4 没落地**（主开口）：`key_assumptions` 里 ASP/份额/结构性 3 条假设无 auto 镜像（条件4「能对应带可判定阈值的镜像」不过），该转 `open_questions` 却留下了。根因：条件4 只靠 LLM 自判（没拦住），`is_paraphrase` backstop 只覆盖条件3。**修法**：把 `condition_classify`+`is_v1_auto` 接进 `entry_loop._apply_key_assumption_rejection`——非 auto 的假设转 open_question，跟菜单路径（P4）对齐。注意是近似（condition_classify 关键词规则，可能过拒）。
-2. **P1 CIK 复用缺口**：`fetch_latest_filing` 走 `filer_type_lookup.yaml`（16 预置 ticker，无 SKHY）→ 「查不到」；但 `ticker_resolver` 已从 `company_tickers.json` 拿到 SKHY 的 CIK（2120882）。fetcher 回退用 resolver 的缓存就能给新 ticker 拉 filing + 链接，而不是「查不到」。验收算过（「明确查不到」达标），质量能更好。
-3. **未测分支**：P1 的「带 SEC 链接」分支（用 MCO/FDS 等在 lookup 里的票问「下次财报什么时候」）；P3-B 的「有数据显示」分支（输入带加仓价，如「我持有 MCO，加仓价 $394，安全边际 16x」）。
+1. **P1 CIK 复用缺口**：`fetch_latest_filing` 走 `filer_type_lookup.yaml`（16 预置 ticker，无 SKHY）→ 「查不到」；但 `ticker_resolver` 已从 `company_tickers.json` 拿到 SKHY 的 CIK（2120882）。fetcher 回退用 resolver 的缓存就能给新 ticker 拉 filing + 链接，而不是「查不到」。验收算过（「明确查不到」达标），质量能更好。
+2. **未测分支**：P1 的「带 SEC 链接」分支（用 MCO/FDS 等在 lookup 里的票问「下次财报什么时候」）；P3-B 的「有数据显示」分支（输入带加仓价，如「我持有 MCO，加仓价 $394，安全边际 16x」）。
+3. **P2 条件4 复跑确认**：v0.0.13 已加条件4 backstop（`condition_classify`+`is_v1_auto` 接进 `_apply_key_assumption_rejection`，非 auto 假设转 open_question），单测过；等真实复跑 SK海力士 确认 ASP/份额/结构性 进 open_question。注意近似：condition_classify 关键词规则，定性假设可能过拒（但符合工单 condition4「不可证伪」语义）。
 
 ## 硬规则（必须遵守）
 - **测试改动**：让测试**更难过**→直接做 + 说一声；**更容易过**→停下问。（本轮 P3 改 `make_mirror` 签名，`test_conditions.py` 3 处调用跟着改 + 加 `assert m.threshold/source_type` + 新增 `test_make_mirror_rejects_missing_threshold_or_source`，是更难过，已做已说、作者已放行。）
@@ -56,5 +61,5 @@
 
 ## serve / 运行
 - 起 serve：`PYTHONUTF8=1 PYTHONPATH=src python -m thesis_watch.serve`（bash；UA env `THESIS_SEC_USER_AGENT`；host/port `THESIS_HOST`/`THESIS_PORT` 默认 127.0.0.1:8000）。
-- pytest：`PYTHONUTF8=1 python -m pytest -q`（74 绿：基线 42 + 新增 32）。**注意**：Windows 下 pip 读 requirements.txt 需 `PYTHONUTF8=1`（否则 GBK 解码报错）。
+- pytest：`PYTHONUTF8=1 python -m pytest -q`（78 绿：基线 42 + 新增 36；v0.0.12 +32 / v0.0.13 +4 条件4）。**注意**：Windows 下 pip 读 requirements.txt 需 `PYTHONUTF8=1`（否则 GBK 解码报错）。
 - 装依赖：`PYTHONUTF8=1 python -m pip install -r requirements.txt`。
