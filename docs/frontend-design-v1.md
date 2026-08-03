@@ -52,3 +52,22 @@
 
 - 停下等作者目检页面（预期两轮以上迭代，每轮目检后继续）。
 - 通过后 changelog 记一条：§2.5 前端打磨完成，依据设计文档 v1，技术栈 React + Vite + shadcn/ui。
+
+## 6. 2026-08-03 前端工单（F0–F4，v1 基线上增量）
+
+F3（卡片字段补全）挂起——entry_anchor §5 结构 / holding_horizon / 被拒条目 / 已排除方向 / 公司全名·交易所 / 来源标注块 全要后端结构化数据，后端窗口在做，落地后单独下工单。前端不解析 assistant 正文（不可靠，与"事实类不走 LLM"矛盾）。
+
+**改了什么**：
+- **F0 主题**：`index.css` `:root` 从高饱和蓝 `#2783DE` → 中性偏冷钢蓝 `215 18% 38%`，softblue→冷灰，amber/success 降饱和。只改 CSS 变量，未碰组件。
+- **F1 chat**：`components/ai/chat.tsx` 手写 `Message`/`Bubble`/`MessageScroller`/`SendButton`（Message/Bubble/MessageScroller 是 Vercel AI Elements 名、依赖 `ai`/`@ai-sdk/*`，拷来撞红线，按 shadcn 风格手写等价组件，不引 SDK）。用户气泡深底白字右对齐右下小圆角，系统白底 1px 边框左对齐左下小圆角+发送者标签；MessageScroller stick-to-bottom+ResizeObserver 防跳动；发送键输入框内右下 30×30 深色圆角方钮+lucide ArrowUp（Notion 式）。来源块（R5）挂起进 F3。
+- **F2 逐字段点亮**：删 `ProgressRow`；`DrawerField` 加 `state` 三态 done（行首绿勾）/ in-progress（灰底+左 2px 竖条+spinner+skeleton）/ pending（opacity 0.35+「待生成」）；卡片头 `N / 8 字段`+76px 细条；`working`（fetch 中）→全字段 in-progress。
+- **F4 空态**：左栏 opening 改空态（标题+说明+三步+三张可点例子卡填入输入框+输入框/SendButton+底部 2px 浅灰竖线+红线两行）；右栏 `drawerOpen=true` 常驻、card null 渲 8 个 pending 行+禁用「确认入库」。
+
+**三点取舍理由**：
+1. **保持双栏**：卡片是主角、对话是输入。双栏边说边看卡逐格点亮，进度与结果同屏，出错一眼定位卡哪格。单栏把卡折进对话流，进度感丢失。
+2. **逐字段点亮 vs 折叠思考区**：折叠把"系统在想"藏起来，用户只看最终卡；逐字段让进度=结果本身（每格 done/in-progress/pending），覆盖透明（PRD §4-A）。折叠是过程黑盒，逐格是过程即产物。
+3. **固定 rubric vs 模型自由评价**：自由评价（"好不好看"）不可复现、无门槛、模型自我恭维；固定 rubric（9 条 yes/no+no 指位）把验收口径前置写死，每轮可复跑、no 必指位、修完重跑到全绿——eval 串行+门槛预注册（eval-plan §6）在视觉层的落地。
+
+**自检**：每项 `npm run build` 过；视觉自检 chromium `--headless --screenshot` 截 `http://127.0.0.1:8001`（http.server 托管 static/，不走 serve.py 免 import 并行改的 src/），qwen3-vl-plus 跑固定 rubric（`scripts/vision_check.py` 传 rubric 作 question）。F4 空态截图 rubric 8/9 yes（#1 两栏/竖线、#2 进度行已删、#3 N/8+条、#5 待生成、#6 发送键、#7 中性无高饱和蓝、#8 无溢出、#9 无大片空白 全 yes）；#4（in-progress 字段行：灰底+左竖条）no——空态无 fetch、字段 pending 非 in-progress，该态只在 fetch 进行时出现，静态空态截不到，代码已实现（`working`→全字段 in-progress），验它需 live session。
+
+**changelog 不再由前端写**：改动摘要列文字给作者，由后端窗口统一写 `docs/changelog.md`。

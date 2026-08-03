@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { InfoTip, TooltipProvider } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+import { Message, MessageScroller, SendButton } from "@/components/ai/chat";
+import { Loader2 } from "lucide-react";
 
 // ──────────────────────────────── types ────────────────────────────────
 type Stage = "opening" | "extracted" | "menu" | "confirm_card" | "confirmed";
@@ -61,25 +62,7 @@ function Typewriter({ text, onDone }: { text: string; onDone?: () => void }) {
   return <span>{text.slice(0, n)}{n < text.length ? <span className="opacity-40">▋</span> : null}</span>;
 }
 
-// ──────────────────────────── 三阶段进度行（验收点 2） ────────────────────────────
-function ProgressRow({ status }: { status: string }) {
-  const stages = [
-    { key: "extract", label: "已抽取", dot: "bg-muted-foreground/40" },
-    { key: "menu", label: "正在生成候选", dot: "bg-primary" },
-    { key: "render", label: "正在更新卡片", dot: "bg-primary" },
-  ];
-  const active = status.includes("抽取") ? 0 : status.includes("生成候选") ? 1 : status.includes("渲染") || status.includes("更新") ? 2 : -1;
-  return (
-    <div className="flex items-center gap-3 text-xs text-muted-foreground py-1">
-      {stages.map((s, i) => (
-        <span key={s.key} className="flex items-center gap-1">
-          <span className={`inline-block w-2 h-2 rounded-full ${i <= active && active >= 0 ? s.dot : "bg-muted-foreground/20"}`} />
-          {s.label}{i < stages.length - 1 ? <span className="mx-1 opacity-40">→</span> : null}
-        </span>
-      ))}
-    </div>
-  );
-}
+// 三阶段进度行已删（F2：进度改由卡片字段逐格点亮表达，不再单独呈现）
 
 // ──────────────────────────── 拒判降级橙边卡（验收点 4） ────────────────────────────
 function RefusalCard({ items }: { items: ManualItem[] }) {
@@ -98,11 +81,38 @@ function RefusalCard({ items }: { items: ManualItem[] }) {
   );
 }
 
-// ──────────────────────────── 抽屉字段（验收点 3/5/6） ────────────────────────────
-function DrawerField({ label, hint, justFilled, children }: { label: string; hint?: string; justFilled?: boolean; children: ReactNode }) {
+// ──────────────────────────── 抽屉字段（验收点 3/5/6，F2 三态） ────────────────────────────
+type FieldState = "done" | "in-progress" | "pending";
+function DrawerField({ label, hint, justFilled, state = "done", action, children }: { label: string; hint?: string; justFilled?: boolean; state?: FieldState; action?: string; children: ReactNode }) {
+  if (state === "in-progress") {
+    return (
+      <div className="relative py-2 pl-3 pr-2 border-b border-border/60 bg-muted/40 rounded">
+        <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-foreground rounded" />
+        <div className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+          {label}<Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+        </div>
+        {action ? <div className="text-[11px] text-muted-foreground mb-1.5">{action}</div> : null}
+        <div className="space-y-1.5">
+          <div className="h-3 rounded bg-muted-foreground/15 w-full" />
+          <div className="h-3 rounded bg-muted-foreground/15 w-2/3" />
+        </div>
+      </div>
+    );
+  }
+  if (state === "pending") {
+    return (
+      <div className="py-2 border-b border-border/60 opacity-35">
+        <div className="text-xs text-muted-foreground mb-1 flex items-center">
+          {label}{hint ? <InfoTip text={hint} /> : null}
+        </div>
+        <div className="text-sm text-muted-foreground">待生成</div>
+      </div>
+    );
+  }
   return (
     <div className={`py-2 border-b border-border/60 ${justFilled ? "just-filled -mx-2 px-2 rounded" : ""}`}>
-      <div className="text-xs text-muted-foreground mb-1 flex items-center">
+      <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+        <span className="text-success">✓</span>
         {label}{hint ? <InfoTip text={hint} /> : null}
         {justFilled ? <Badge variant="softblue" className="ml-auto">刚填入</Badge> : null}
       </div>
@@ -125,10 +135,7 @@ export default function App() {
   const [justFilled, setJustFilled] = useState<Set<string>>(new Set());
   const [picks, setPicks] = useState<{ a: number[]; b: number[] }>({ a: [], b: [] });
   const [edits, setEdits] = useState<Record<string, any>>({});
-  const convRef = useRef<HTMLDivElement>(null);
-
-  // 自动滚到底
-  useEffect(() => { convRef.current?.scrollTo({ top: convRef.current.scrollHeight, behavior: "smooth" }); }, [conv]);
+  // 自动滚动由 MessageScroller 接管（stick-to-bottom + ResizeObserver，防流式跳动）
 
   function applyView(v: View, opts?: { newUserMsg?: Msg }) {
     setStage(v.stage);
@@ -222,9 +229,27 @@ export default function App() {
     });
   }
 
-  const drawerOpen = !!card && stage !== "opening";
+  const drawerOpen = true;
   const confirmed = stage === "confirmed";
   const showStart = stage === "opening";
+
+  // F2：字段逐格点亮。working=fetch 进行中→全字段 in-progress；否则 populated→done、空→pending。
+  const working = !!status && (status.includes("正在") || status.includes("处理中"));
+  const populated = card ? {
+    ticker: !!card.ticker,
+    holding_reason: !!card.holding_reason_raw,
+    assumptions: card.key_assumptions.length > 0,
+    broken: card.broken_conditions.length > 0,
+    manual: (card.manual_check_items?.length ?? 0) > 0,
+    anchor: !!card.entry_anchor,
+    next_verdict: !!card.next_verdict,
+    position_cap: !!card.position_cap_tier,
+    horizon: !!card.holding_horizon,
+  } : null;
+  const doneCount = populated ? (Object.values(populated) as boolean[]).filter(Boolean).length : 0;
+  const nDone = working ? 0 : doneCount;
+  const actionText = working ? status : "";
+  const fst = (p: boolean): FieldState => (working ? "in-progress" : p ? "done" : "pending");
 
   return (
     <TooltipProvider>
@@ -240,49 +265,90 @@ export default function App() {
         {/* 对话主流（居中单栏 ~680px） */}
         <main className={`flex-1 flex justify-center px-4 ${drawerOpen ? "pr-[360px]" : ""}`}>
           <div className="w-full max-w-conv py-4 flex flex-col" style={{ height: "calc(100vh - 49px)" }}>
-            <div ref={convRef} className="flex-1 overflow-y-auto space-y-3 pr-1">
-              {conv.map((m) => (
-                <div key={m.id} className={`rounded-lg px-3 py-2 max-w-[92%] whitespace-pre-wrap break-words text-sm ${m.role === "user" ? "bg-softblue ml-auto" : "bg-muted mr-auto"}`}>
-                  {m.role === "assistant" ? <Typewriter text={m.text} /> : m.text}
-                </div>
-              ))}
-              {/* 拒判降级橙边卡（验收点 4） */}
-              {card?.manual_check_items?.length ? <RefusalCard items={card.manual_check_items} /> : null}
-              {/* 菜单 option 卡（验收点 1） */}
-              {stage === "menu" && menu ? (
-                <div className="space-y-2 my-2">
-                  <div className="text-xs text-muted-foreground">A 你信什么（可多选，勾选实时同步右侧抽屉）</div>
-                  {menu.assumptions.map((a, i) => (
-                    <label key={i} className={`flex items-start gap-2 p-2 rounded-md border cursor-pointer ${picks.a.includes(i) ? "border-primary bg-softblue" : "border-border"}`}>
-                      <Checkbox checked={picks.a.includes(i)} onCheckedChange={() => togglePick("a", i)} className="mt-0.5" />
-                      <span className="text-sm">{a}</span>
-                    </label>
-                  ))}
-                  <div className="text-xs text-muted-foreground mt-2">B 破的条件（勾几条，每条我能从公告核对）</div>
-                  {menu.mirrors.map((b, i) => (
-                    <label key={i} className={`flex items-start gap-2 p-2 rounded-md border cursor-pointer ${picks.b.includes(i) ? "border-primary bg-softblue" : "border-border"}`}>
-                      <Checkbox checked={picks.b.includes(i)} onCheckedChange={() => togglePick("b", i)} className="mt-0.5" />
-                      <span className="text-sm"><span>{b.mirror_text}</span><span className="block text-xs text-muted-foreground">对应：{b.assumption}</span></span>
-                    </label>
-                  ))}
-                  <Button size="sm" onClick={submitPicks}>提交勾选</Button>
-                </div>
-              ) : null}
-            </div>
-
-            <ProgressRow status={status} />
-            {error ? <div className="text-xs text-red-600 py-1">{error}</div> : null}
-
             {showStart ? (
-              <div className="space-y-2 border-t border-border pt-3">
-                <textarea id="f-input" placeholder={'一句话说标的 + 理由，如「我持有 MCO，因为评级双寡头的 moat 被 AI 恐慌错杀」'} rows={3} className={inputCls} />
-                <Button onClick={start}>开始录入</Button>
+              <div className="flex-1 flex flex-col justify-center max-w-[620px] mx-auto w-full">
+                <h2 className="text-xl font-semibold text-foreground mb-2">说说你为什么持有它</h2>
+                <p className="text-sm text-muted-foreground mb-6 leading-relaxed">用一句话讲清楚买入逻辑，我会把它拆成可被财报击中的条件，以后每次披露更新，逐条替你核对是否还成立。</p>
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                  {[{ n: 1, t: "你口述", d: "一句话，不用工整" }, { n: 2, t: "我追问", d: "补齐说不清的地方" }, { n: 3, t: "你确认", d: "右侧卡片逐格核对" }].map((s) => (
+                    <div key={s.n} className="text-sm">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="w-5 h-5 rounded-full bg-foreground text-background text-xs flex items-center justify-center font-medium">{s.n}</span>
+                        <span className="font-medium text-foreground">{s.t}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground pl-7">{s.d}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-xs text-muted-foreground mb-2">从一个例子开始</div>
+                <div className="space-y-2 mb-6">
+                  {[{ tag: "基本面", text: "我持有 MCO，因为评级双寡头的 moat 被 AI 恐慌错杀" }, { tag: "周期", text: "我持有 SK 海力士，AI 时代需要大量计算，计算需要存储" }, { tag: "价格形态", text: "HSBC 跌破 200 日线我就走" }].map((ex, i) => (
+                    <button key={i} type="button" onClick={() => { const el = document.getElementById("f-input") as HTMLTextAreaElement; if (el) { el.value = ex.text; el.focus(); } }}
+                      className="w-full text-left rounded-md border border-border bg-card px-3 py-2 hover:bg-muted transition">
+                      <span className="text-[10px] text-muted-foreground mr-2">[{ex.tag}]</span>
+                      <span className="text-sm text-foreground">{ex.text}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="relative">
+                  <textarea id="f-input" placeholder="一句话说标的 + 理由" rows={3} className={`${inputCls} pr-12 resize-none`} />
+                  <SendButton onClick={start} />
+                </div>
+                <div className="text-right text-[11px] text-muted-foreground/70 mt-1">Enter 发送 · Shift+Enter 换行</div>
+                <div className="mt-6 pl-3 border-l-2 border-border/60">
+                  <div className="text-xs text-muted-foreground leading-relaxed">不给买卖建议，不预测价格。</div>
+                  <div className="text-xs text-muted-foreground leading-relaxed">所有结论必须附一手披露链接，查不到就说查不到。</div>
+                </div>
               </div>
             ) : (
-              <div className="space-y-2 border-t border-border pt-3 flex gap-2">
-                <textarea id="f-msg" placeholder='回复（如「确认」或「无法确定」要候选菜单）' rows={2} className={inputCls} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
-                <Button onClick={send} disabled={stage !== "extracted" && stage !== "confirm_card"}>发送</Button>
-              </div>
+              <>
+                <MessageScroller dep={conv} className="flex-1">
+                  {conv.map((m) => (
+                    <Message key={m.id} role={m.role === "assistant" ? "system" : "user"} sender={m.role === "assistant" ? "Thesis Watch" : undefined}>
+                      {m.role === "assistant" ? <Typewriter text={m.text} /> : m.text}
+                    </Message>
+                  ))}
+                  {/* 拒判降级橙边卡（验收点 4） */}
+                  {card?.manual_check_items?.length ? <RefusalCard items={card.manual_check_items} /> : null}
+                  {/* 菜单 option 卡（验收点 1） */}
+                  {stage === "menu" && menu ? (
+                    <div className="space-y-2 my-2">
+                      <div className="text-xs text-muted-foreground">A 你信什么（点 tag 选中，可多选）</div>
+                      <div className="flex flex-wrap gap-2">
+                        {menu.assumptions.map((a, i) => (
+                          <button key={i} type="button" onClick={() => togglePick("a", i)}
+                            className={`rounded-full border px-3 py-1 text-sm transition ${picks.a.includes(i) ? "border-foreground bg-foreground text-background" : "border-border bg-card text-foreground hover:bg-muted"}`}>
+                            {a}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-2">B 破的条件（点 tag 选中，每条我能从公告核对）</div>
+                      <div className="flex flex-wrap gap-2">
+                        {menu.mirrors.map((b, i) => (
+                          <button key={i} type="button" onClick={() => togglePick("b", i)}
+                            className={`rounded-full border px-3 py-1 text-sm text-left transition ${picks.b.includes(i) ? "border-foreground bg-foreground text-background" : "border-border bg-card text-foreground hover:bg-muted"}`}>
+                            <span>{b.mirror_text}</span>
+                            <span className="block text-xs opacity-70">对应：{b.assumption}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <Button size="sm" onClick={submitPicks}>提交勾选</Button>
+                    </div>
+                  ) : null}
+                </MessageScroller>
+
+                {error ? <div className="text-xs text-red-600 py-1">{error}</div> : null}
+
+                <div className="border-t border-border pt-3">
+                  <div className="relative">
+                    <textarea id="f-msg" placeholder='回复（如「确认」或「无法确定」要候选菜单）' rows={2}
+                      className={`${inputCls} pr-12 resize-none`}
+                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
+                    <SendButton onClick={send} disabled={stage !== "extracted" && stage !== "confirm_card"} />
+                  </div>
+                  <div className="text-right text-[11px] text-muted-foreground/70 mt-1">Enter 发送 · Shift+Enter 换行</div>
+                </div>
+              </>
             )}
           </div>
         </main>
@@ -290,24 +356,32 @@ export default function App() {
         {/* 确认卡抽屉（右侧 ~340px，滑入/滑出，验收点 3） */}
         <aside className={`fixed right-0 top-[49px] h-[calc(100vh-49px)] w-full max-w-drawer bg-card border-l border-border shadow-lg transition-drawer ${drawerOpen ? "drawer-enter" : "drawer-exit"} overflow-y-auto`}>
           <div className="p-4">
-            <h2 className="text-sm font-semibold mb-2 text-muted-foreground">确认卡 <span className="text-xs">（字段可点改）</span></h2>
+            <div className="flex items-center mb-2">
+              <h2 className="text-sm font-semibold text-muted-foreground">确认卡 <span className="text-xs font-normal">（字段可点改）</span></h2>
+              <div className="ml-auto flex items-center gap-2">
+                <span className="text-xs text-muted-foreground tabular-nums">{nDone} / 9 字段</span>
+                <div className="h-1 w-[76px] rounded-full bg-muted overflow-hidden">
+                  <div className="h-full bg-foreground transition-all" style={{ width: `${(nDone / 9) * 100}%` }} />
+                </div>
+              </div>
+            </div>
             {card ? (
               <>
-                <DrawerField label="标的（ticker）" hint="抽错了在这里改，确认时按新 ticker 重查 filer_type / 仓位档">
+                <DrawerField label="标的（ticker）" hint="抽错了在这里改，确认时按新 ticker 重查 filer_type / 仓位档" state={fst(populated.ticker)} action={actionText}>
                   <input className={inputCls} defaultValue={card.ticker} onChange={(e) => setEdit("ticker", e.target.value)} />
                 </DrawerField>
-                <DrawerField label="买入逻辑（原话）" justFilled={justFilled.has("holding_reason_raw")}>
+                <DrawerField label="买入逻辑（原话）" justFilled={justFilled.has("holding_reason_raw")} state={fst(populated.holding_reason)} action={actionText}>
                   <textarea className={inputCls} rows={3} defaultValue={card.holding_reason_raw}
                     onChange={(e) => setEdit("holding_reason_raw", e.target.value)} />
                 </DrawerField>
 
-                <DrawerField label="关键假设">
+                <DrawerField label="关键假设" state={fst(populated.assumptions)} action={actionText}>
                   <div className="text-sm space-y-1">
                     {card.key_assumptions.map((a) => <div key={a.id} className={justFilled.has("assumption_" + a.id) ? "just-filled rounded px-1" : ""}>{a.text}</div>)}
                   </div>
                 </DrawerField>
 
-                <DrawerField label="破局条件（两层）">
+                <DrawerField label="破局条件（两层）" state={fst(populated.broken)} action={actionText}>
                   <div className="text-sm space-y-1">
                     {card.broken_conditions.map((c) => (
                       <div key={c.id} className={justFilled.has("cond_" + c.id) ? "just-filled rounded px-1" : ""}>
@@ -319,12 +393,12 @@ export default function App() {
                 </DrawerField>
 
                 {card.manual_check_items?.length ? (
-                  <DrawerField label="人工自查项（每月）">
+                  <DrawerField label="人工自查项（每月）" state={fst(populated.manual)} action={actionText}>
                     <div className="text-sm">{card.manual_check_items.map((m) => <div key={m.id}>• {m.text}</div>)}</div>
                   </DrawerField>
                 ) : null}
 
-                <DrawerField label="录入估值锚" hint="锚型是估值口径（怎么算这个倍数的）；有数据必须显示，无数据显示未检出" justFilled={justFilled.has("entry_anchor")}>
+                <DrawerField label="录入估值锚" hint="锚型是估值口径（怎么算这个倍数的）；有数据必须显示，无数据显示未检出" justFilled={justFilled.has("entry_anchor")} state={fst(populated.anchor)} action={actionText}>
                   {card.entry_anchor ? (
                     <div className="space-y-1">
                       <div className="text-xs text-muted-foreground">
@@ -350,7 +424,7 @@ export default function App() {
                 </DrawerField>
 
                 {card.next_verdict ? (
-                  <DrawerField label="下次裁判日" hint="下一个能证伪 thesis 的事件（不等于复盘日）" justFilled={justFilled.has("next_verdict")}>
+                  <DrawerField label="下次裁判日" hint="下一个能证伪 thesis 的事件（不等于复盘日）" justFilled={justFilled.has("next_verdict")} state={fst(!!card.next_verdict)} action={actionText}>
                     <div className="flex gap-1">
                       <input className={inputCls} defaultValue={card.next_verdict.event} placeholder="事件" onChange={(e) => setEdit("next_verdict.event", e.target.value)} />
                       <input className={inputCls} defaultValue={card.next_verdict.date ?? ""} placeholder="YYYY-MM" onChange={(e) => setEdit("next_verdict.date", e.target.value)} />
@@ -358,11 +432,11 @@ export default function App() {
                   </DrawerField>
                 ) : null}
 
-                <DrawerField label="仓位上限档" hint={TIER_NOTE}>
+                <DrawerField label="仓位上限档" hint={TIER_NOTE} state={fst(!!card.position_cap_tier)} action={actionText}>
                   <div className="text-sm font-semibold">{card.position_cap_tier || "—（查表无，待确认）"}{card.position_cap_tier ? <span className="text-xs text-muted-foreground ml-1">（柔性上限）</span> : null}</div>
                 </DrawerField>
 
-                <DrawerField label="持仓周期" hint="必须由你确认（不模型猜）；影响 mirror 阈值时间尺度：long→季频 / mid→季报 / trade→日频或 trailing stop">
+                <DrawerField label="持仓周期" hint="必须由你确认（不模型猜）；影响 mirror 阈值时间尺度：long→季频 / mid→季报 / trade→日频或 trailing stop" state={fst(populated.horizon)} action={actionText}>
                   <select className={inputCls} defaultValue={card.holding_horizon ?? ""} onChange={(e) => setEdit("holding_horizon", e.target.value)}>
                     <option value="">— 待你确认 —</option>
                     <option value="long">long（≥3y，noise 阈值最高）</option>
@@ -382,7 +456,21 @@ export default function App() {
                 </div>
               </>
             ) : (
-              <div className="text-sm text-muted-foreground mt-8 text-center">（开始录入后这里实时渲染确认卡）</div>
+              <>
+                <DrawerField label="标的（ticker）" state="pending" />
+                <DrawerField label="买入逻辑（原话）" state="pending" />
+                <DrawerField label="关键假设" state="pending" />
+                <DrawerField label="破局条件（两层）" state="pending" />
+                <DrawerField label="人工自查项（每月）" state="pending" />
+                <DrawerField label="录入估值锚" state="pending" />
+                <DrawerField label="下次裁判日" state="pending" />
+                <DrawerField label="仓位上限档" state="pending" />
+                <DrawerField label="持仓周期" state="pending" />
+                <div className="text-xs text-muted-foreground mt-3">卡片会随对话逐格填充，确认后才入库</div>
+                <div className="pt-3">
+                  <Button className="w-full" disabled>确认入库</Button>
+                </div>
+              </>
             )}
           </div>
         </aside>
