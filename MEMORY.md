@@ -47,7 +47,7 @@ state machine → OpenAI Agents SDK agent loop（docs/refactor-spec.md）。本�
 - **待 caca 定**：(1) 是否收紧 agent-prompt.md 强制调 extract_card（改文档先于代码）；(2) `frontend/chatbot/` 未跟踪残留（ai-chatbot 迁移放弃后未清，删是红线，待示下）；(3) Notion 看板状态更新中（作者给链接，R7 例外授权本板）。
 - SEC company_tickers 缓存：首次 demo 冷缓存+SEC fetch 偶发失败 → resolve 空转；重取成功落盘 `data/company_tickers.json`（gitignored），二次 demo 正常。
 
-## Phase 2 重构（refactor/agent-loop 分支，2026-08-03，未 commit）
+## Phase 2 重构（refactor/agent-loop 分支，2026-08-03，已 push d823162）
 state machine 砍完，agent loop 接管 web 端：
 - **entry_loop.py 重写**：800→~190 行，state machine 全删。EntrySession 委托 orchestrator.agent（Runner.run_sync）；_mine 从 tool 输出派生 view（stage/card/menu/ticker/sources/stored）；_build_card_draft 复用 build_card_from_extraction 落 ThesisCard 草稿。保留 new_session/EntrySession/start/turn/confirm/card_draft surface（serve.py + run_w2.py import 不挂）。
 - **ticker_resolver.py**：删 fuzzy 子串+公司名模糊（Bug #3 根因），只留整串精确 ticker。
