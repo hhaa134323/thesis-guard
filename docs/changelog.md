@@ -2,6 +2,22 @@
 
 > 规则：每次迭代写清楚——依据哪条用户反馈、砍了什么、为什么砍。KILL 判据体检结果也记这里。
 
+## v0.0.15 — 2026-08-03 — F3 后端 view 字段（ticker_title / sources / menu.coverage）——给前端不猜字段名
+
+**做了什么**
+- **`view.ticker_title`**（F3 #6 公司全名）：`ticker_resolver` 命中时存 `TickerMatch.title` 到 session，`_view` 顶层返回；未命中/未 resolve → null。**注意：无 exchange 字段**——SEC `company_tickers.json` 无交易所信息，给不了。
+- **`view.sources`**（F3 来源块 R5）：confirm 提问类 SEC `fetch_latest_filing` 命中时，结构化 `[{form,date,url,note}]` 存 session，`_view` 顶层返回；未命中/未问 → []。
+- **`view.menu.coverage`**（F3 #5 已排除方向）：`_view` 在 S_MENU 态给 `menu.coverage = {total,excluded,reasons[],excluded_items[]}`（P4 的结构化版，原本只在 assistant 文本里）。`excluded_items` 每条 `{mirror_text,reasons[]}`。
+- **已存在确认**（前端问的）：`card.broken_conditions[].source_type`（per-condition 数据来源，P3 加的，**在 view 里**）+ `threshold` + `layer`(mirror/redline) ；`view.open_questions[].text` = 被拒候选原文（P2）；`card.entry_anchor = {anchor_type,anchor_value,note}`（**单读数，无 history 数组**——§5 history 多时点是未来后端事）。
+
+**依据**
+- 前端窗口 F3 开工，按「后端先给 view 字段、前端不猜字段名」规矩对齐形状。
+
+**自测**
+- 83 测试绿（79 + 4 个 view 形状契约测试：ticker_title/sources 默认+设置、menu.coverage 形状、非 menu 态 menu=null）。
+
+**状态**：F3 后端字段落地，等前端按形状渲染。本地提交（push 看 B1）。
+
 ## v0.0.14 — 2026-08-03 — 真跑 smoke 发现的 2 个 P0 bug 修（ticker token 扫描误命中 + filer_type LLM 兜底没去干净）
 
 **做了什么**

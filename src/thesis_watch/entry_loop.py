@@ -82,6 +82,8 @@ class EntrySession:
     _filer_src: str | None = None
     _ticker_candidates: Any = None  # P0：resolve 返回 >1 候选时暂存，供澄清文案列出
     _excluded_mirrors: Any = None  # P4：可执行性过滤剔除的 B 候选，覆盖率显式呈现用
+    _ticker_title: str | None = None  # F3：resolve 命中时的公司全名（TickerMatch.title），view 给前端
+    _sources: Any = None  # F3：confirm 提问 SEC fetch 的结构化来源 [{form,date,url,note}]
 
     def _agents(self) -> tuple[Any, Any, Any]:
         if self._extract_agent is None:
@@ -137,6 +139,7 @@ class EntrySession:
         matches = resolve_ticker(text)
         if len(matches) == 1:
             self.ticker = matches[0].ticker
+            self._ticker_title = matches[0].title  # F3：公司全名给前端
             return self._after_ticker_resolved(is_price_pattern(text))
         self._ticker_candidates = matches
         self.stage = S_TICKER_CLARIFY
@@ -221,6 +224,7 @@ class EntrySession:
             matches = resolve_ticker(text or "")
             if len(matches) == 1:
                 self.ticker = matches[0].ticker
+                self._ticker_title = matches[0].title  # F3：公司全名给前端
                 return self._after_ticker_resolved(
                     is_price_pattern(self.conversation[0]["text"] if self.conversation else ""))
             self._ticker_candidates = matches
@@ -288,6 +292,12 @@ class EntrySession:
                                     form_types=["10-K", "10-Q", "20-F", "6-K",
                                                 "10-K/A", "10-Q/A", "20-F/A", "6-K/A"])
             if f is not None:
+                self._sources = [{  # F3：结构化来源块给前端（R5）
+                    "form": f.form_type,
+                    "date": f.filed_at.strftime("%Y-%m-%d"),
+                    "url": f.url,
+                    "note": "下次财报日期 SEC 不预披露，需关注公司 8-K 公告。",
+                }]
                 return (f"最近一份 SEC filing：{f.form_type}，{f.filed_at.strftime('%Y-%m-%d')}。"
                         f"一手链接：{f.url}\n（下次财报日期 SEC 不预披露，需关注公司 8-K 公告。）" + suffix)
             return (f"查不到 {self.ticker or '该标的'} 的 SEC 财报 filing"
@@ -551,10 +561,20 @@ class EntrySession:
         card_json = to_dict(self.card_draft) if self.card_draft is not None else None
         menu_json = None
         if self.menu is not None and self.stage == S_MENU:
+            excl = getattr(self, "_excluded_mirrors", None) or []
+            kept = len(self.menu.candidate_mirrors)
             menu_json = {
                 "assumptions": list(self.menu.candidate_assumptions),
                 "mirrors": [{"assumption": b.assumption, "mirror_text": b.mirror_text}
                             for b in self.menu.candidate_mirrors],
+                # F3：覆盖率显式（P4 的结构化版——原本 N / 排除 M / 原因 + 逐条）
+                "coverage": {
+                    "total": kept + len(excl),
+                    "excluded": len(excl),
+                    "reasons": sorted({r for x in excl for r in x.get("reasons", [])}),
+                    "excluded_items": [{"mirror_text": x.get("mirror_text", ""),
+                                        "reasons": x.get("reasons", [])} for x in excl],
+                },
             }
         return {
             "stage": self.stage,
@@ -563,6 +583,8 @@ class EntrySession:
             "menu": menu_json,
             "open_questions": list(self.open_questions),
             "ticker": self.ticker,
+            "ticker_title": self._ticker_title,  # F3：公司全名（resolve 命中时；否则 null）
+            "sources": list(self._sources or []),  # F3：R5 来源块（confirm SEC fetch 命中时；否则 []）
             "error": self.error,
             "metrics": dict(self.metrics),
         }

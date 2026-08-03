@@ -1,15 +1,23 @@
 # MEMORY — 跨 AI 交接（2026-08-03）
 
 > 本文件给协作 AI 拉取进度。Claude（本会话）维护，提交到 GitHub。
-> 详细变更见 `docs/changelog.md`（v0.0.12 P0–P5 + v0.0.13 P2 条件4 + v0.0.14 真 bug 修）；本文是 digest + 当前状态 + 开口项 + 硬规则。
+> 详细变更见 `docs/changelog.md`（v0.0.12 P0–P5 + v0.0.13 P2 条件4 + v0.0.14 真 bug 修 + v0.0.15 F3 view 字段）；本文是 digest + 当前状态 + 开口项 + 硬规则。
 > 读这一个文件就能接上。
 
 ## 当前状态
-- 分支 `main`。已 push 到 `bf19d0f`（v0.0.12）。本地新增 `e651a4b`（本文件）+ v0.0.13（P2 条件4）+ v0.0.14（真 bug 修）——push 受 B1 GitHub 间歇 reset 阻塞，待网络恢复再推。
-- v0.0.12（P0–P5）+ v0.0.13（P2 条件4 backstop）+ v0.0.14（真跑发现的 2 bug 修）已落地；端到端验过（curl 真跑 SK海力士：Bug #1 无 AI/HBM 误命中、Bug #2 filer=other 一致）。
-- serve 在跑（http://127.0.0.1:8000/，v0.0.12–v0.0.14 后端 + 前端窗口最新 build）。前端窗口自检服在 :8001（http.server）。
+- 分支 `main`，origin/main = `c851c1b`（v0.0.14，已 push）。v0.0.15（F3 view 字段）本地待推。
+- v0.0.12（P0–P5）+ v0.0.13（P2 条件4）+ v0.0.14（真 bug 修）已 push；v0.0.15（F3 后端 view 字段）已落地、待 push。
+- serve 在跑（http://127.0.0.1:8000/，v0.0.12–v0.0.15 后端 + 前端窗口最新 build）。前端窗口自检服在 :8001。
 - **不重跑 eval**（等 key_assumptions 定义经作者目检后再说）。
-- **两窗口并行**：本窗口 = `src/` `docs/`（除 `docs/frontend-design-v1.md` 归前端窗口）`tests/` + 仓库根（含本文件、CLAUDE.md）；前端窗口 = `frontend/` + `static/` + `docs/frontend-design-v1.md`（构建产物，谁改 frontend/src 谁 build 谁提交）。本窗口不读不改不 git add 前端域。
+- **两窗口并行**：本窗口 = `src/` `docs/`（除 `docs/frontend-design-v1.md` 归前端窗口）`tests/` + 仓库根；前端窗口 = `frontend/` + `static/` + `docs/frontend-design-v1.md`。本窗口不读不改不 git add 前端域。
+
+## v0.0.15 做了什么（F3 后端 view 字段，2026-08-03）
+给前端 F3 渲染用的结构化字段（前端不猜字段名）：
+- `view.ticker_title`（公司全名，resolve 命中时；null=未命中）。**无 exchange**（SEC 数据无交易所）。
+- `view.sources` = `[{form,date,url,note}]`（R5 来源块，confirm SEC fetch 命中时；[]否则）。
+- `view.menu.coverage` = `{total,excluded,reasons[],excluded_items[{mirror_text,reasons[]}]}`（S_MENU 态，P4 结构化版）。
+- 已存在确认：`card.broken_conditions[].source_type`(per-condition 数据来源,P3)+`threshold`+`layer`；`view.open_questions[].text`(被拒候选原文,P2)；`card.entry_anchor={anchor_type,anchor_value,note}`(单读数,**无 history 数组**,§5 未来)。
+- 83 测试绿（+4 view 形状契约测试）。
 
 ## v0.0.14 做了什么（真跑 smoke 发现的 2 bug 修，2026-08-03）
 - **Bug #1 ticker token 扫描误命中**：`ticker_resolver` 去掉句中 ticker 词扫描（论据里的 AI/HBM 凑巧是真 SEC ticker 会被误当候选）。只剩「整串精确 + 英文公司名模糊」。删死代码 `_scan_ticker_tokens`/`_ticker_set`/`_TOKEN_RE`/`import re`。+ 回归测试。
@@ -67,5 +75,5 @@
 
 ## serve / 运行
 - 起 serve：`PYTHONUTF8=1 PYTHONPATH=src python -m thesis_watch.serve`（bash；UA env `THESIS_SEC_USER_AGENT`；host/port `THESIS_HOST`/`THESIS_PORT` 默认 127.0.0.1:8000）。
-- pytest：`PYTHONUTF8=1 python -m pytest -q`（79 绿：基线 42 + 新增 37；v0.0.12 +32 / v0.0.13 +4 条件4 / v0.0.14 +1 Bug#1 回归）。**注意**：Windows 下 pip 读 requirements.txt 需 `PYTHONUTF8=1`（否则 GBK 解码报错）。
+- pytest：`PYTHONUTF8=1 python -m pytest -q`（83 绿：基线 42 + 新增 41；v0.0.12 +32 / v0.0.13 +4 / v0.0.14 +1 / v0.0.15 +4 view 形状）。**注意**：Windows 下 pip 读 requirements.txt 需 `PYTHONUTF8=1`（否则 GBK 解码报错）。
 - 装依赖：`PYTHONUTF8=1 python -m pip install -r requirements.txt`。
