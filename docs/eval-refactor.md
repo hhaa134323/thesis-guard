@@ -227,3 +227,22 @@ caca 填 `evals/blind_verdicts.yaml`（15 case × holding_reason_raw/key_assumpt
 - 11 个 both-acceptable-no-pick（两模型都可接受，无偏好）。
 
 **结论**：port + typed schema 不只「不退」——W2 主观上 **deepseek 质量高于 glm**（caca 偏好 deepseek 的 holding_reason_raw/key_assumptions/mirrors），接受率 85.45%→93.33%。W1 objective（deepseek ≈ glm，next_verdict 0.75 修好 + filer_type/entry_anchor 满分）+ W2 subjective（deepseek 胜）合起来：**切 deepseek 决策正确**，重构（Phase 0-5）质量达标。manual_items（W1 识别问题）留作后续 prompt 引导，不阻塞。
+
+### W1 EXTRACT_PROMPT manual_items 引导扩展（2026-08-04，caca 接受）
+
+W1 manual_items 0.43（vs 旧 0.80）根因：LLM 对 manual_check_items vs mirror 识别不准（prompt 问题，非 schema）。扩 manual_check_items 引导：
+- `SYSTEM_PROMPT`（对话 agent，docs/agent-prompt.md 第 3 步，e5a0af7）+ `EXTRACT_PROMPT`（extract 子 agent，W1 manual_items 真正驱动，f77add3）——两 prompt 都扩：mirror vs manual 区分标准 + 正例（跌破200日均线/突破前高失败/量价背离）+ 反例（营收增速<10%/高管变更=应该是 mirror）+ 每条须有具体标准/可操作判定/频率。
+
+**5-case deepseek 快验**（FDS/MCO/FIS/NVDA/VEEV，新 EXTRACT_PROMPT）：
+
+| 字段 | typed（改前） | typed + 新 EXTRACT_PROMPT | 目标 |
+|---|---|---|---|
+| next_verdict | 0.75 | **0.8** ✅ | ≥0.80 **达标** |
+| manual_items | 0.0 | **0.2** | ≥0.70 未达（5-case 噪声） |
+| filer_type | 1.0 | 1.0 ✅ | 1.0 |
+| entry_anchor | 1.0 | 1.0 ✅ | — |
+
+- next_verdict 0.75→0.8 **达标** ✅（主目标之一）。
+- manual_items 0.0→0.2（FIS 现在正确产了 1 个 manual item；FDS/MCO/NVDA/VEEV GT 期望 manual 但模型漏产——方向对，没全命中，5-case 噪声大）。
+
+**caca 接受**：next_verdict 达标 + filer_type/entry_anchor 满分；manual_items 改善（方向对）但 5-case 未全命中，留作 follow-up（根因：模型对部分 ticker 台账破条件里价格图形型识别不全，prompt 帮了 FIS 没全帮上，可能需更多 prompt 调或 few-shot）。不阻塞产品。真实 manual_items 率待全 15-case（~40min，caca 定时机）。

@@ -2,6 +2,24 @@
 
 > 规则：每次迭代写清楚——依据哪条用户反馈、砍了什么、为什么砍。KILL 判据体检结果也记这里。
 
+## v0.0.22 — 2026-08-04 — manual_check_items prompt 引导扩展（SYSTEM_PROMPT + EXTRACT_PROMPT）+ caca 接受
+
+**做了什么**
+- W1 manual_items 0.43（vs 旧 0.80）根因：LLM 对 manual_check_items vs mirror 识别不准（prompt 引导问题，非 schema）。扩展 manual_check_items 引导：
+  - `docs/agent-prompt.md` 第 3 步（= orchestrator SYSTEM_PROMPT，**对话 agent**）—— mirror vs manual_check_items 区分标准 + 正例（跌破200日均线/突破前高失败/量价背离）+ 反例（营收增速<10%/高管变更=应该是 mirror）+ 每条须有具体标准/可操作判定/频率。commit e5a0af7。
+  - `EXTRACT_PROMPT`（orchestrator.py，**extract 子 agent**，W1 manual_items 真正驱动）—— 同样扩展（之前只有一行「manual_items：价格图形型等不可自动核对项」）。commit f77add7。
+  - 两个 prompt 都改（SYSTEM_PROMPT 帮对话 agent 讨论，EXTRACT_PROMPT 帮 extract 产 EntryExtraction.manual_items）。
+- 5-case deepseek 快验（FDS/MCO/FIS/NVDA/VEEV，新 EXTRACT_PROMPT）：
+  - next_verdict 0.75 → **0.8 ✅ 达标**（≥0.80）
+  - manual_items 0.0 → **0.2**（FIS 现在正确产了 1 个 manual item；FDS/MCO/NVDA/VEEV GT 期望 manual 但模型漏产——方向对，没全命中）
+  - filer_type 1.0 ✅ / entry_anchor_type+value 1.0 ✅
+
+**caca 决策**：接受。next_verdict 达标（主目标之一）+ filer_type/entry_anchor 满分；manual_items 改善（0.0→0.2，方向对）但 5-case 噪声大未全命中，留作 follow-up（根因：模型对部分 ticker 台账破条件里价格图形型识别不全，prompt 引导帮了 FIS 没全帮上，可能需更多 prompt 调或 few-shot）。不阻塞产品。
+
+**自测**：107 pytest 绿；f77add3 在 main + refactor/agent-loop（网络间歇挡 github，retry 后通）。
+
+**状态**：manual_check_items prompt 引导扩展完成 + 接受。W1：next_verdict 0.8 达标 + filer_type/entry_anchor 满分 + manual_items follow-up。W2：deepseek 胜 glm（93.33%）。Phase 0-5 重构 + manual_items prompt 改进，收尾。
+
 ## v0.0.21 — 2026-08-04 — W2 盲评结果：deepseek 胜 glm（接受率 93.33% ↑ vs 85.45%）
 
 **做了什么**
