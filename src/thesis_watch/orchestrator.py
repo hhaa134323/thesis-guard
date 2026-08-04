@@ -242,6 +242,26 @@ def _usage_tokens(result) -> tuple[int | None, int | None]:
     return it, ot
 
 
+def _coerce_extraction(raw: dict) -> dict:
+    """submit_extraction(extraction: dict) 是 loose schema（strict_mode=False）——模型常把
+    nested 字段（next_verdict / entry_anchor）传成 str 而非 dict，导致 EntryExtraction(**raw)
+    ValidationError。这里把 str 包成最小 dict，让 pydantic 校验过。mirrors 难从 str 推断，不强行
+    （缺则 make_mirror 转 open_questions）。"""
+    out = dict(raw)
+    nv = out.get("next_verdict")
+    if isinstance(nv, str):
+        out["next_verdict"] = {"event": nv} if nv.strip() else None
+    ea = out.get("entry_anchor")
+    if isinstance(ea, str):
+        out["entry_anchor"] = ({"anchor_type": "other", "note": ea} if ea.strip() else None)
+    # key_assumptions / manual_items：模型可能传 list[str] → 包成 [{text: str}]
+    for fld in ("key_assumptions", "manual_items"):
+        vals = out.get(fld)
+        if isinstance(vals, list):
+            out[fld] = [{"text": v} if isinstance(v, str) else v for v in vals]
+    return out
+
+
 def _run_extract(agent: Agent, text: str, cfg: dict, *, mode: str = "A") -> dict:
     """单次抽取（OpenAI Agents SDK + deepseek）。返回 {ok, extraction, status, error, dur_s,
     retries_429, in_tok, out_tok}。mode B=自澄清 prefix（A/B 对照，与旧 entry_agent.extract 一致）。
@@ -261,7 +281,7 @@ def _run_extract(agent: Agent, text: str, cfg: dict, *, mode: str = "A") -> dict
                         "error": "agent 未调 submit_extraction / 空 extraction",
                         "dur_s": round(time.perf_counter() - t0, 2), "retries_429": retries,
                         "in_tok": None, "out_tok": None}
-            ext = EntryExtraction(**raw)  # pydantic 校验 + coerce 嵌套 dict → EntryExtraction
+            ext = EntryExtraction(**_coerce_extraction(raw))  # coerce str→dict 后 pydantic 校验
             it, ot = _usage_tokens(result)
             return {"ok": True, "extraction": ext, "status": "pass", "error": None,
                     "dur_s": round(time.perf_counter() - t0, 2), "retries_429": retries,

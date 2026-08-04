@@ -17,9 +17,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import random
 import re
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -361,6 +363,8 @@ def cmd_run(args) -> int:
             })
             print(f"{ticker:8s} {gc.get('exposure'):5s} {m:22s} {res.get('status'):8s} "
                   f"obj={ {k:v for k,v in per_model_obj[m]['fields'].items() if isinstance(v,bool)} }")
+            # 429 限流缓解：每 case×model 后 sleep（env THESIS_EVAL_INTERCALL_SEC，默认 0；deepseek 批跑建议 15-20）
+            time.sleep(int(os.environ.get("THESIS_EVAL_INTERCALL_SEC", "0")))
 
         # 盲评对照：每个主观字段随机左右、隐藏来源
         pair = {"case": ticker, "fields": {}}
