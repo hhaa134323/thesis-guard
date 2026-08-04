@@ -160,20 +160,20 @@ Phase 3 完成后，caca 测"丝滑感"——SSE streaming 是否像 Notion AI �
 
 | Case | 自动化方式 | 结果 | 说明 |
 |---|---|---|---|
-| 1 探针仓 MCO | pytest（resolve_ticker 逻辑）+ SYSTEM_PROMPT 措辞 | ⚠️ 部分 + 需 caca live | resolve_ticker 精确匹配 ✓（test_ticker_resolver 9 测试）；措辞"关注"在 SYSTEM_PROMPT 明写 ✓；live agent 实跑 blocked（DeepSeek 不通）→ caca 重跑 demo |
-| 2 已建仓 MCO | 同上 | ⚠️ 部分 + 需 caca live | 同 Case 1；措辞"持有"在 SYSTEM_PROMPT ✓ |
+| 1 探针仓 MCO | pytest + live demo | ✅ | resolve_ticker("MCO") ✓；agent 回复用「关注」措辞 + 先确认标的再问理由 ✓（live demo 2026-08-04 过） |
+| 2 已建仓 MCO | pytest + live demo | ✅ | resolve_ticker("MCO") ✓；agent 回复用「持有」措辞（探针仓 vs 已建仓 区分）✓（live demo 过） |
 | 3 逐字段引导 | 仅浏览器 | 需 caca 验收 | 5 步逐字段讨论是 live 多轮 UX，只能浏览器测 |
 | 4 key_assumptions 用户确认 | pytest（G3 逻辑）+ 浏览器 | ✅ 逻辑 + 需 caca UX | G3（条件3 is_paraphrase / 条件4 is_v1_auto / P3 / R1-R3）✓ test_orchestrator_impl 7 测试；UX 确认环节需浏览器 |
 | 5 估值选项 | 仅浏览器 | 需 caca 验收 | 估值方法选项是 LLM 判断（SYSTEM_PROMPT 指引不给映射表），只能 live/浏览器测 |
 | 6 generate_menu | pytest（filter_executable_mirrors）+ 浏览器 | ✅ 逻辑 + 需 caca UX | filter_executable_mirrors ✓ test_menu_filter；菜单呈现 UX 需浏览器 |
 | 7 必填字段 | pytest | ✅ | save_card G1 必填 + G4 用户确认 ✓ test_orchestrator_impl（test_save_g1_rejects_* / test_save_g4_rejects_unconfirmed） |
 | 8 ticker 未验证 | pytest（G4）+ live | ⚠️ 部分 + 需 caca live | G4（confirmed_by_user）✓ tested；"resolve_ticker 前置"是 agent loop 行为（SYSTEM_PROMPT 约束），需 live/浏览器验 |
-| 9 汇丰→HSBC | pytest（resolve_ticker HSBC 逻辑）+ live | ⚠️ 部分 + 需 caca live | resolve_ticker("HSBC") 精确匹配 ✓；"汇丰→HSBC 翻译"是 DeepSeek 世界知识，需 live 跑（网络 blocked） |
+| 9 汇丰→HSBC | pytest + live demo | ✅ | resolve_ticker("HSBC") ✓（agent 把「汇丰」翻译成 HSBC 再调）；回复「HSBC Holdings PLC（汇丰控股），ticker: HSBC，这是你说的标的吗？」+ 让用户确认 ✓（live demo 2026-08-04 过） |
 | 10 LLM 幻觉防护 | pytest（G2 结构校验） | ⚠️ 部分 | save_card G2 安全边际结构校验（anchor_type+value 须有）✓ test_save_g2_rejects_*；**已知局限**：G2 是结构校验非事实核查，LLM 编造一个"看似合理"的 anchor_value G2 拦不住——需 caca 知悉 |
 
 **自动化结论**：
 - pytest 离线覆盖：Case 7、4（G3）、6（filter）、10（G2 结构）+ 1/2/8/9 的确定性部分（resolve_ticker / G4）。
-- 需 caca 浏览器/live 验收：Case 3、5（纯 live UX）；Case 1、2、4、6、8、9 的 UX/翻译部分。
+- 需 caca 浏览器/live 验收：Case 3、5（纯 live UX）；Case 1、2、9 live demo 已过（措辞 关注/持有 + 汇丰→HSBC 翻译）；Case 4、6、8 的 UX 部分。
 - 性能验收（单票 ≤5min / tool ≤3 per turn / SSE ≤2s 首字）：单票录入了 check_agent 84.6s（≤5min ✓）；其余需 caca 浏览器 devtools 量。
 
 **Regression**：107 测试绿（基线 75 + Phase 5 新增 32：orchestrator impl 16 + check_agent 16）。
