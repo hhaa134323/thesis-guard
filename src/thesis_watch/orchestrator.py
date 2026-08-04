@@ -46,7 +46,7 @@ from .config import (
     get_redline_thresholds,
     load_config,
 )
-from .fetchers import sec_edgar, ticker_resolver
+from .fetchers import FetcherRegistry, ticker_resolver
 from .models import (
     Assumption,
     Confirmation,
@@ -896,15 +896,16 @@ def check_filing(ticker: str, form_type: str | None = None) -> dict:
     form_type 可选：按表单类型筛（10-K 取最近年报 / 10-Q 最近季报 / 20-F、6-K 外国发行人 / 8-K 重大事项）；
     不传 → 任意表单最近一份（行为不变）。
     返回 {form_type, filed_at, url, title} 或 {found:false}。取不到明说「查不到」，不编造（R5）。"""
-    ev = sec_edgar.fetch_latest_filing(ticker, form_types=[form_type] if form_type else None)
-    if ev is None:
+    rows = FetcherRegistry.get("sec").fetch(ticker, form_type=form_type)
+    if not rows:
         return {"found": False}
+    ev = rows[0]
     return {
         "found": True,
-        "form_type": ev.form_type,
-        "filed_at": ev.filed_at.date().isoformat() if hasattr(ev.filed_at, "date") else str(ev.filed_at),
-        "url": ev.url,
-        "title": ev.title,
+        "form_type": ev["form_type"],
+        "filed_at": ev["filed_at"],
+        "url": ev["url"],
+        "title": ev["title"],
     }
 
 

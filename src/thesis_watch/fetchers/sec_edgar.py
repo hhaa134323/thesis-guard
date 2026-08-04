@@ -15,6 +15,8 @@ from datetime import datetime, timedelta, timezone
 
 import requests
 
+from .base import BaseFetcher, FetcherRegistry
+
 # SEC fair-access 要求描述性 UA + 联系邮箱；env 覆盖（公开部署前换 generic/作者邮箱）
 USER_AGENT = os.environ.get("THESIS_SEC_USER_AGENT", "ThesisWatch/0.0 2248789162@qq.com")
 COMPANY_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
@@ -230,5 +232,59 @@ def fetch_latest_filing(ticker: str, user_agent: str | None = None,
     return best
 
 
+# --- BaseFetcher subclass + 注册（Stage 2 数据源抽象层；base.py 定义接口/注册表） ---
+def _filing_event_to_dict(ev: "FilingEvent") -> dict:
+    """FilingEvent -> plain dict（BaseFetcher.fetch 统一返回 list[dict]；字段/值与
+    orchestrator 旧 check_filing 内联构造一致，行为不变）。"""
+    return {
+        "ticker": ev.ticker,
+        "form_type": ev.form_type,
+        "filed_at": ev.filed_at.date().isoformat() if hasattr(ev.filed_at, "date") else str(ev.filed_at),
+        "url": ev.url,
+        "title": ev.title,
+    }
+
+
+class SecFetcher(BaseFetcher):
+    """SEC EDGAR fetcher（BaseFetcher subclass，注册名 "sec"）。
+
+    包装 sec_edgar 现有确定性逻辑（forms_for_filer / fetch_filings / fetch_latest_filing），
+    不重写取数。fetch() 返回 list[dict]（空 = 查不到，R5 不编造）；首条 = 最近一份。
+    orchestrator.check_filing 经 FetcherRegistry.get("sec") 取此实例，行为不变（与
+    form_type 过滤兼容）。Stage 2 接行情 / Yahoo RSS 等新数据源时，写新 subclass +
+    FetcherRegistry.register 即可。
+    """
+
+    name = "sec"
+
+    def fetch(self, ticker: str, **kwargs) -> list[dict]:
+        """取 ticker 最近一份 SEC filing（可选 form_type 过滤）。
+
+        kwargs:
+            form_type: str | None —— 按表单类型筛（如 "10-K"/"10-Q"/"20-F"/"6-K"/"8-K"）；
+                       不传 → 任意表单最近一份（行为不变，与 check_filing 不传 form_type 一致）。
+        返回 list[dict]：空 = 查不到；非空首条 = 最近一份
+            [{ticker, form_type, filed_at, url, title}]。
+        """
+        form_type = kwargs.get("form_type")
+        form_types = [form_type] if form_type else None
+        ev = fetch_latest_filing(ticker, form_types=form_types)
+        if ev is None:
+            return []
+        return [_filing_event_to_dict(ev)]
+
+    # --- 透传 sec_edgar 现有能力（Stage 2 路由扩展用；check_filing 仅用 fetch） ---
+    @staticmethod
+    def forms_for_filer(filer_type) -> tuple[str, ...]:
+        return forms_for_filer(filer_type)
+
+    @staticmethod
+    def fetch_filings(tickers, lookback_hours, user_agent=None, form_types=None) -> list[FilingEvent]:
+        return fetch_filings(tickers, lookback_hours, user_agent=user_agent, form_types=form_types)
+
+
+FetcherRegistry.register("sec", SecFetcher)
+
+
 __all__ = ["FilingEvent", "fetch_filings", "fetch_latest_filing",
-           "forms_for_filer", "FORM_TYPE_LABELS", "USER_AGENT"]
+           "forms_for_filer", "FORM_TYPE_LABELS", "USER_AGENT", "SecFetcher"]
