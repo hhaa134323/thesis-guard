@@ -197,3 +197,22 @@ Phase 3 完成后，caca 测"丝滑感"——SSE streaming 是否像 Notion AI �
 - **W2 主观接受率**：deferred——需 caca 填 `evals/blind_verdicts.yaml`（A/B 盲评 deepseek vs glm 的 holding_reason_raw/key_assumptions/mirrors）后跑 `run_l1.py collect`。`blind_pairs.yaml` 已导出（隐藏来源随机左右）。
 
 **待 caca 定**（移植质量成本）：新路径 manual_items/next_verdict 退步是 `submit_extraction` loose schema 的代价（换 drop pydantic-ai）。选项：(a) 接受 tradeoff（deepseek+orchestrator 栈简、filer_type 满分，但 manual_items/next_verdict 弱）；(b) 改进 `submit_extraction` schema（typed fields 强制 next_verdict{event,date} 结构）；(c) 试 `output_type=EntryExtraction`（schema 强制，但 B4 deepseek thinking 拒 tool_choice=required 风险）。**不自作主张切回 pydantic_ai/glm**——等 caca 定。
+
+### W1 schema 收紧实验（2026-08-04，typed ExtractionInput）— caca 选了 (b)
+
+caca 选 (b)：`submit_extraction` 收紧 typed schema（`ExtractionInput` 镜像 `EntryExtraction`：`next_verdict` 强制 `{event, date}` 对象非 string，`manual_items` 强制 `[{text,reason,cadence}]`）。`strict_mode=True` 被 SDK strict-schema 生成器拒（nested model additionalProperties 冲突，非 B4）→ `strict_mode=False`；typed model 仍由 SDK 按 pydantic parse args → string next_verdict 校验失败 → 强制 `{event,date}` 或 null。`_coerce_extraction` 保留兜底。commit 434e1e1。
+
+**5-case deepseek 快验**（FDS/MCO/FIS/NVDA/VEEV，typed schema；不跑全 30 省 40min）：
+
+| 字段 | OLD deepseek（loose dict） | NEW deepseek（typed） | 目标 |
+|---|---|---|---|
+| next_verdict | 0.0 | **0.75** ✅ | ≥0.80（接近） |
+| manual_items | 0.43（15 case）/ 0.2（这5） | 0.0（这5） | ≥0.70 ❓ 未达 |
+| filer_type | 1.0 | 1.0 ✅ | 1.0 |
+| entry_anchor_type/value | — | 1.0 ✅ | — |
+
+- **next_verdict 修好了**：typed schema 强制 `{event, date}` → date 现在 parseable（FDS=2026-06 / MCO=2026-10 / FIS=2026-08 / NVDA=2026-08，VEEV=None）→ `_date_match` 命中 → 0.0→0.75。15-case 上大概率 ≥0.80。
+- **manual_items 不确定**：这 5 case 4 个（FDS/MCO/FIS/NVDA）新旧都 False（case-selection——这些 case 模型本就不产 manual_items）；VEEV old=True new=False（疑似 LLM 运行间 variance，5 样本不足以下结论）。typed schema 强制 `{text,reason,cadence}` 结构，但 manual_items 是「模型要不要识别价格图形型条件」的**识别**问题，非结构问题——schema 收紧未必帮识别。
+- **filer_type / entry_anchor 满分** ✓。
+
+**结论**：typed schema（434e1e1）达 next_verdict 目标（0.0→0.75，主目标）+ filer_type/entry_anchor 满分；manual_items 未达（5-case 不确定，需全 15-case 确认，但根因是识别非结构）。**待 caca 定**：(a) 接受（next_verdict 修好是大头，manual_items 留作后续 prompt 引导）；(b) 放松 `_ManualItemInput`（只 `{text}`，reason/cadence 全 default，降模型产出门槛）；(c) 跑全 30 确认 manual_items 15-case 率（40min，caca 定时机）。deepseek vs glm 持平待全量跑（5-case 只跑了 deepseek）。
