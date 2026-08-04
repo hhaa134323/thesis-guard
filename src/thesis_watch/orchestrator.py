@@ -124,7 +124,7 @@ EXTRACT_PROMPT = """你是持仓条件录入助手。从用户给的 thesis 描�
 - manual_items：价格图形型等不可自动核对项。
 - filer_type：申报方类型（美国本土 10-K → domestic_10k；20-F/6-K 外国发行人 → foreign_issuer_20f_6k；ETF/ETN/基金/信托 → etf_fund）。
 - ETF/基金类（etf_fund）：无公司层面 10-K/20-F，破条件依赖指数成分/基金公告/价格规模数据，v1 数据源不覆盖 → 所有破条件记为 manual_items（人工自查），不进自动核对。
-- next_verdict：下一个能证伪 thesis 的事件+日期（财报日等）；不等于下次复盘日。
+- next_verdict：下一个能证伪 thesis 的事件+日期（财报日等）；不等于下次复盘日。**必须是 {event, date} 对象**（event=事件描述，date=YYYY-MM-DD 或 YYYY-MM；不确定 date 留 null），不要传一句话 string。
 - entry_anchor：录入估值锚。从文本「加仓价 / 安全边际」相关段落中识别估值口径。
   - anchor_type 从以下闭集九项中选（选不出口径时返回 other，不要留 null；文本中确实没有加仓价/安全边际信息时才返回 null）：
     ttm_gaap_pe              TTM GAAP P/E（最近四季 GAAP 摄薄 EPS × 倍数）
@@ -179,6 +179,61 @@ def _is_429(e: Exception) -> bool:
     return "429" in s or "rate" in s or "ratelimit" in s
 
 
+# --- submit_extraction typed schema（Phase 5 收紧：强制 next_verdict 为 {event,date} 对象，
+# manual_items 为 [{text,...}] 对象，杜绝模型传 string；镜像 EntryExtraction 结构）---
+class _NVInput(BaseModel):
+    """next_verdict 结构（强制 event + date，不允许 string）。date 格式 YYYY-MM-DD 或 YYYY-MM。"""
+    event: str = Field(description="下一个能证伪 thesis 的事件（如「Q3 财报发布」）")
+    date: str | None = Field(default=None, description="事件日期 YYYY-MM-DD 或 YYYY-MM；不确定留 null")
+    source_note: str = ""
+
+
+class _EAInput(BaseModel):
+    """entry_anchor 结构。"""
+    anchor_type: str = Field(description="估值口径闭集九项之一（ttm_gaap_pe/forward_non_gaap_pe/.../other）")
+    anchor_value: float | None = None
+    note: str = ""
+
+
+class _AssumptionInput(BaseModel):
+    text: str
+    judgeable: bool = True
+
+
+class _MirrorInput(BaseModel):
+    assumption_text: str
+    mirror_text: str
+    threshold: dict | None = None
+    source_type: str = ""
+
+
+class _ManualItemInput(BaseModel):
+    """manual_items 结构（强制 {text,reason,cadence}，不允许 string）。"""
+    text: str
+    reason: str = "价格图形型"
+    cadence: str = "monthly"
+
+
+class _OQInput(BaseModel):
+    field: str = "key_assumptions"
+    reason: str = ""
+    text: str = ""
+
+
+class ExtractionInput(BaseModel):
+    """submit_extraction 的 typed schema（替代 loose dict，Phase 5 收紧）。强制 next_verdict 为
+    {event, date} 对象（非 string），manual_items 为 [{text,reason,cadence}] 对象（非 string）。
+    映射 schema.EntryExtraction；_run_extract 据此 + _coerce_extraction 兜底构造 EntryExtraction。"""
+    holding_reason_raw: str
+    key_assumptions: list[_AssumptionInput] = Field(default_factory=list)
+    mirrors: list[_MirrorInput] = Field(default_factory=list)
+    manual_items: list[_ManualItemInput] = Field(default_factory=list)
+    filer_type: str = "other"
+    next_verdict: _NVInput | None = None
+    entry_anchor: _EAInput | None = None
+    open_questions: list[_OQInput] = Field(default_factory=list)
+
+
 @dataclass
 class ExtractCtx:
     """submit_extraction 工具写回；_run_extract 读它建 EntryExtraction。"""
@@ -191,12 +246,14 @@ class MenuCtx:
     menu_submitted: dict | None = None
 
 
-@function_tool(strict_mode=False)  # extraction: dict 嵌套入参，strict schema 不稳；关掉保可靠（与 save_card/submit_verdicts 同款）
-def submit_extraction(ctx: RunContextWrapper[ExtractCtx], extraction: dict) -> dict:
-    """提交抽取的 EntryExtraction（结构化输出通道，替代 output_type）。extraction 须含
+@function_tool(strict_mode=False)  # strict_mode=True 被 SDK strict-schema 生成器拒（nested model additionalProperties 冲突，非 B4）；typed ExtractionInput 仍由 SDK 按 pydantic 模型 parse args → string next_verdict 校验失败 → 强制 {event,date} 或 null + _coerce_extraction 兜底
+def submit_extraction(ctx: RunContextWrapper[ExtractCtx], extraction: ExtractionInput) -> dict:
+    """提交抽取的 EntryExtraction（结构化输出通道，替代 output_type）。extraction 是结构化对象：
     holding_reason_raw / key_assumptions[{text}] / mirrors[{assumption_text,mirror_text,threshold,source_type}]
-    / open_questions / manual_items / filer_type / next_verdict / entry_anchor。必须调，不要在回复里复述。"""
-    ctx.context.extraction_submitted = extraction or {}
+    / manual_items[{text,reason,cadence}] / filer_type / next_verdict{event,date} / entry_anchor{anchor_type,anchor_value,note}
+    / open_questions。**next_verdict 必须是 {event, date} 对象**（date 格式 YYYY-MM-DD 或 YYYY-MM，不确定留 null），
+    不要传一句话 string。必须调，不要在回复里复述。"""
+    ctx.context.extraction_submitted = extraction.model_dump()
     return {"ok": True}
 
 
