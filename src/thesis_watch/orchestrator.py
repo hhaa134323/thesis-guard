@@ -469,7 +469,8 @@ SYSTEM_PROMPT = """你是 Thesis Guard 的 thesis 讨论伙伴。你的职责是
    - 保存前确认所有必填字段都有值
    - 5 个必填字段缺一不可，不允许部分保存
 
-5. check_filing(ticker) — 查询最近一份 SEC filing。
+5. check_filing(ticker, form_type?) — 查询最近一份 SEC filing。
+   - form_type 可选：按表单类型筛（10-K 年报 / 10-Q 季报 / 20-F 外国发行人年报 / 6-K / 8-K 重大事项）；不传 = 任意表单最近一份
    - 用于回答用户在确认阶段的问题（如"最近财报什么时候？"）
 
 ## 你怎么跟用户讨论
@@ -888,12 +889,14 @@ def save_card(
     )
 
 
-@function_tool
-def check_filing(ticker: str) -> dict:
+@function_tool(strict_mode=False)  # 加 form_type: str|None=None（可缺省），strict schema 不稳，关掉保可靠（与 save_card 同款）
+def check_filing(ticker: str, form_type: str | None = None) -> dict:
     """查询某 ticker 最近一份 SEC filing（10-K/10-Q/20-F/6-K），用于回答用户在确认阶段
-    的问题（如「最近财报什么时候？」）。返回 {form_type, filed_at, url, title} 或 {found:false}。
-    取不到明说「查不到」，不编造（R5）。"""
-    ev = sec_edgar.fetch_latest_filing(ticker)
+    的问题（如「最近财报什么时候？」）。
+    form_type 可选：按表单类型筛（10-K 取最近年报 / 10-Q 最近季报 / 20-F、6-K 外国发行人 / 8-K 重大事项）；
+    不传 → 任意表单最近一份（行为不变）。
+    返回 {form_type, filed_at, url, title} 或 {found:false}。取不到明说「查不到」，不编造（R5）。"""
+    ev = sec_edgar.fetch_latest_filing(ticker, form_types=[form_type] if form_type else None)
     if ev is None:
         return {"found": False}
     return {
