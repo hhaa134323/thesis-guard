@@ -2,6 +2,111 @@
 
 > 规则：每次迭代写清楚——依据哪条用户反馈、砍了什么、为什么砍。KILL 判据体检结果也记这里。
 
+## v0.0.21 — 2026-08-04 — W2 盲评结果：deepseek 胜 glm（接受率 93.33% ↑ vs 85.45%）
+
+**做了什么**
+- caca 盲评 `evals/blind_verdicts.yaml`（15 case × holding_reason_raw/key_assumptions/mirrors，A/B 匿名 deepseek+glm 随机左右；OLD qwen+glm 裁决备份 `blind_verdicts_2026-08-03_qwen_glm.bak.yaml`）→ `python -m evals.run_l1 collect` 出 W2。
+
+**结果**：
+- **用户接受率 93.33%（42/45）** —— vs 旧基线 85.45%，**上升 ~8pp** ✅（门槛 ≥0.85）。
+- **deepseek 胜率 51.11%（23/45）** > **glm 17.78%（8/45）** —— caca 盲评 deepseek 明显胜 glm ✅。
+- 3 不接受 = GDXU（W1 两模型都 extraction failed "other"，盲评 both-wrong 一致）；11 both-acceptable-no-pick。
+
+**结论**：port + typed schema 不只「不退」——W2 主观 deepseek 质量高于 glm（caca 偏好 deepseek 的抽取），接受率 85.45%→93.33%。W1 objective（deepseek ≈ glm，next_verdict 0.75 修好 + filer_type/entry_anchor 满分）+ W2 subjective（deepseek 胜）合：**切 deepseek 决策正确**，Phase 0-5 质量达标。manual_items 留作后续 prompt 引导。
+
+**状态**：Phase 5 收尾 + W2 验证完成。重构（Phase 0-5）质量达标。
+
+## v0.0.20 — 2026-08-04 — submit_extraction typed schema（next_verdict 强制 {event,date}）+ caca 接受
+
+**做了什么**
+- `submit_extraction`：loose `extraction: dict` → typed `ExtractionInput`（镜像 `EntryExtraction`：`next_verdict` 强制 `{event, date}` 对象非 string，`manual_items` 强制 `[{text,reason,cadence}]`，+ `_NVInput/_EAInput/_AssumptionInput/_MirrorInput/_ManualItemInput/_OQInput`）。`strict_mode=True` 被 SDK strict-schema 生成器拒（nested model `additionalProperties` 冲突，非 B4）→ `strict_mode=False`；typed model 仍由 SDK 按 pydantic parse args → string next_verdict 校验失败 → 强制 `{event,date}` 或 null。`_coerce_extraction` 保留兜底。EXTRACT_PROMPT next_verdict 行加 `{event,date}` 结构提示。commit 434e1e1。
+- **5-case deepseek 快验**（不跑全 30 省 40min，per caca 反馈）：next_verdict **0.0→0.75** ✅（typed 强制 date parseable：FDS=2026-06/MCO=2026-10/FIS=2026-08/NVDA=2026-08）；filer_type 1.0 ✅；entry_anchor_type/value 1.0 ✅；manual_items 0.0（5-case 不确定——4 个新旧都 False 是 case-selection，VEEV old=True new=False 疑 LLM variance；根因是「模型识别价格图形型条件」的识别问题非结构问题）。
+
+**依据**
+- v0.0.18 移植后 manual_items/next_verdict 退步（loose dict schema）；caca 选改进 schema（typed fields）。strict 失败 → 降级 strict_mode=False + typed model + coerce 兜底。
+
+**caca 决策**：**接受 (a)**（2026-08-04）——typed schema 为最终状态。next_verdict 修好是主目标 + filer_type/entry_anchor 满分；manual_items 留作后续 prompt 引导（识别问题，非结构，不阻塞产品）。不自作主张切回 pydantic-ai/glm。deepseek vs glm 持平 + manual_items 15-case 率待全量跑确认（可选，caca 定时机）。
+
+**自测**：107 pytest 绿；live G3 ok（FDS next_verdict={event, date='2026-06'} 非 string）。
+
+**状态**：Phase 5 收尾——extract/menu 移植 deepseek（v0.0.18）+ coercion 兜底（v0.0.19）+ typed schema 收紧 next_verdict（v0.0.20，caca 接受）。重构（Phase 0-5）完成。
+
+## v0.0.19 — 2026-08-04 — W1 extract eval 重跑（deepseek 移植后）+ 修复 coercion bug
+
+**做了什么**
+- **修 extract coercion bug（a07ca68）**：移植后 `_run_extract` 用 `submit_extraction(extraction: dict)`（loose schema）→ 模型把 `next_verdict`/`entry_anchor` 当 string 传 → `EntryExtraction(**raw)` ValidationError → extract 返 "other"（真台账输入全挂）。加 `_coerce_extraction`：str→{event}/{anchor_type:other,note} + key_assumptions/manual_items list[str]→[{text}]。验 FDS extract ok=True。
+- **W1 eval 重跑完成**（`run_l1.py run --allow-stale-gt`，PYTHONUTF8=1）：15 case × 2 模型（deepseek + glm，都走新 orchestrator `submit_extraction` 路径）。结果记 `docs/eval-refactor.md` 末尾「W1 extract eval 重跑」。
+
+**结果**：
+- deepseek vs glm（都新路径）：deepseek **不明显低于** glm——n_pass 14>13、manual_items 0.43 vs 0.46、next_verdict 0.0 vs None、filer_type 都 1.0。per caca 规则，deepseek 持平 glm。
+- **新路径 vs 旧 pydantic_ai（移植成本）**：manual_items 0.8→0.43-0.46、next_verdict 1.0→0/None（两模型都退）；filer_type 0.93→1.0（升）。根因：loose dict schema 不强制结构 → next_verdict 当 string 传无 date → `_date_match` 失败；manual_items 识别不全。**待 caca 定**（接受 tradeoff / 改进 schema typed fields / 试 output_type 但 B4 风险）——不自作主张切回 pydantic_ai/glm。
+
+**自测**：107 pytest 绿；W1 eval 全 30 调用完成（coercion 修后无 "other"，仅 GDXU 两模型都 other + CRM glm other——边缘 case）。W2 主观 deferred（caca 填 blind_verdicts.yaml）。
+
+## v0.0.18 — 2026-08-04 — Phase 5 完成：extract/menu 移植 deepseek + 删 pydantic-ai
+
+**做了什么**
+- **orchestrator.py 移植**：`extract_card` / `generate_menu` 工具内部 LLM 调用从 PydanticAI+glm 移植到 OpenAI Agents SDK+deepseek。走 `submit_extraction` / `submit_menu` tool call 提交结构化输出（**不用 `output_type`**——DeepSeek thinking 模式拒 `tool_choice=required` 即 B4；且 output_type 会让模型短路成空结构不调工具，见 check_agent `submit_verdicts` 同款）。移入 `EXTRACT_PROMPT` / `MENU_PROMPT` / `MenuMirror` / `MenuCandidates` / `filter_executable_mirrors`。`build_extract_agent` / `extract` / `_run_generate_menu` 公共 API for entry_cli / evals。
+- **删 3 文件 + 3 依赖**：`entry_agent.py` / `menu.py` / `llm.py` + `pydantic-ai` / `pydantic-evals` / `anthropic`（加 `openai` 显式）。drop glm task_model——extract 改走 `agent_model`=deepseek。
+- **更新 5 consumer**：`entry_cli`（build_extract_agent+extract from orchestrator）/ `tests/test_menu_filter`（MenuMirror+filter from orchestrator）/ `scripts/day1_fds_validation`（重写用 orchestrator.extract，5-run gate deepseek）/ `evals/run_l1`（build_extract_agent+extract；MODELS deepseek vs glm 头对头）/ `orchestrator`（自给自足）。`config.py` docstring + `demo_phase1.py` 注释同步。
+- **entry_loop.stream_run**：`async for` 包 try/except（流式中途出错发 error+done 不断连，不再裸抛断连）——前端 flag #1。
+- #2（fetch 路径 setMenu normalizeMenu）是前端窗口域，未动（其 SSE 集成 commit 待签字应含 normalizeMenu，per parallel-windows 不碰 frontend/）。
+
+**依据**
+- caca 定切 deepseek（Phase 5 决策）。任务前提「extract_card/generate_menu 已不依赖，orchestrator 内置」本不成立（orchestrator 仍 import entry_agent/menu），故先移植再删——不能直接删。
+- 不用 `output_type` 避 B4（DeepSeek thinking 拒 `tool_choice=required`）+ 避短路（check_agent 实测 output_type 产空结构不调 fetch）。
+
+**自测**
+- 107 pytest 绿（port 后 test_menu_filter import 改 orchestrator；test_orchestrator_impl mock `_run_extract` 仍过）。
+- **live 验 deepseek extract + G3 双层（step 6）**：`_extract_card_impl(sample MCO thesis)` → ok=True，deepseek 调 `submit_extraction` 产 valid EntryExtraction，G3（`is_paraphrase`）正确把同义复述假设转 open_questions。pipeline 通，未短路、未踩 B4。
+- **W1 eval 重跑（step 5）⚠️ deferred**：`run_l1.py run --allow-stale-gt`（PYTHONUTF8=1 避 Windows gbk 崩 ⚠️ print；snapshot_ref 不匹配是 merge commit 形式差异，assets/ 内容 0 diff，GT 未过期）。跑了 28/30 后 deepseek 端点限流（429 backoff）卡住，`_l1_result.json` 未刷新。**eval 未完成**——deepseek+submit_extraction ~37s/extract（agent loop 开销，比 pydantic_ai 慢），30 调用触发限流。port 功能已验（step 6），全量 eval 量化 deferred（限流清后 caca 重跑，或减 case 数）。
+- perf 观察：deepseek extract ~37s/extract（vs pydantic_ai ~5-10s）。单次 extract_card 调用可接受（≤5min/case），但 eval 批跑慢 + 易触发限流。caca 知悉。
+
+**状态**：Phase 5 完成——清理旧代码 ✅（B6 已解除）；extract/menu 走 deepseek ✅；107 测试 ✅；live G3 ✅；全量 W1 eval ⚠️ deferred（限流）。重构（Phase 0-5）主体完成。
+
+## v0.0.17 — 2026-08-04 — Phase 5（部分）：agent-loop 行为测试 + 10 case 验收 + 文档；清理旧代码 blocked
+
+**做了什么**
+- **新增 32 个 agent-loop 行为测试**（替代 Phase 2 砍掉的 entry_loop 状态机测试，补回 83→75 的缺口并超）：
+  - `tests/test_orchestrator_impl.py`（16）：`_extract_card_impl` G3（条件3 is_paraphrase / 条件4 is_v1_auto / P3 make_mirror 缺阈值 / 对应假设被拒 / R1-R3 红线 / 抽取失败友好错误）+ `_save_card_impl`（G1 必填 / G4 用户确认 / G2 安全边际完整 / horizon 合法 / R1-R3 / happy path 落库）。`_run_extract` + `_get_store` monkeypatch，不触网不调 LLM。
+  - `tests/test_check_agent.py`（16）：`_map_status`（triggered/watch/untriggered/未知兜底）+ `_verdict_from_dict` + `run_check` E1-E8 全分支（mock `Runner.run_sync` 注入 ctx 状态：E1 fetch 失败 / E7 跳过 fetch / 无 filings 全 untriggered / E7 未提交判决 / 正常三态 / E8 redline / E3 evidence 回放不过 / E4 缺 cond / E6 429）。
+- **10 case 验收**：`docs/eval-refactor.md` 末尾加「验收结果」表。pytest 离线覆盖 Case 4/6/7/10 + 1/2/8/9 确定性部分；纯 live/浏览器 UX（Case 3/5 + 各 case UX/翻译）列给 caca 验收。性能：check_agent 84.6s（≤5min ✓）。
+- **文档**：README 加「架构」节（agent loop + DeepSeek + 5 tools + check_agent 三态 + 仍走 PydanticAI 待清理）+ 项目状态更新到 Phase 5；refactor-spec §5 Phase 表加状态列 + Phase 5 进度说明，§6 regression 83→107；BLOCKERS 加 B6（清理旧代码 blocked）。
+- **未做（blocked）**：删 `llm.py` / `entry_agent.py` / `menu.py` / `pydantic-ai`。任务前提「extract_card/generate_menu 已不依赖，orchestrator 内置」不成立——orchestrator 仍 import entry_agent/menu（工具内部委托 PydanticAI + glm-5.2-fast-preview）。删除需先移植到 OpenAI Agents SDK，含「提取模型选 glm（W1/W2 eval 验过 96%）还是切 deepseek」的产品决策 + live 验证（网络当时不通）。**不擅自做**——core extract_card 是 live-verified 流程，移植需 caca 定模型 + 网络通时 live 验。
+
+**依据**
+- Phase 5 任务（10 case 验收 + 测试重做 + 清理旧代码 + 文档）。10 case 验收 + 测试重做 + 文档可离线做（无网络依赖），已落地；清理旧代码 blocked（见 BLOCKERS B6）。
+- 测试覆盖缺口：`_extract_card_impl` / `_save_card_impl` / `check_agent` 三态+E1-E8 此前无专属单测（Phase 1 impl 隔离测试未 commit），Phase 5 补齐。
+
+**自测**
+- 107 pytest 绿（75 基线 + 32 新增，2.5s）。新测试全离线（mock LLM/Runner/store/SEC），无网络无 flaky。
+
+**状态**：Phase 5 部分——eval + 测试 + 文档 ✅；清理旧代码 ⛔ blocked（B6），待 caca 定提取模型 + 网络通。Phase 5 不算全部完成。
+
+## v0.0.16 — 2026-08-04 — Phase 4：check_agent agent loop 重构（pydantic_ai → OpenAI Agents SDK + DeepSeek）
+
+**做了什么**
+- **架构转换**：`check_agent.py` 从 `pydantic_ai.Agent(output_type=CheckVerdicts)` + run_check 预取 filings 灌进 prompt → OpenAI Agents SDK `Agent` + DeepSeek V4-Flash（百炼 chat_completions，与 orchestrator 同款 `OpenAIChatCompletionsModel` + `set_default_openai_api`）。agent 自己调工具取 filings 再提交判决，不再预取灌进 prompt。
+- **2 个 @function_tool（context-injected via `RunContextWrapper[CheckCtx]`，确定性，不让 LLM 传参）**：
+  - `fetch_recent_filings()` — 复用 `sec_edgar.forms_for_filer` + `fetch_filings`，按 filer_type 路由表单；写回 `ctx.fetched_filings` / `fetch_error` / `fetch_called`。
+  - `submit_verdicts(verdicts)` — `strict_mode=False`（list[dict] 嵌套入参，与 `orchestrator.save_card` 同款），替代 `output_type` 做结构化输出通道；写回 `ctx.verdicts_submitted`。
+- **为什么不用 `output_type=CheckVerdicts`**：实测 DeepSeek V4-Flash + chat_completions 用 output_type 会短路成空 `{"verdicts":[]}` 而不先调 fetch（trace 实测：ReasoningItem 说「该调 fetch」→ 直接产空 CheckVerdicts 结束 loop）。改 `submit_verdicts` tool call 后稳定（与 orchestrator `extract_card`/`save_card` 同款；prompt 收紧「先调 fetch_recent_filings，再调 submit_verdicts，不复述」）。
+- **redline R1-R3 复用不变**：per-verdict `redline.guard(v.reasoning)`（粒度 E8，仅校验 LLM reasoning 系统输出，不校验 SEC 引用摘录）。
+- **E1-E8 + fetch_called 诚实区分**：`fetch_error` → E1（fetch 失败）；`not fetch_called` → E7（agent 跳过 fetch 无据判定）；`not fetched_filings` → 全 untriggered（PRD「无事那行不许空」）；`not verdicts_submitted` → E7（未提交判决）；缺 cond → E4。
+- **输出格式不变**：`CondVerdict(cond_id/status/evidence_url/evidence_excerpt/reasoning)`，status ∈ triggered|watch|untriggered（**三态**）。`run_all`/`run_check` 签名 + 返回 shape 不变（`notify.py` 依赖）。懒构建 `build_check_agent`（不在模块 import 时 SystemExit，避免阻断 orchestrator/tests 导入）。
+- 不动 `orchestrator.py` / `serve.py` / 前端 / `entry_agent.py` / `menu.py`（仍走 pydantic_ai task_model=glm，Phase 5 再统一）。
+
+**依据**
+- refactor-spec §5 Phase 4 = 「check_agent agent loop」（纯架构转换）。任务原文写「判 HOLD/ADD/CUT/PASS、保持四判决格式不变」——核对后确认矛盾：HOLD/ADD/CUT/PASS 是**作者个人 Notion 复查 skill v4**（建仓后每日跑），不是本产品模块；产品 `check_agent` 一直是三态（`models.py` 明写「不存结论/建议」，旧 CHECK_PROMPT 明写「不给买卖/仓位建议、不替用户结论」），HOLD/ADD/CUT/PASS 本质是仓位/买卖建议，直接踩 R1/R2/R6 红线。经作者确认（AskUserQuestion）：**保持三态，纯架构转换，HOLD/ADD/CUT/PASS 不混入**。Notion 写入经作者确认 R7 仅限台账/简报，PM 看板可更新。
+- 本地 `config.yaml` 加 `llm.agent_model` 段（gitignored，仅本机；`config.example.yaml` 已有）——否则 `orchestrator._build_model` import 时 SystemExit，75 测试全跑不起来。
+
+**自测**
+- 75 pytest 绿（无 regress；check_agent 无专属单测，公共 API 不变）。
+- live MCO smoke（合成卡 + `:memory:` store + lookback 8760h=1y → 105 filings）：agent 先调 `fetch_recent_filings`（105 filings）再调 `submit_verdicts`（4 verdicts 全 untriggered）→ `run_check` 全链路（self_check/redline/save）→ `errors=[]` 无红线违反、4 CheckResults 落库、三态输出、`filings_count=105`。dur 84.6s（≤5min/case 内）。
+- SEC fetch 直测：`fetch_filings(["MCO"], 8760)` → 105 filings（10-Q 2026-07-23 / 8-K 2026-07-22 / Form 4…），网络通。
+
+**状态**：Phase 4 完成，待作者验收 + Phase 5（全量 10 case 验收 + 测试重整）。
+
 ## v0.0.15 — 2026-08-03 — F3 后端 view 字段（ticker_title / sources / menu.coverage）——给前端不猜字段名
 
 **做了什么**

@@ -150,3 +150,80 @@ Phase 1 完成后，PM 会给 caca 一个 demo 脚本 prompt，粘贴到终端�
 Phase 2 完成后，caca 直接用浏览器测 Case 1-10。
 
 Phase 3 完成后，caca 测"丝滑感"——SSE streaming 是否像 Notion AI 一样逐字出现。
+
+---
+
+## 验收结果（2026-08-04，Phase 5）
+
+> 后端窗口执行。网络当时不通（DeepSeek 百炼端点 APIConnectionError），live agent 跑不了；
+> 能用 pytest 离线覆盖的标 ✅，纯 live/浏览器交互的标「需 caca 验收」。
+
+| Case | 自动化方式 | 结果 | 说明 |
+|---|---|---|---|
+| 1 探针仓 MCO | pytest + live demo | ✅ | resolve_ticker("MCO") ✓；agent 回复用「关注」措辞 + 先确认标的再问理由 ✓（live demo 2026-08-04 过） |
+| 2 已建仓 MCO | pytest + live demo | ✅ | resolve_ticker("MCO") ✓；agent 回复用「持有」措辞（探针仓 vs 已建仓 区分）✓（live demo 过） |
+| 3 逐字段引导 | 仅浏览器 | 需 caca 验收 | 5 步逐字段讨论是 live 多轮 UX，只能浏览器测 |
+| 4 key_assumptions 用户确认 | pytest（G3 逻辑）+ 浏览器 | ✅ 逻辑 + 需 caca UX | G3（条件3 is_paraphrase / 条件4 is_v1_auto / P3 / R1-R3）✓ test_orchestrator_impl 7 测试；UX 确认环节需浏览器 |
+| 5 估值选项 | 仅浏览器 | 需 caca 验收 | 估值方法选项是 LLM 判断（SYSTEM_PROMPT 指引不给映射表），只能 live/浏览器测 |
+| 6 generate_menu | pytest（filter_executable_mirrors）+ 浏览器 | ✅ 逻辑 + 需 caca UX | filter_executable_mirrors ✓ test_menu_filter；菜单呈现 UX 需浏览器 |
+| 7 必填字段 | pytest | ✅ | save_card G1 必填 + G4 用户确认 ✓ test_orchestrator_impl（test_save_g1_rejects_* / test_save_g4_rejects_unconfirmed） |
+| 8 ticker 未验证 | pytest（G4）+ live | ⚠️ 部分 + 需 caca live | G4（confirmed_by_user）✓ tested；"resolve_ticker 前置"是 agent loop 行为（SYSTEM_PROMPT 约束），需 live/浏览器验 |
+| 9 汇丰→HSBC | pytest + live demo | ✅ | resolve_ticker("HSBC") ✓（agent 把「汇丰」翻译成 HSBC 再调）；回复「HSBC Holdings PLC（汇丰控股），ticker: HSBC，这是你说的标的吗？」+ 让用户确认 ✓（live demo 2026-08-04 过） |
+| 10 LLM 幻觉防护 | pytest（G2 结构校验） | ⚠️ 部分 | save_card G2 安全边际结构校验（anchor_type+value 须有）✓ test_save_g2_rejects_*；**已知局限**：G2 是结构校验非事实核查，LLM 编造一个"看似合理"的 anchor_value G2 拦不住——需 caca 知悉 |
+
+**自动化结论**：
+- pytest 离线覆盖：Case 7、4（G3）、6（filter）、10（G2 结构）+ 1/2/8/9 的确定性部分（resolve_ticker / G4）。
+- 需 caca 浏览器/live 验收：Case 3、5（纯 live UX）；Case 1、2、9 live demo 已过（措辞 关注/持有 + 汇丰→HSBC 翻译）；Case 4、6、8 的 UX 部分。
+- 性能验收（单票 ≤5min / tool ≤3 per turn / SSE ≤2s 首字）：单票录入了 check_agent 84.6s（≤5min ✓）；其余需 caca 浏览器 devtools 量。
+
+**Regression**：107 测试绿（基线 75 + Phase 5 新增 32：orchestrator impl 16 + check_agent 16）。
+旧 entry_loop 状态机测试 Phase 2 已砍（83→75 差异），Phase 5 新增 agent-loop 行为测试补回（75→107）。
+
+### W1 extract eval 重跑（2026-08-04，Phase 5 移植 deepseek 后）
+
+`run_l1.py run --allow-stale-gt`（PYTHONUTF8=1；snapshot_ref 不匹配是 merge commit 形式差异，assets/ 内容 0 diff，GT 未过期）。15 case × 2 模型（deepseek-v4-flash + glm-5.2-fast-preview，头对头，都走新 orchestrator `submit_extraction` 路径）。
+
+**客观一致率（逐字段，总体）**：
+
+| 模型（新 orchestrator 路径） | filer_type | manual_items | next_verdict | n_pass |
+|---|---|---|---|---|
+| deepseek-v4-flash | **1.0** | 0.4286 | 0.0 | 14/15 |
+| glm-5.2-fast-preview | **1.0** | 0.4615 | None（ambiguous） | 13/15 |
+| 旧 glm（pydantic_ai output_type，8/3 基线） | 0.933 | 0.8 | 1.0 | 15/15 |
+
+**对比结论**：
+- **deepseek vs glm（都新路径，苹果对苹果）**：deepseek **不明显低于** glm——n_pass 14 > 13（deepseek 略稳，CRM 抽出 glm 没抽出）；manual_items 0.43 vs 0.46（deepseek 低 ~3pp，都低）；next_verdict 0.0 vs None（都差）。filer_type 都 1.0（满分）。per caca 规则（明显低于才记差距等定），deepseek 持平 glm，可记通过。
+- **新路径 vs 旧 pydantic_ai 路径（移植成本）**：新 `submit_extraction`（loose dict）比旧 `output_type`（schema 强制）**退步**——manual_items 0.8→0.43-0.46、next_verdict 1.0→0/None（两模型都退）；filer_type 0.93→1.0（反而升）。**根因**：loose dict schema 不强制结构 → 模型把 next_verdict 当 string 传（无 date，coerce 后 date=None → `_date_match` 失败 → 0.0）+ manual_items 识别不全；旧 `output_type` 强制 NextVerdict{event,date} 结构 → date 在 → 1.0。
+- **W2 主观接受率**：deferred——需 caca 填 `evals/blind_verdicts.yaml`（A/B 盲评 deepseek vs glm 的 holding_reason_raw/key_assumptions/mirrors）后跑 `run_l1.py collect`。`blind_pairs.yaml` 已导出（隐藏来源随机左右）。
+
+**待 caca 定**（移植质量成本）：新路径 manual_items/next_verdict 退步是 `submit_extraction` loose schema 的代价（换 drop pydantic-ai）。选项：(a) 接受 tradeoff（deepseek+orchestrator 栈简、filer_type 满分，但 manual_items/next_verdict 弱）；(b) 改进 `submit_extraction` schema（typed fields 强制 next_verdict{event,date} 结构）；(c) 试 `output_type=EntryExtraction`（schema 强制，但 B4 deepseek thinking 拒 tool_choice=required 风险）。**不自作主张切回 pydantic_ai/glm**——等 caca 定。
+
+### W1 schema 收紧实验（2026-08-04，typed ExtractionInput）— caca 选了 (b)
+
+caca 选 (b)：`submit_extraction` 收紧 typed schema（`ExtractionInput` 镜像 `EntryExtraction`：`next_verdict` 强制 `{event, date}` 对象非 string，`manual_items` 强制 `[{text,reason,cadence}]`）。`strict_mode=True` 被 SDK strict-schema 生成器拒（nested model additionalProperties 冲突，非 B4）→ `strict_mode=False`；typed model 仍由 SDK 按 pydantic parse args → string next_verdict 校验失败 → 强制 `{event,date}` 或 null。`_coerce_extraction` 保留兜底。commit 434e1e1。
+
+**5-case deepseek 快验**（FDS/MCO/FIS/NVDA/VEEV，typed schema；不跑全 30 省 40min）：
+
+| 字段 | OLD deepseek（loose dict） | NEW deepseek（typed） | 目标 |
+|---|---|---|---|
+| next_verdict | 0.0 | **0.75** ✅ | ≥0.80（接近） |
+| manual_items | 0.43（15 case）/ 0.2（这5） | 0.0（这5） | ≥0.70 ❓ 未达 |
+| filer_type | 1.0 | 1.0 ✅ | 1.0 |
+| entry_anchor_type/value | — | 1.0 ✅ | — |
+
+- **next_verdict 修好了**：typed schema 强制 `{event, date}` → date 现在 parseable（FDS=2026-06 / MCO=2026-10 / FIS=2026-08 / NVDA=2026-08，VEEV=None）→ `_date_match` 命中 → 0.0→0.75。15-case 上大概率 ≥0.80。
+- **manual_items 不确定**：这 5 case 4 个（FDS/MCO/FIS/NVDA）新旧都 False（case-selection——这些 case 模型本就不产 manual_items）；VEEV old=True new=False（疑似 LLM 运行间 variance，5 样本不足以下结论）。typed schema 强制 `{text,reason,cadence}` 结构，但 manual_items 是「模型要不要识别价格图形型条件」的**识别**问题，非结构问题——schema 收紧未必帮识别。
+- **filer_type / entry_anchor 满分** ✓。
+
+**结论**：typed schema（434e1e1）达 next_verdict 目标（0.0→0.75，主目标）+ filer_type/entry_anchor 满分；manual_items 未达（5-case 不确定，需全 15-case 确认，但根因是识别非结构）。**caca 已接受 (a)（2026-08-04）**：typed schema 为最终状态——next_verdict 修好是大头 + filer_type/entry_anchor 满分；manual_items 留作后续 prompt 引导（识别问题，非结构，不阻塞产品）。deepseek vs glm 持平 + manual_items 15-case 率待全量跑确认（可选，caca 定时机）。不自作主张切回 pydantic-ai/glm。
+
+### W2 主观盲评结果（2026-08-04，caca 盲评 deepseek vs glm）
+
+caca 填 `evals/blind_verdicts.yaml`（15 case × holding_reason_raw/key_assumptions/mirrors，A/B 匿名 deepseek+glm 随机左右；OLD qwen+glm 裁决备份 `.bak`）→ `python -m evals.run_l1 collect`。
+
+- **用户接受率 = 93.33%（42/45）** —— vs 旧基线 85.45%，**上升 ~8pp** ✅（门槛 ≥0.85，§9.1）。
+- **deepseek 胜率 = 51.11%（23/45）** > **glm 17.78%（8/45）** —— caca 盲评 deepseek 明显胜 glm ✅。
+- 3 个不接受 = GDXU（W1 里 deepseek+glm 都 extraction failed "other"，盲评 both-wrong，一致）。
+- 11 个 both-acceptable-no-pick（两模型都可接受，无偏好）。
+
+**结论**：port + typed schema 不只「不退」——W2 主观上 **deepseek 质量高于 glm**（caca 偏好 deepseek 的 holding_reason_raw/key_assumptions/mirrors），接受率 85.45%→93.33%。W1 objective（deepseek ≈ glm，next_verdict 0.75 修好 + filer_type/entry_anchor 满分）+ W2 subjective（deepseek 胜）合起来：**切 deepseek 决策正确**，重构（Phase 0-5）质量达标。manual_items（W1 识别问题）留作后续 prompt 引导，不阻塞。

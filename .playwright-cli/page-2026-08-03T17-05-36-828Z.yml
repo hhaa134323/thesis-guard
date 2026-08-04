@@ -1,0 +1,80 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - heading "Thesis Watch" [level=1] [ref=e6]
+      - generic [ref=e7]: 持仓条件核对 Agent · 录入（判断权永远归你）
+  - generic [ref=e8]:
+    - main [ref=e9]:
+      - generic [ref=e11]:
+        - heading "说说你为什么持有它" [level=2] [ref=e12]
+        - paragraph [ref=e13]: 用一句话讲清楚买入逻辑，我会把它拆成可被财报击中的条件，以后每次披露更新，逐条替你核对是否还成立。
+        - generic [ref=e14]:
+          - generic [ref=e15]:
+            - generic [ref=e16]:
+              - generic [ref=e17]: "1"
+              - generic [ref=e18]: 你口述
+            - generic [ref=e19]: 一句话，不用工整
+          - generic [ref=e20]:
+            - generic [ref=e21]:
+              - generic [ref=e22]: "2"
+              - generic [ref=e23]: 我追问
+            - generic [ref=e24]: 补齐说不清的地方
+          - generic [ref=e25]:
+            - generic [ref=e26]:
+              - generic [ref=e27]: "3"
+              - generic [ref=e28]: 你确认
+            - generic [ref=e29]: 右侧卡片逐格核对
+        - generic [ref=e30]: 从一个例子开始
+        - generic [ref=e31]:
+          - button "[基本面]我持有 MCO，因为评级双寡头的 moat 被 AI 恐慌错杀" [ref=e32] [cursor=pointer]:
+            - generic [ref=e33]: "[基本面]"
+            - text: 我持有 MCO，因为评级双寡头的 moat 被 AI 恐慌错杀
+          - button "[周期]我持有 SK 海力士，AI 时代需要大量计算，计算需要存储" [ref=e34] [cursor=pointer]:
+            - generic [ref=e35]: "[周期]"
+            - text: 我持有 SK 海力士，AI 时代需要大量计算，计算需要存储
+          - button "[价格形态]HSBC 跌破 200 日线我就走" [ref=e36] [cursor=pointer]:
+            - generic [ref=e37]: "[价格形态]"
+            - text: HSBC 跌破 200 日线我就走
+        - generic [ref=e38]:
+          - textbox "一句话说标的 + 理由" [ref=e39]: 我持有 MCO，因为评级双寡头的 moat 被 AI 恐慌错杀
+          - button [active] [ref=e40] [cursor=pointer]:
+            - img [ref=e41]
+        - generic [ref=e43]: Enter 发送 · Shift+Enter 换行
+        - generic [ref=e44]:
+          - generic [ref=e45]: 不给买卖建议，不预测价格。
+          - generic [ref=e46]: 所有结论必须附一手披露链接，查不到就说查不到。
+    - complementary [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - heading "确认卡 （字段可点改）" [level=2] [ref=e50]
+          - generic [ref=e52]: 0 / 9 字段
+        - generic [ref=e54]:
+          - generic [ref=e55]: 标的（ticker）
+          - generic [ref=e56]: 待生成
+        - generic [ref=e57]:
+          - generic [ref=e58]: 买入逻辑（原话）
+          - generic [ref=e59]: 待生成
+        - generic [ref=e60]:
+          - generic [ref=e61]: 关键假设
+          - generic [ref=e62]: 待生成
+        - generic [ref=e63]:
+          - generic [ref=e64]: 破局条件（两层）
+          - generic [ref=e65]: 待生成
+        - generic [ref=e66]:
+          - generic [ref=e67]: 人工自查项（每月）
+          - generic [ref=e68]: 待生成
+        - generic [ref=e69]:
+          - generic [ref=e70]: 录入估值锚
+          - generic [ref=e71]: 待生成
+        - generic [ref=e72]:
+          - generic [ref=e73]: 下次裁判日
+          - generic [ref=e74]: 待生成
+        - generic [ref=e75]:
+          - generic [ref=e76]: 仓位上限档
+          - generic [ref=e77]: 待生成
+        - generic [ref=e78]:
+          - generic [ref=e79]: 持仓周期
+          - generic [ref=e80]: 待生成
+        - generic [ref=e81]: 卡片会随对话逐格填充，确认后才入库
+        - generic [ref=e82]:
+          - button "确认入库" [disabled]

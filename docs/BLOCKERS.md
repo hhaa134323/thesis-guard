@@ -69,3 +69,17 @@
 - **约束**：**选模型时除 B4（thinking 冲突）外，还要查「是否被 provider 归为 code model」**——code model 的 tool-call arguments 格式间歇被拒，做结构化输出不稳。
 - **已试**：qwen-flash（4/5 400，1/5 过 out_tok=438）。见 `docs/eval-report.md` §1。
 - **状态**：硬约束，选模型必查（与 B4 并列两项）。
+
+## B6 — Phase 5 清理旧代码 blocked（删 llm.py / entry_agent.py / menu.py / pydantic-ai）
+
+- **现象（2026-08-04）**：Phase 5 任务含「删 llm.py / entry_agent.py / menu.py / pydantic-ai 依赖」，但执行时发现前提不成立——任务说「extract_card/generate_menu 已不依赖，orchestrator 内置」，实际 `orchestrator.py` 仍 `from .entry_agent import build_agent, extract` + `from .menu import build_menu_agent, generate_menu, filter_executable_mirrors`（行 43-47）。`extract_card` / `generate_menu` 工具内部仍委托 PydanticAI + glm-5.2-fast-preview（task_model），Phase 1 主动留的 delegation（"重构完成后再删"）。
+- **根因（三项叠加）**：
+  1. **前提不成立**：不能"直接删"——需先把 extract + generate_menu 移植到 OpenAI Agents SDK（nested agent 或直接 chat_completions + function-calling schema），再删。
+  2. **产品决策（待 caca 定）**：移植时提取模型选 glm（W1 胜率 96% + W2 接受率 85.45%，eval 验过）还是切 deepseek（unify 栈，但需重跑 W1/W2 eval 确认质量不退）。这是模型/产品决策，不擅自定。
+  3. **网络不通（2026-08-04）**：DeepSeek 百炼端点 APIConnectionError（上 session check_agent smoke 还通，本 session 不通，疑似 sandbox/网络波动）。移植后无法 live 验证——extract_card 是 core live-verified 流程（G3 双层），不验证就动不负责任。
+- **影响**：Phase 5「清理旧代码」子项未完成。但 extract_card/generate_menu 当前 delegation **工作正常**（Phase 1 live-verified），删除是 cleanup 非 correctness fix，不阻塞产品功能。
+- **缓解（待 caca 选 + 网络通）**：
+  - (a) caca 定提取模型：glm 保留（保守，不退质量）vs 切 deepseek（unify，需重跑 eval）；
+  - (b) 保守方案（不需模型决策）：保留 glm + 移植到直接 OpenAI chat_completions（function-calling tool schema 强制结构化输出），drop pydantic-ai + llm.py——但仍需网络通时 live 验 extract 质量不退；
+  - (c) 网络通时移植 + 重跑 W1/W2 extract eval 确认 + 更新 5 个 consumer（`entry_cli.py` / `tests/test_menu_filter.py` / `scripts/day1_fds_validation.py` / `evals/run_l1.py` / `orchestrator.py`）。
+- **状态**：✅ 已解除（2026-08-04）。caca 定切 deepseek；移植 extract+menu 到 OpenAI Agents SDK（`submit_extraction` / `submit_menu` tool call 提交结构化输出，不用 `output_type`——避 B4 thinking 冲突 + 短路空结构）；删 `entry_agent.py` / `menu.py` / `llm.py` + `pydantic-ai`/`pydantic-evals`/`anthropic` 依赖；prompts + `MenuMirror`/`MenuCandidates` + `filter_executable_mirrors` 移入 `orchestrator.py`；更新 5 个 consumer（`entry_cli` / `tests/test_menu_filter` / `scripts/day1_fds_validation` / `evals/run_l1` / `orchestrator`）；107 测试绿；live 验 deepseek extract + G3 双层 ok；W1 eval 重跑 deepseek vs glm 头对头（`evals/_l1_result.json`，`run_l1.py run --allow-stale-gt`，PYTHONUTF8=1 避 Windows gkb 崩 ⚠️ print）。

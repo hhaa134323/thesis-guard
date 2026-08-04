@@ -1,20 +1,10 @@
-"""Agent harness 骨架（v0.1）。
+"""agent.py —— 录入卡组装（Phase 2：harness 骨架已删，仅留 build_card_from_extraction + render_summary）。
 
-这是本项目的核心交付——harness 本身。包含：
-- 工具注册与分发（ToolRegistry）
-- 抽取器可插拔（Extractor 协议）：mock（离线 demo/测试）或真实
-  （Claude Agent SDK / SDK loop，待选型确认 + 网络）。接口不变即可替换。
-- 证据自检契约（evidence.self_check，fetcher 可注入）
-- 红线 guard（redline.guard，命中即 E8）
-- 不可判定/价格图形型 → 降级人工自查
-
-先用 mock extractor 跑通 harness 机制；真实 responder 接入后替换即可。
-不依赖任何 LLM SDK，不触网。
+harness 骨架（ToolRegistry / build_card / mock_extractor / HSBC demo）已删——agent loop
+（orchestrator.py）接管对话流程，不再需要 harness；entry_loop 复用 build_card_from_extraction
+把 extract_card 工具的输出落成 ThesisCard 草稿（make_mirror + redline 默认包，不重复 G3）。
 """
 from __future__ import annotations
-
-import dataclasses
-import typing
 
 from . import redline
 from .conditions import (
@@ -23,119 +13,17 @@ from .conditions import (
     make_mirror,
     to_manual_check,
 )
-from .evidence import self_check as evidence_self_check
 from .models import (
     Assumption,
     BrokenCondition,
     ConditionLayer,
     Confirmation,
+    EntryAnchorData,
     FilerType,
     ManualCheckItem,
-    EntryAnchorData,
     NextVerdictData,
     ThesisCard,
-    to_dict,
 )
-
-# --------------------------------------------------------------------------- #
-# 工具注册与分发
-# --------------------------------------------------------------------------- #
-
-Tool = typing.Callable[..., typing.Any]
-
-
-class ToolRegistry:
-    """核对/录入 Agent 可用工具的注册表。真实 responder 经此调用工具。"""
-
-    def __init__(self) -> None:
-        self._tools: dict[str, Tool] = {}
-
-    def register(self, name: str, fn: Tool) -> "ToolRegistry":
-        self._tools[name] = fn
-        return self
-
-    def call(self, name: str, args: dict) -> typing.Any:
-        if name not in self._tools:
-            raise KeyError(f"unknown tool: {name}")
-        return self._tools[name](**args)
-
-    def names(self) -> list[str]:
-        return list(self._tools)
-
-
-def default_tools(user_thresholds: dict | None = None) -> ToolRegistry:
-    """录入/核对共用工具集（数据层部分；fetchers 待 B1 解除后接入）。"""
-    reg = ToolRegistry()
-    reg.register("lookup_filer_type", lambda ticker: FilerType.OTHER.value)  # TODO: 基于 EDGAR
-    reg.register("default_redline_pack",
-                lambda: [to_dict(c) for c in default_redline_pack(user_thresholds)])
-    reg.register("is_price_pattern", lambda text: is_price_pattern(text))
-    reg.register("evidence_self_check",
-                lambda url, excerpt, fetcher=None: dataclasses.asdict(
-                    evidence_self_check(url, excerpt, fetcher)))
-    return reg
-
-
-# --------------------------------------------------------------------------- #
-# 抽取器（可插拔）
-# --------------------------------------------------------------------------- #
-
-@dataclasses.dataclass
-class ExtractionResult:
-    """抽取器从对话中结构化的内容。"""
-    holding_reason_raw: str = ""
-    assumptions: list[Assumption] = dataclasses.field(default_factory=list)
-    mirrors: list[dict[str, str]] = dataclasses.field(default_factory=list)  # {"assumption_id","text"}
-    manual_items: list[str] = dataclasses.field(default_factory=list)
-
-
-Extractor = typing.Callable[[list[dict]], ExtractionResult]
-
-
-def _find(assumptions: list[Assumption], aid: str) -> Assumption | None:
-    return next((a for a in assumptions if a.id == aid), None)
-
-
-def build_card(user_id: str, ticker: str, filer_type: FilerType,
-              conversation: list[dict], extractor: Extractor,
-              user_thresholds: dict | None = None,
-              enabled_redlines: list[str] | None = None) -> ThesisCard:
-    """对话 → thesis 卡（未确认状态；确认是后续用户动作）。
-
-    流程：extractor 抽取 → 镜像(L1) + 红线包(L2) + 人工自查(价格图形) → 组装。
-    抽取器产出的镜像/红线条目经 redline.guard 校验（系统生成内容不得踩红线）。
-    """
-    ext = extractor(conversation)
-
-    broken: list[BrokenCondition] = []
-    for m in ext.mirrors:
-        a = _find(ext.assumptions, m.get("assumption_id", ""))
-        if a is None:
-            continue
-        # 镜像文本是系统生成内容，guard 之（R3）
-        redline.guard(m.get("text", ""))
-        m_obj = make_mirror(a, m["text"],
-                            threshold=m.get("threshold"),
-                            source_type=m.get("source_type", ""))
-        if m_obj is not None:
-            broken.append(m_obj)
-        # P3：缺 threshold/source_type → make_mirror 返 None，不生成镜像（通用 build_card 路径略 rejected；
-        #   live 路径 build_card_from_extraction 转 open_questions）
-
-    broken.extend(default_redline_pack(user_thresholds, enabled_redlines))
-
-    manual: list[ManualCheckItem] = [to_manual_check(t) for t in ext.manual_items]
-
-    return ThesisCard(
-        user_id=user_id,
-        ticker=ticker,
-        filer_type=filer_type,
-        holding_reason_raw=ext.holding_reason_raw,
-        key_assumptions=ext.assumptions,
-        broken_conditions=broken,
-        manual_check_items=manual,
-        confirmation=Confirmation(paraphrased=False, confirmed_by_user=False),
-    )
 
 
 def build_card_from_extraction(ext, *, user_id: str, ticker: str,
@@ -181,8 +69,6 @@ def build_card_from_extraction(ext, *, user_id: str, ticker: str,
     if ext is not None and is_price_pattern(raw) and not any(is_price_pattern(m.text) for m in manual):
         manual.append(to_manual_check(raw))
 
-    # P0 审计：filer_type 是事实，不经 LLM——filer_type=None（查表无）→ OTHER + open_question，
-    # 不取 ext.filer_type（LLM 猜的，与「不经 LLM」矛盾；Bug #2 修）
     ft = filer_type if filer_type is not None else FilerType.OTHER
     ea = None
     if ext is not None and ext.entry_anchor:
@@ -234,110 +120,4 @@ def render_summary(card: ThesisCard) -> str:
     return redline.guard(text)
 
 
-# --------------------------------------------------------------------------- #
-# Mock extractor（离线 demo / 测试）
-# --------------------------------------------------------------------------- #
-
-def mock_extractor(conversation: list[dict]) -> ExtractionResult:
-    """脚本化抽取器：把样例对话结构化为 thesis 卡输入。
-
-    真实 responder 接入后替换为：LLM 读对话 → 输出 ExtractionResult（工具调用）。
-    """
-    # 把对话拼成原话（真实场景由 LLM 抽取；这里取首条用户消息）
-    user_msgs = [m.get("text", "") for m in conversation if m.get("role") == "user"]
-    raw = "；".join(user_msgs) if user_msgs else ""
-
-    a = Assumption(text="服务收入持续高增")
-    return ExtractionResult(
-        holding_reason_raw=raw,
-        assumptions=[a],
-        mirrors=[{"assumption_id": a.id, "text": "服务收入同比转负",
-                  "threshold": {"metric": "service_revenue_yoy", "operator": "<", "value": 0},
-                  "source_type": "sec_filing_field"}],
-        manual_items=["跌破60日均线"],
-    )
-
-
-_DEMO_CONVERSATION = [
-    {"role": "user", "text": "持有 AAPL，看好服务收入持续高增。"},
-    {"role": "user", "text": "破的话就看服务收入同比转负；另外我盯着60日线。"},
-]
-
-
-def demo() -> None:
-    card = build_card(
-        user_id="beta1", ticker="AAPL", filer_type=FilerType.DOMESTIC_10K,
-        conversation=_DEMO_CONVERSATION, extractor=mock_extractor,
-    )
-    print(render_summary(card))
-    print("\n--- card_json ---")
-    import json
-    print(json.dumps(to_dict(card), ensure_ascii=False, indent=2))
-
-
-# --------------------------------------------------------------------------- #
-# HSBC 演练 transcript demo（W1：glm-5.2 内联抽取固化；生产 API responder 见 W2）
-# 基线 transcript：assets/onboarding_dryrun_0731.md（6 轮对话 + 8 条设计发现）
-# --------------------------------------------------------------------------- #
-
-# transcript 6 轮对话摘要（round 1–4 关键产出；完整原文见 assets/onboarding_dryrun_0731.md）。
-HSBC_TRANSCRIPT: list[dict] = [
-    {"role": "user", "text": "HSBC，因为按照年来看，它的股价表现稳健上升的形状"},
-    {"role": "assistant", "text": "追问：信图形还是公司？什么算「形状破了」？"},
-    {"role": "user", "text": "1、公司  2、无法确定，那得想想什么会让这家公司变得让人无法信任"},
-    {"role": "assistant", "text": "候选菜单 A（假设）/ B（破条件镜像）；价格形状→人工自查"},
-    {"role": "user", "text": "1、A4  2、B6？"},
-    {"role": "assistant", "text": "确认卡：A4 镜像①② + 通用红线③罚单 + 人工自查价格形状"},
-    {"role": "user", "text": "确认。大多数情况下不会触发对吗"},
-]
-
-
-def hsbc_glm52_extractor(conversation: list[dict]) -> ExtractionResult:
-    """glm-5.2 读 onboarding_dryrun_0731.md HSBC transcript 产出的 ExtractionResult（固化）。
-
-    生产用 API responder（W2）替换本函数为 headless 自动调 glm-5.2；
-    本函数是 W1 的「模型内联」产出，证明 harness 跑通 + 供 eval 基线。
-    镜像文本经 build_card 内 redline.guard 校验（R3）。
-    """
-    a = Assumption(text="管理层战略清晰，重组聚焦见效")
-    return ExtractionResult(
-        holding_reason_raw="按照年来看，它的股价表现稳健上升的形状",
-        assumptions=[a],
-        mirrors=[
-            {"assumption_id": a.id, "text": "宣布战略转向、重组叫停，或亚洲核心资产被剥离",
-             "threshold": {"event": "strategic_pivot_announced", "occurred": False},
-             "source_type": "sec_filing_field"},
-            {"assumption_id": a.id, "text": "CEO / CFO 突然离职",
-             "threshold": {"roles": ["CEO", "CFO"], "lookback_days": 30},
-             "source_type": "sec_filing_field"},
-        ],
-        manual_items=["价格「形状」：年线"],
-    )
-
-
-def run_entry_agent_demo() -> ThesisCard:
-    """跑 HSBC transcript 通过 harness，产出确认卡 + 复述（经 redline.guard）。
-
-    - filer_type=FOREIGN_ISSUER_20F_6K（HSBC 是 20-F/6-K 申报方，6-K 主渠道，发现 7）
-    - user_thresholds large_fine=5e7（贴合 transcript round-4 的 5000 万阈值）
-    - enabled_redlines=["large_fine"]（mirror②已覆盖 CEO/CFO 离职，关停 exec_change 去重，发现 1）
-    - manual_check = 价格形状年线（发现 5）
-    """
-    card = build_card(
-        user_id="beta1",
-        ticker="HSBC",
-        filer_type=FilerType.FOREIGN_ISSUER_20F_6K,
-        conversation=HSBC_TRANSCRIPT,
-        extractor=hsbc_glm52_extractor,
-        user_thresholds={"large_fine": {"amount_usd": 5e7}},
-        enabled_redlines=["large_fine"],
-    )
-    print(render_summary(card))
-    print("\n--- card_json ---")
-    import json
-    print(json.dumps(to_dict(card), ensure_ascii=False, indent=2))
-    return card
-
-
-if __name__ == "__main__":
-    run_entry_agent_demo()
+__all__ = ["build_card_from_extraction", "render_summary"]

@@ -1,7 +1,7 @@
 {
   "summary": {
     "models": {
-      "qwen-turbo": {
+      "deepseek-v4-flash": {
         "总体": {
           "per_field": {
             "entry_anchor": {
@@ -11,24 +11,24 @@
               "note": "无有效样本（全 null/ambiguous）"
             },
             "next_verdict": {
-              "rate": 0.75,
-              "matched": 3,
-              "denom": 4
+              "rate": 0.0,
+              "matched": 0,
+              "denom": 1
             },
             "manual_items": {
-              "rate": 0.7143,
-              "matched": 10,
+              "rate": 0.4286,
+              "matched": 6,
               "denom": 14
             },
             "filer_type": {
-              "rate": 0.4286,
-              "matched": 6,
+              "rate": 1.0,
+              "matched": 14,
               "denom": 14
             }
           },
           "ambiguous_count": {
             "entry_anchor": 0,
-            "next_verdict": 10,
+            "next_verdict": 13,
             "manual_items": 0,
             "filer_type": 0
           },
@@ -43,28 +43,29 @@
               "note": "无有效样本（全 null/ambiguous）"
             },
             "next_verdict": {
-              "rate": 0.75,
-              "matched": 3,
-              "denom": 4
+              "rate": null,
+              "matched": 0,
+              "denom": 0,
+              "note": "无有效样本（全 null/ambiguous）"
             },
             "manual_items": {
-              "rate": 0.6923,
-              "matched": 9,
-              "denom": 13
+              "rate": 0.5,
+              "matched": 6,
+              "denom": 12
             },
             "filer_type": {
-              "rate": 0.3846,
-              "matched": 5,
-              "denom": 13
+              "rate": 1.0,
+              "matched": 12,
+              "denom": 12
             }
           },
           "ambiguous_count": {
             "entry_anchor": 0,
-            "next_verdict": 9,
+            "next_verdict": 12,
             "manual_items": 0,
             "filer_type": 0
           },
-          "n_pass": 13
+          "n_pass": 12
         },
         "seen": {
           "per_field": {
@@ -75,20 +76,19 @@
               "note": "无有效样本（全 null/ambiguous）"
             },
             "next_verdict": {
-              "rate": null,
+              "rate": 0.0,
               "matched": 0,
-              "denom": 0,
-              "note": "无有效样本（全 null/ambiguous）"
+              "denom": 1
             },
             "manual_items": {
-              "rate": 1.0,
-              "matched": 1,
-              "denom": 1
+              "rate": 0.0,
+              "matched": 0,
+              "denom": 2
             },
             "filer_type": {
               "rate": 1.0,
-              "matched": 1,
-              "denom": 1
+              "matched": 2,
+              "denom": 2
             }
           },
           "ambiguous_count": {
@@ -97,7 +97,7 @@
             "manual_items": 0,
             "filer_type": 0
           },
-          "n_pass": 1
+          "n_pass": 2
         }
       },
       "glm-5.2-fast-preview": {
@@ -110,28 +110,29 @@
               "note": "无有效样本（全 null/ambiguous）"
             },
             "next_verdict": {
-              "rate": 1.0,
-              "matched": 1,
-              "denom": 1
+              "rate": null,
+              "matched": 0,
+              "denom": 0,
+              "note": "无有效样本（全 null/ambiguous）"
             },
             "manual_items": {
-              "rate": 0.8,
-              "matched": 12,
-              "denom": 15
+              "rate": 0.4615,
+              "matched": 6,
+              "denom": 13
             },
             "filer_type": {
-              "rate": 0.9333,
-              "matched": 14,
-              "denom": 15
+              "rate": 1.0,
+              "matched": 13,
+              "denom": 13
             }
           },
           "ambiguous_count": {
             "entry_anchor": 0,
-            "next_verdict": 14,
+            "next_verdict": 13,
             "manual_items": 0,
             "filer_type": 0
           },
-          "n_pass": 15
+          "n_pass": 13
         },
         "clean": {
           "per_field": {
@@ -142,28 +143,29 @@
               "note": "无有效样本（全 null/ambiguous）"
             },
             "next_verdict": {
-              "rate": 1.0,
-              "matched": 1,
-              "denom": 1
+              "rate": null,
+              "matched": 0,
+              "denom": 0,
+              "note": "无有效样本（全 null/ambiguous）"
             },
             "manual_items": {
-              "rate": 0.7692,
-              "matched": 10,
-              "denom": 13
+              "rate": 0.5455,
+              "matched": 6,
+              "denom": 11
             },
             "filer_type": {
-              "rate": 0.9231,
-              "matched": 12,
-              "denom": 13
+              "rate": 1.0,
+              "matched": 11,
+              "denom": 11
             }
           },
           "ambiguous_count": {
             "entry_anchor": 0,
-            "next_verdict": 12,
+            "next_verdict": 11,
             "manual_items": 0,
             "filer_type": 0
           },
-          "n_pass": 13
+          "n_pass": 11
         },
         "seen": {
           "per_field": {
@@ -180,8 +182,8 @@
               "note": "无有效样本（全 null/ambiguous）"
             },
             "manual_items": {
-              "rate": 1.0,
-              "matched": 2,
+              "rate": 0.0,
+              "matched": 0,
               "denom": 2
             },
             "filer_type": {
@@ -206,265 +208,10 @@
       "ticker": "FDS",
       "exposure": "seen",
       "input_type": "ai_polished",
-      "model": "qwen-turbo",
-      "fields": {
-        "filer_type": false,
-        "manual_items": false,
-        "entry_anchor_type": false
-      },
-      "ambiguous": {
-        "entry_anchor_value": "GT 或输出 value 为 null",
-        "next_verdict": "GT 或输出 date 缺失"
-      },
-      "status": "other"
-    },
-    {
-      "ticker": "FDS",
-      "exposure": "seen",
-      "input_type": "ai_polished",
-      "model": "glm-5.2-fast-preview",
-      "fields": {
-        "filer_type": true,
-        "manual_items": true,
-        "entry_anchor_type": true,
-        "entry_anchor_value": true
-      },
-      "ambiguous": {
-        "next_verdict": "GT 或输出 date 缺失"
-      },
-      "status": "pass"
-    },
-    {
-      "ticker": "HSBC",
-      "exposure": "seen",
-      "input_type": "ai_polished",
-      "model": "qwen-turbo",
-      "fields": {
-        "filer_type": true,
-        "manual_items": true,
-        "entry_anchor_type": true,
-        "entry_anchor_value": true
-      },
-      "ambiguous": {
-        "next_verdict": "(无说明)"
-      },
-      "status": "pass"
-    },
-    {
-      "ticker": "HSBC",
-      "exposure": "seen",
-      "input_type": "ai_polished",
-      "model": "glm-5.2-fast-preview",
-      "fields": {
-        "filer_type": true,
-        "manual_items": true,
-        "entry_anchor_type": true,
-        "entry_anchor_value": true
-      },
-      "ambiguous": {
-        "next_verdict": "(无说明)"
-      },
-      "status": "pass"
-    },
-    {
-      "ticker": "BRK.B",
-      "exposure": "clean",
-      "input_type": "ai_polished",
-      "model": "qwen-turbo",
-      "fields": {
-        "filer_type": false,
-        "manual_items": true,
-        "entry_anchor_type": true,
-        "entry_anchor_value": true
-      },
-      "ambiguous": {
-        "next_verdict": "(无说明)"
-      },
-      "status": "pass"
-    },
-    {
-      "ticker": "BRK.B",
-      "exposure": "clean",
-      "input_type": "ai_polished",
-      "model": "glm-5.2-fast-preview",
-      "fields": {
-        "filer_type": true,
-        "manual_items": true,
-        "entry_anchor_type": true,
-        "entry_anchor_value": true
-      },
-      "ambiguous": {
-        "next_verdict": "(无说明)"
-      },
-      "status": "pass"
-    },
-    {
-      "ticker": "MCO",
-      "exposure": "clean",
-      "input_type": "ai_polished",
-      "model": "qwen-turbo",
-      "fields": {
-        "filer_type": true,
-        "manual_items": true,
-        "entry_anchor_type": true,
-        "entry_anchor_value": true,
-        "next_verdict": true
-      },
-      "ambiguous": {},
-      "status": "pass"
-    },
-    {
-      "ticker": "MCO",
-      "exposure": "clean",
-      "input_type": "ai_polished",
-      "model": "glm-5.2-fast-preview",
-      "fields": {
-        "filer_type": true,
-        "manual_items": true,
-        "entry_anchor_type": true,
-        "entry_anchor_value": true
-      },
-      "ambiguous": {
-        "next_verdict": "GT 或输出 date 缺失"
-      },
-      "status": "pass"
-    },
-    {
-      "ticker": "GOOGL",
-      "exposure": "clean",
-      "input_type": "ai_polished",
-      "model": "qwen-turbo",
-      "fields": {
-        "filer_type": true,
-        "manual_items": true,
-        "entry_anchor_type": true,
-        "entry_anchor_value": true
-      },
-      "ambiguous": {
-        "next_verdict": "(无说明)"
-      },
-      "status": "pass"
-    },
-    {
-      "ticker": "GOOGL",
-      "exposure": "clean",
-      "input_type": "ai_polished",
-      "model": "glm-5.2-fast-preview",
-      "fields": {
-        "filer_type": true,
-        "manual_items": true,
-        "entry_anchor_type": true,
-        "entry_anchor_value": true
-      },
-      "ambiguous": {
-        "next_verdict": "(无说明)"
-      },
-      "status": "pass"
-    },
-    {
-      "ticker": "NOW",
-      "exposure": "clean",
-      "input_type": "ai_polished",
-      "model": "qwen-turbo",
-      "fields": {
-        "filer_type": false,
-        "manual_items": false,
-        "entry_anchor_type": true,
-        "entry_anchor_value": true
-      },
-      "ambiguous": {
-        "next_verdict": "(无说明)"
-      },
-      "status": "pass"
-    },
-    {
-      "ticker": "NOW",
-      "exposure": "clean",
-      "input_type": "ai_polished",
-      "model": "glm-5.2-fast-preview",
+      "model": "deepseek-v4-flash",
       "fields": {
         "filer_type": true,
         "manual_items": false,
-        "entry_anchor_type": true,
-        "entry_anchor_value": true
-      },
-      "ambiguous": {
-        "next_verdict": "(无说明)"
-      },
-      "status": "pass"
-    },
-    {
-      "ticker": "NFLX",
-      "exposure": "clean",
-      "input_type": "ai_polished",
-      "model": "qwen-turbo",
-      "fields": {
-        "filer_type": false,
-        "manual_items": false,
-        "entry_anchor_type": true,
-        "entry_anchor_value": true
-      },
-      "ambiguous": {
-        "next_verdict": "(无说明)"
-      },
-      "status": "pass"
-    },
-    {
-      "ticker": "NFLX",
-      "exposure": "clean",
-      "input_type": "ai_polished",
-      "model": "glm-5.2-fast-preview",
-      "fields": {
-        "filer_type": true,
-        "manual_items": false,
-        "entry_anchor_type": true,
-        "entry_anchor_value": true
-      },
-      "ambiguous": {
-        "next_verdict": "(无说明)"
-      },
-      "status": "pass"
-    },
-    {
-      "ticker": "CRM",
-      "exposure": "clean",
-      "input_type": "ai_polished",
-      "model": "qwen-turbo",
-      "fields": {
-        "filer_type": true,
-        "manual_items": true,
-        "entry_anchor_type": true,
-        "entry_anchor_value": true
-      },
-      "ambiguous": {
-        "next_verdict": "(无说明)"
-      },
-      "status": "pass"
-    },
-    {
-      "ticker": "CRM",
-      "exposure": "clean",
-      "input_type": "ai_polished",
-      "model": "glm-5.2-fast-preview",
-      "fields": {
-        "filer_type": true,
-        "manual_items": true,
-        "entry_anchor_type": true,
-        "entry_anchor_value": true
-      },
-      "ambiguous": {
-        "next_verdict": "(无说明)"
-      },
-      "status": "pass"
-    },
-    {
-      "ticker": "FIS",
-      "exposure": "clean",
-      "input_type": "ai_polished",
-      "model": "qwen-turbo",
-      "fields": {
-        "filer_type": false,
-        "manual_items": true,
         "entry_anchor_type": true,
         "entry_anchor_value": true,
         "next_verdict": false
@@ -473,28 +220,285 @@
       "status": "pass"
     },
     {
+      "ticker": "FDS",
+      "exposure": "seen",
+      "input_type": "ai_polished",
+      "model": "glm-5.2-fast-preview",
+      "fields": {
+        "filer_type": true,
+        "manual_items": false,
+        "entry_anchor_type": true,
+        "entry_anchor_value": true
+      },
+      "ambiguous": {
+        "next_verdict": "GT 或输出 date 缺失"
+      },
+      "status": "pass"
+    },
+    {
+      "ticker": "HSBC",
+      "exposure": "seen",
+      "input_type": "ai_polished",
+      "model": "deepseek-v4-flash",
+      "fields": {
+        "filer_type": true,
+        "manual_items": false,
+        "entry_anchor_type": true,
+        "entry_anchor_value": true
+      },
+      "ambiguous": {
+        "next_verdict": "(无说明)"
+      },
+      "status": "pass"
+    },
+    {
+      "ticker": "HSBC",
+      "exposure": "seen",
+      "input_type": "ai_polished",
+      "model": "glm-5.2-fast-preview",
+      "fields": {
+        "filer_type": true,
+        "manual_items": false,
+        "entry_anchor_type": true,
+        "entry_anchor_value": true
+      },
+      "ambiguous": {
+        "next_verdict": "(无说明)"
+      },
+      "status": "pass"
+    },
+    {
+      "ticker": "BRK.B",
+      "exposure": "clean",
+      "input_type": "ai_polished",
+      "model": "deepseek-v4-flash",
+      "fields": {
+        "filer_type": true,
+        "manual_items": true,
+        "entry_anchor_type": true,
+        "entry_anchor_value": true
+      },
+      "ambiguous": {
+        "next_verdict": "(无说明)"
+      },
+      "status": "pass"
+    },
+    {
+      "ticker": "BRK.B",
+      "exposure": "clean",
+      "input_type": "ai_polished",
+      "model": "glm-5.2-fast-preview",
+      "fields": {
+        "filer_type": true,
+        "manual_items": true,
+        "entry_anchor_type": true,
+        "entry_anchor_value": true
+      },
+      "ambiguous": {
+        "next_verdict": "(无说明)"
+      },
+      "status": "pass"
+    },
+    {
+      "ticker": "MCO",
+      "exposure": "clean",
+      "input_type": "ai_polished",
+      "model": "deepseek-v4-flash",
+      "fields": {
+        "filer_type": true,
+        "manual_items": false,
+        "entry_anchor_type": true,
+        "entry_anchor_value": true
+      },
+      "ambiguous": {
+        "next_verdict": "GT 或输出 date 缺失"
+      },
+      "status": "pass"
+    },
+    {
+      "ticker": "MCO",
+      "exposure": "clean",
+      "input_type": "ai_polished",
+      "model": "glm-5.2-fast-preview",
+      "fields": {
+        "filer_type": true,
+        "manual_items": true,
+        "entry_anchor_type": true,
+        "entry_anchor_value": true
+      },
+      "ambiguous": {
+        "next_verdict": "GT 或输出 date 缺失"
+      },
+      "status": "pass"
+    },
+    {
+      "ticker": "GOOGL",
+      "exposure": "clean",
+      "input_type": "ai_polished",
+      "model": "deepseek-v4-flash",
+      "fields": {
+        "filer_type": true,
+        "manual_items": false,
+        "entry_anchor_type": true,
+        "entry_anchor_value": true
+      },
+      "ambiguous": {
+        "next_verdict": "(无说明)"
+      },
+      "status": "pass"
+    },
+    {
+      "ticker": "GOOGL",
+      "exposure": "clean",
+      "input_type": "ai_polished",
+      "model": "glm-5.2-fast-preview",
+      "fields": {
+        "filer_type": true,
+        "manual_items": false,
+        "entry_anchor_type": true,
+        "entry_anchor_value": true
+      },
+      "ambiguous": {
+        "next_verdict": "(无说明)"
+      },
+      "status": "pass"
+    },
+    {
+      "ticker": "NOW",
+      "exposure": "clean",
+      "input_type": "ai_polished",
+      "model": "deepseek-v4-flash",
+      "fields": {
+        "filer_type": true,
+        "manual_items": true,
+        "entry_anchor_type": true,
+        "entry_anchor_value": true
+      },
+      "ambiguous": {
+        "next_verdict": "(无说明)"
+      },
+      "status": "pass"
+    },
+    {
+      "ticker": "NOW",
+      "exposure": "clean",
+      "input_type": "ai_polished",
+      "model": "glm-5.2-fast-preview",
+      "fields": {
+        "filer_type": true,
+        "manual_items": true,
+        "entry_anchor_type": true,
+        "entry_anchor_value": true
+      },
+      "ambiguous": {
+        "next_verdict": "(无说明)"
+      },
+      "status": "pass"
+    },
+    {
+      "ticker": "NFLX",
+      "exposure": "clean",
+      "input_type": "ai_polished",
+      "model": "deepseek-v4-flash",
+      "fields": {
+        "filer_type": true,
+        "manual_items": true,
+        "entry_anchor_type": true,
+        "entry_anchor_value": true
+      },
+      "ambiguous": {
+        "next_verdict": "(无说明)"
+      },
+      "status": "pass"
+    },
+    {
+      "ticker": "NFLX",
+      "exposure": "clean",
+      "input_type": "ai_polished",
+      "model": "glm-5.2-fast-preview",
+      "fields": {
+        "filer_type": true,
+        "manual_items": true,
+        "entry_anchor_type": true,
+        "entry_anchor_value": true
+      },
+      "ambiguous": {
+        "next_verdict": "(无说明)"
+      },
+      "status": "pass"
+    },
+    {
+      "ticker": "CRM",
+      "exposure": "clean",
+      "input_type": "ai_polished",
+      "model": "deepseek-v4-flash",
+      "fields": {
+        "filer_type": true,
+        "manual_items": false,
+        "entry_anchor_type": true,
+        "entry_anchor_value": true
+      },
+      "ambiguous": {
+        "next_verdict": "(无说明)"
+      },
+      "status": "pass"
+    },
+    {
+      "ticker": "CRM",
+      "exposure": "clean",
+      "input_type": "ai_polished",
+      "model": "glm-5.2-fast-preview",
+      "fields": {
+        "filer_type": false,
+        "manual_items": false,
+        "entry_anchor_type": false
+      },
+      "ambiguous": {
+        "entry_anchor_value": "GT 或输出 value 为 null",
+        "next_verdict": "(无说明)"
+      },
+      "status": "other"
+    },
+    {
+      "ticker": "FIS",
+      "exposure": "clean",
+      "input_type": "ai_polished",
+      "model": "deepseek-v4-flash",
+      "fields": {
+        "filer_type": true,
+        "manual_items": false,
+        "entry_anchor_type": true,
+        "entry_anchor_value": true
+      },
+      "ambiguous": {
+        "next_verdict": "GT 或输出 date 缺失"
+      },
+      "status": "pass"
+    },
+    {
       "ticker": "FIS",
       "exposure": "clean",
       "input_type": "ai_polished",
       "model": "glm-5.2-fast-preview",
       "fields": {
         "filer_type": true,
-        "manual_items": true,
+        "manual_items": false,
         "entry_anchor_type": true,
-        "entry_anchor_value": true,
-        "next_verdict": true
+        "entry_anchor_value": true
       },
-      "ambiguous": {},
+      "ambiguous": {
+        "next_verdict": "GT 或输出 date 缺失"
+      },
       "status": "pass"
     },
     {
       "ticker": "CGNX",
       "exposure": "clean",
       "input_type": "ai_polished",
-      "model": "qwen-turbo",
+      "model": "deepseek-v4-flash",
       "fields": {
-        "filer_type": false,
-        "manual_items": true
+        "filer_type": true,
+        "manual_items": false
       },
       "ambiguous": {
         "entry_anchor_type": "系统建立前买入的历史持仓，台账并列起步加仓线与安全边际线两条；现已全部清仓，该字段不影响当前产品",
@@ -523,15 +527,15 @@
       "ticker": "NVDA",
       "exposure": "clean",
       "input_type": "ai_polished",
-      "model": "qwen-turbo",
+      "model": "deepseek-v4-flash",
       "fields": {
         "filer_type": true,
         "manual_items": false,
-        "entry_anchor_type": true,
-        "next_verdict": true
+        "entry_anchor_type": true
       },
       "ambiguous": {
-        "entry_anchor_value": "GT 或输出 value 为 null"
+        "entry_anchor_value": "GT 或输出 value 为 null",
+        "next_verdict": "GT 或输出 date 缺失"
       },
       "status": "pass"
     },
@@ -542,7 +546,7 @@
       "model": "glm-5.2-fast-preview",
       "fields": {
         "filer_type": true,
-        "manual_items": true,
+        "manual_items": false,
         "entry_anchor_type": true
       },
       "ambiguous": {
@@ -555,22 +559,7 @@
       "ticker": "VEEV",
       "exposure": "clean",
       "input_type": "ai_polished",
-      "model": "qwen-turbo",
-      "fields": {
-        "filer_type": false,
-        "manual_items": true,
-        "entry_anchor_type": true,
-        "entry_anchor_value": true,
-        "next_verdict": true
-      },
-      "ambiguous": {},
-      "status": "pass"
-    },
-    {
-      "ticker": "VEEV",
-      "exposure": "clean",
-      "input_type": "ai_polished",
-      "model": "glm-5.2-fast-preview",
+      "model": "deepseek-v4-flash",
       "fields": {
         "filer_type": true,
         "manual_items": true,
@@ -583,28 +572,28 @@
       "status": "pass"
     },
     {
-      "ticker": "QQQ",
-      "exposure": "clean",
-      "input_type": "ai_polished",
-      "model": "qwen-turbo",
-      "fields": {
-        "filer_type": true,
-        "manual_items": true
-      },
-      "ambiguous": {
-        "entry_anchor_type": "(无说明)",
-        "entry_anchor_value": "(无说明)",
-        "next_verdict": "(无说明)"
-      },
-      "status": "pass"
-    },
-    {
-      "ticker": "QQQ",
+      "ticker": "VEEV",
       "exposure": "clean",
       "input_type": "ai_polished",
       "model": "glm-5.2-fast-preview",
       "fields": {
         "filer_type": true,
+        "manual_items": false,
+        "entry_anchor_type": true,
+        "entry_anchor_value": true
+      },
+      "ambiguous": {
+        "next_verdict": "GT 或输出 date 缺失"
+      },
+      "status": "pass"
+    },
+    {
+      "ticker": "QQQ",
+      "exposure": "clean",
+      "input_type": "ai_polished",
+      "model": "deepseek-v4-flash",
+      "fields": {
+        "filer_type": true,
         "manual_items": true
       },
       "ambiguous": {
@@ -615,23 +604,7 @@
       "status": "pass"
     },
     {
-      "ticker": "SPGI",
-      "exposure": "clean",
-      "input_type": "ai_polished",
-      "model": "qwen-turbo",
-      "fields": {
-        "filer_type": false,
-        "manual_items": false
-      },
-      "ambiguous": {
-        "entry_anchor_type": "(无说明)",
-        "entry_anchor_value": "(无说明)",
-        "next_verdict": "(无说明)"
-      },
-      "status": "pass"
-    },
-    {
-      "ticker": "SPGI",
+      "ticker": "QQQ",
       "exposure": "clean",
       "input_type": "ai_polished",
       "model": "glm-5.2-fast-preview",
@@ -647,10 +620,42 @@
       "status": "pass"
     },
     {
+      "ticker": "SPGI",
+      "exposure": "clean",
+      "input_type": "ai_polished",
+      "model": "deepseek-v4-flash",
+      "fields": {
+        "filer_type": true,
+        "manual_items": true
+      },
+      "ambiguous": {
+        "entry_anchor_type": "(无说明)",
+        "entry_anchor_value": "(无说明)",
+        "next_verdict": "(无说明)"
+      },
+      "status": "pass"
+    },
+    {
+      "ticker": "SPGI",
+      "exposure": "clean",
+      "input_type": "ai_polished",
+      "model": "glm-5.2-fast-preview",
+      "fields": {
+        "filer_type": true,
+        "manual_items": true
+      },
+      "ambiguous": {
+        "entry_anchor_type": "(无说明)",
+        "entry_anchor_value": "(无说明)",
+        "next_verdict": "(无说明)"
+      },
+      "status": "pass"
+    },
+    {
       "ticker": "GDXU",
       "exposure": "clean",
       "input_type": "ai_polished",
-      "model": "qwen-turbo",
+      "model": "deepseek-v4-flash",
       "fields": {
         "filer_type": false,
         "manual_items": true
@@ -660,7 +665,7 @@
         "entry_anchor_value": "(无说明)",
         "next_verdict": "(无说明)"
       },
-      "status": "pass"
+      "status": "other"
     },
     {
       "ticker": "GDXU",
@@ -676,1667 +681,1609 @@
         "entry_anchor_value": "(无说明)",
         "next_verdict": "(无说明)"
       },
-      "status": "pass"
+      "status": "other"
     }
   ],
   "extractions": {
     "FDS": {
-      "qwen-turbo": {
-        "extraction": null,
-        "metrics": {
-          "status": "other",
-          "dur_s": 4.87,
-          "in_tok": null,
-          "out_tok": null,
-          "retries_429": 0,
-          "error": "ModelHTTPError: status_code: 400, model_name: qwen-turbo, body: {'message': '<400> InternalError.Algo.InvalidParameter: The \"function.arguments\" parameter of the code model must be in JSON format.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_parameter_error'}"
-        }
-      },
-      "glm-5.2-fast-preview": {
+      "deepseek-v4-flash": {
         "extraction": {
-          "holding_reason_raw": "FactSet = 金融数据与分析订阅平台，深度嵌入买卖方工作流、转换成本高、ASV（年化订阅）经常性强、续约率高。价值角度：高黏性订阅 + 稳定现金流的「卖铲子」生意。",
+          "ticker": "FDS",
+          "holding_reason_raw": "FactSet是深度嵌入买卖方工作流的金融数据与分析订阅平台，转换成本高、ASV年化订阅经常性强、续约率高，是高黏性订阅+稳定现金流的「卖铲子」生意。",
           "key_assumptions": [
             {
-              "text": "FactSet 平台深度嵌入买卖方工作流，转换成本高，构成护城河",
-              "judgeable": true
-            },
-            {
-              "text": "ASV 经常性强、续约率高，提供稳定现金流",
-              "judgeable": true
-            },
-            {
-              "text": "Reverse DCF 在 r=9% 和 10% 下隐含永续 FCF 增速仅 2.75%–3.75%，远低于 ASV ~6% + 回购减股 ~3% 的实际轨迹，两种折现率下均显示便宜",
-              "judgeable": true
-            },
-            {
-              "text": "GAAP 口径门槛偏保守：调整后 EPS（剔收购无形资产摊销）比 GAAP 高约 12%",
+              "text": "切换成本锁定客户，竞品难蚕食份额",
               "judgeable": true
             }
           ],
+          "open_questions": [],
           "mirrors": [
             {
-              "assumption_text": "FactSet 平台深度嵌入买卖方工作流，转换成本高，构成护城河",
-              "mirror_text": "客户大量迁移至 Bloomberg/Refinitiv 或新进入者平台，工作流嵌入度下降，转换成本壁垒失效"
-            },
-            {
-              "assumption_text": "ASV 经常性强、续约率高，提供稳定现金流",
-              "mirror_text": "ASV 增速从 ~6% 显著放缓或转负，续约率大幅下降"
-            },
-            {
-              "assumption_text": "Reverse DCF 在 r=9% 和 10% 下隐含永续 FCF 增速仅 2.75%–3.75%，远低于 ASV ~6% + 回购减股 ~3% 的实际轨迹，两种折现率下均显示便宜",
-              "mirror_text": "FCF 显著恶化或 ASV+回购实际增速降至隐含永续增速（2.75%–3.75%）水平或以下"
-            },
-            {
-              "assumption_text": "GAAP 口径门槛偏保守：调整后 EPS（剔收购无形资产摊销）比 GAAP 高约 12%",
-              "mirror_text": "GAAP 与调整后 EPS 差距收窄至可忽略（如收购无形资产摊销大幅减少），保守余量消失"
+              "assumption_text": "切换成本锁定客户，竞品难蚕食份额",
+              "mirror_text": "主要客户转投竞品或ASV客户留存率跌破90%",
+              "threshold": {
+                "metric": "asv_client_retention_rate",
+                "operator": "<",
+                "value": 90
+              },
+              "source_type": "sec_filing_field"
             }
           ],
-          "manual_items": [
-            {
-              "text": "现价约 $253 ≈ 16.2x TTM P/E，门槛 16x ≈ $251；现价在加仓门口，越跌越买",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            },
-            {
-              "text": "已距 52 周高 $464 腰斩、比十年均值约 28x 低约 55%",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            }
-          ],
+          "manual_items": [],
           "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "FactSet Q3 FY26 财报发布，检查 ASV 增速、续约率、FCF 及 TTM GAAP EPS 重算",
-            "date": null,
-            "source_note": "FactSet 财年截至8月31日；Q3 FY26（截至5月31日）通常6月下旬发布，具体日期待公司公告"
+            "event": "FDS FY2026 Q3 财报发布",
+            "date": "2026-06-30",
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "ttm_gaap_pe",
             "anchor_value": 16.0,
-            "note": "16x TTM GAAP P/E ≈ $251；2026-06-06 读数 TTM GAAP EPS≈$15.66（Q1FY26 4.06 + Q2FY26 3.59 + FY25后两季），现价约$253≈16.2x；forward P/E约13–14x"
+            "note": "TTM P/E 16x ≈ ~$251 (TTM GAAP EPS ~$15.66)。当前读数2026-06-06：现价~$253≈16.2x。调整后EPS比GAAP高约12%，若用调整口径门槛会更低。reverse DCF：市值9.2B，TTM FCF~575M，r=9-10%，隐含永续增速~2.75-3.75%。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 47.38,
-          "in_tok": 2080,
-          "out_tok": 5088,
+          "dur_s": 64.92,
+          "in_tok": null,
+          "out_tok": null,
+          "retries_429": 0,
+          "error": null
+        }
+      },
+      "glm-5.2-fast-preview": {
+        "extraction": {
+          "ticker": "FDS",
+          "holding_reason_raw": "FactSet = 金融数据与分析订阅平台，深度嵌入买卖方工作流、转换成本高、ASV（年化订阅）经常性强、续约率高。价值角度：高黏性订阅 + 稳定现金流的「卖铲子」生意。",
+          "key_assumptions": [
+            {
+              "text": "深度嵌入买卖方工作流，转换成本锁定客户，竞品难蚕食份额",
+              "judgeable": true
+            }
+          ],
+          "open_questions": [
+            {
+              "field": "key_assumptions",
+              "reason": "condition 3 - 同义复述原话'ASV经常性强、续约率高'，未增加超出原话的新信息",
+              "text": "ASV 经常性收入将持续稳定增长、续约率维持高位"
+            }
+          ],
+          "mirrors": [
+            {
+              "assumption_text": "深度嵌入买卖方工作流，转换成本锁定客户，竞品难蚕食份额",
+              "mirror_text": "客户续约率跌破 90%，或 ASV 同比增速转负，显示转换成本不再有效锁定客户",
+              "threshold": {
+                "metric": "client_retention_rate",
+                "operator": "<",
+                "value": 90
+              },
+              "source_type": "sec_filing_field"
+            }
+          ],
+          "manual_items": [],
+          "filer_type": "domestic_10k",
+          "next_verdict": {
+            "event": "下一次财报（Q3 FY26，约 2026 年 6 月中下旬）披露 ASV 及客户续约率",
+            "date": null,
+            "source_note": ""
+          },
+          "entry_anchor": {
+            "anchor_type": "ttm_gaap_pe",
+            "anchor_value": 16.0,
+            "note": "TTM GAAP P/E 16x 门槛；TTM EPS＝最近四季 GAAP 摄薄 EPS 加总（非单季×4）。2026-06-06 读数：TTM GAAP EPS ≈ 15.66（Q1FY26 4.06 + Q2FY26 3.59 + FY25 后两季），现价约 $253 ≈ 16.2x，门槛 16x ≈ $251；Forward P/E 约 13–14x。Reverse DCF（锈，不进线）：市值约 9.2B、TTM FCF 约 575M，r=9%/10% 时隐含永续 FCF 增速 ~2.75%–3.75%，低于 ASV ~6% + 回购减股 ~3% 实际轨迹。调整后 EPS（剔收购无形资产摊销）比 GAAP 高约 12%，用 GAAP 口径偏保守。距 52 周高 $464 腰斩、比十年均值约 28x 低约 55%。"
+          }
+        },
+        "metrics": {
+          "status": "pass",
+          "dur_s": 81.14,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       }
     },
     "HSBC": {
-      "qwen-turbo": {
+      "deepseek-v4-flash": {
         "extraction": {
-          "holding_reason_raw": "汇丰 = 以亚洲（香港）为核心的全球性大型银行，庞大的存款/财富管理特许经营权 + 跨境贸易网络，长期分红。价值角度：大而稳的息差生意 + 股息回报，越跌越买时提供现金流缓冲。",
+          "ticker": "HSBC",
+          "holding_reason_raw": "以亚洲（香港）为核心的全球性大型银行，庞大的存款/财富管理特许经营权 + 跨境贸易网络，长期分红；价值角度：大而稳的息差生意 + 股息回报",
           "key_assumptions": [
             {
-              "text": "银行估值第一性原理：合理 P/TBV ≈ ROTE / 权益成本。可持续 ROTE（剔 notable）~15-17%、但穿越周期的报告 ROTE ~13% 更老实，权益成本（港/中国敞口）~10-11% ⇒ 合理 P/TBV ~1.3-1.6x。",
+              "text": "HSBC's Hong Kong deposit franchise is protected by high customer switching costs and relationship banking, making it resilient to digital disruption and competitive pressure from fintech/neobanks",
               "judgeable": true
             },
             {
-              "text": "银行有周期性，要在 1.3x TBV、ROTE 仍高时才越跌越买，同时股息率回到 ~6%。",
+              "text": "HSBC's cross-border trade and payments network creates structural network effects that protect its transaction banking and trade finance revenue from being disintermediated by digital/alternative payment platforms",
               "judgeable": true
             },
             {
-              "text": "市场在为“高 ROTE 持续 + 中国不出事”定价，几乎无安全边际。",
+              "text": "Regulatory restrictions on cross-border capital flows between Mainland China and Hong Kong will not materially worsen, preserving HSBC's wealth management growth channel",
               "judgeable": true
+            }
+          ],
+          "open_questions": [
+            {
+              "field": "key_assumptions",
+              "reason": "rule1_violation（不是关于生意本身的判断，而是估值口径/计算方法）",
+              "text": "HSBC's normalized ROTE will remain above ~13% through the cycle, supporting the valuation framework"
+            },
+            {
+              "field": "key_assumptions",
+              "reason": "rule3_violation（同义复述用户原话，未增加新信息）",
+              "text": "HSBC's large deposit and wealth management franchise is a durable competitive advantage"
             }
           ],
           "mirrors": [
             {
-              "assumption_text": "银行估值第一性原理：合理 P/TBV ≈ ROTE / 权益成本。可持续 ROTE（剔 notable）~15-17%、但穿越周期的报告 ROTE ~13% 更老实，权益成本（港/中国敞口）~10-11% ⇒ 合理 P/TBV ~1.3-1.6x。",
-              "mirror_text": "P/TBV 超过合理区间（如 >1.6x）或 ROTE 下降至低于权益成本（如 <10%）"
+              "assumption_text": "HSBC's Hong Kong deposit franchise is protected by high customer switching costs and relationship banking, making it resilient to digital disruption and competitive pressure from fintech/neobanks",
+              "mirror_text": "HSBC's Hong Kong personal banking deposits decline YoY for 2 consecutive quarters, or deposit cost rises faster than peer average",
+              "threshold": {
+                "metric": "hk_personal_deposits_yoy_change_pct",
+                "operator": "<",
+                "value": 0
+              },
+              "source_type": "sec_filing_field"
             },
             {
-              "assumption_text": "银行有周期性，要在 1.3x TBV、ROTE 仍高时才越跌越买，同时股息率回到 ~6%。",
-              "mirror_text": "P/TBV 超过 1.3x 或 ROTE 下降且股息率低于 6%"
+              "assumption_text": "HSBC's cross-border trade and payments network creates structural network effects that protect its transaction banking and trade finance revenue from being disintermediated by digital/alternative payment platforms",
+              "mirror_text": "HSBC's trade finance or transaction banking revenue declines YoY for 3 consecutive quarters, indicating structural disintermediation",
+              "threshold": {
+                "metric": "trade_finance_revenue_yoy_change_pct",
+                "operator": "<",
+                "value": 0
+              },
+              "source_type": "sec_filing_field"
             },
             {
-              "assumption_text": "市场在为“高 ROTE 持续 + 中国不出事”定价，几乎无安全边际。",
-              "mirror_text": "ROTE 持续下降或中国出现重大政策变化"
+              "assumption_text": "Regulatory restrictions on cross-border capital flows between Mainland China and Hong Kong will not materially worsen, preserving HSBC's wealth management growth channel",
+              "mirror_text": "HKMA or PBOC announces new or tightened restrictions on Mainland Chinese residents' offshore investment accounts at Hong Kong banks",
+              "threshold": {
+                "event": "hk_cn_offshore_restriction_announced",
+                "occurred": true
+              },
+              "source_type": "news_headline"
             }
           ],
-          "manual_items": [
-            {
-              "text": "香港/内地收紧内地客户离岸投资账户，直接打 HSBC 港区财富增量获客渠道（逼近态、未破）",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            }
-          ],
+          "manual_items": [],
           "filer_type": "foreign_issuer_20f_6k",
           "next_verdict": {
-            "event": "2026 Q2 财报",
-            "date": "2026-08-01",
-            "source_note": "Q2'26 财报将披露 ROE、NIM 和信贷成本变化情况"
+            "event": "H1 2026 earnings (next quarterly report after Q1 2026, the latest data point referenced by user as of June 2026 reading)",
+            "date": null,
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "p_tbv",
             "anchor_value": 1.3,
-            "note": "1.3x ≈ $61"
+            "note": "P/TBV 1.3x ≈ $61/ADR（基于最新 TNAV $9.46/普通股 ×5 = $47.3/ADR 重算）。现价 ~$91 → P/TBV ~1.9x, 股息率 ~4%。加仓价对应股息率回升至 ~6%。可持续 ROTE(剔 notable) ~15-17%, 穿越周期报告 ROTE ~13%, 权益成本(港/中国敞口) ~10-11% ⇒ 合理 P/TBV ~1.3-1.6x。每次复盘用最新 TNAV 重算，不锁死价。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 5.26,
-          "in_tok": 2495,
-          "out_tok": 650,
+          "dur_s": 103.01,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       },
       "glm-5.2-fast-preview": {
         "extraction": {
-          "holding_reason_raw": "汇丰 = 以亚洲（香港）为核心的全球性大型银行，庞大的存款/财富管理特许经营权 + 跨境贸易网络，长期分红。价值角度：大而稳的息差生意 + 股息回报，越跌越买时提供现金流缓冲。",
+          "ticker": "HSBC",
+          "holding_reason_raw": "以亚洲（香港）为核心的全球性大型银行，庞大的存款/财富管理特许经营权 + 跨境贸易网络，长期分红。价值角度：大而稳的息差生意 + 股息回报。",
           "key_assumptions": [
             {
-              "text": "庞大的存款/财富管理特许经营权 + 跨境贸易网络构成持续获客的护城河，亚洲（香港）核心定位不可替代",
+              "text": "汇丰亚洲存款基础的结构性低成本资金优势与跨境网络客户粘性构成护城河，竞品难以蚕食份额",
               "judgeable": true
             },
             {
-              "text": "息差生意（NIM）不会长期收窄且无法转嫁给客户",
+              "text": "汇丰港区跨境财富管理增量获客依赖内地客户离岸投资渠道，监管未收紧是 franchise 增长前提",
               "judgeable": true
             },
             {
-              "text": "高 ROTE 可持续：剔 notable ~15-17%、穿越周期报告 ROTE ~13%，权益成本（港/中国敞口）~10-11% ⇒ 合理 P/TBV ~1.3-1.6x",
+              "text": "汇丰净息差可通过定价转嫁资金成本，不会长期收窄至侵蚀核心盈利能力",
               "judgeable": true
             },
             {
-              "text": "中国敞口不爆发系统性风险（中国不出事）",
+              "text": "汇丰中国/香港信贷敞口不构成系统性风险，资产质量穿越周期保持稳定",
               "judgeable": true
             },
             {
-              "text": "股息政策可持续：EPS（剔 notable）50% 派息 + 回购，不会被被迫长期削减",
+              "text": "汇丰的资本充足率与盈利能力支撑当前分红政策（50% 派息率+回购），不会被监管或经营压力迫使长期削减",
               "judgeable": true
+            }
+          ],
+          "open_questions": [
+            {
+              "field": "key_assumptions",
+              "reason": "test1_valuation_method_not_business",
+              "text": "估值用 P/TBV 不用 P/E——P/E 被拨备周期+notable items 扭曲"
             },
             {
-              "text": "信贷成本不跳升（ECL 不会大幅恶化）",
-              "judgeable": true
+              "field": "key_assumptions",
+              "reason": "test1_valuation_mechanic",
+              "text": "可持续 ROTE（剔 notable）~15-17%、穿越周期报告 ROTE ~13%、权益成本 ~10-11% ⇒ 合理 P/TBV ~1.3-1.6x"
+            },
+            {
+              "field": "key_assumptions",
+              "reason": "test3_paraphrase",
+              "text": "大而稳的息差生意 + 股息回报"
             }
           ],
           "mirrors": [
             {
-              "assumption_text": "庞大的存款/财富管理特许经营权 + 跨境贸易网络构成持续获客的护城河，亚洲（香港）核心定位不可替代",
-              "mirror_text": "香港/内地收紧内地客户离岸投资账户，直接打 HSBC 港区财富增量获客渠道（逼近态、未破）"
+              "assumption_text": "汇丰亚洲存款基础的结构性低成本资金优势与跨境网络客户粘性构成护城河，竞品难以蚕食份额",
+              "mirror_text": "竞品蚕食存款/财富管理份额——HSBC 港区/亚洲客户存款或财富管理 AUM 同比下滑",
+              "threshold": {
+                "metric": "hk_customer_accounts_yoy_pct",
+                "operator": "<",
+                "value": 0
+              },
+              "source_type": "sec_filing_field"
             },
             {
-              "assumption_text": "息差生意（NIM）不会长期收窄且无法转嫁给客户",
-              "mirror_text": "NIM 长期收窄且无法转嫁给客户（息差生意护城河失效）"
+              "assumption_text": "汇丰港区跨境财富管理增量获客依赖内地客户离岸投资渠道，监管未收紧是 franchise 增长前提",
+              "mirror_text": "香港/内地监管收紧内地客户离岸投资账户，HSBC 港区财富管理获客渠道受阻",
+              "threshold": {
+                "event": "prc_hk_regulatory_tightening_offshore_investment",
+                "occurred": false
+              },
+              "source_type": "news_headline"
             },
             {
-              "assumption_text": "高 ROTE 可持续：剔 notable ~15-17%、穿越周期报告 ROTE ~13%，权益成本（港/中国敞口）~10-11% ⇒ 合理 P/TBV ~1.3-1.6x",
-              "mirror_text": "ROTE 大幅下降（核心业务回报率坍塌，notable items 扭曲加剧或净息差/资本效率持续恶化）"
+              "assumption_text": "汇丰净息差可通过定价转嫁资金成本，不会长期收窄至侵蚀核心盈利能力",
+              "mirror_text": "NIM 长期收窄且无法转嫁，净息差持续下降侵蚀核心盈利",
+              "threshold": {
+                "metric": "net_interest_margin_yoy_bps",
+                "operator": "<",
+                "value": -25
+              },
+              "source_type": "sec_filing_field"
             },
             {
-              "assumption_text": "中国敞口不爆发系统性风险（中国不出事）",
-              "mirror_text": "中国敞口爆发系统性风险（港/中国地产或信用危机大规模传导至 HSBC）"
+              "assumption_text": "汇丰中国/香港信贷敞口不构成系统性风险，资产质量穿越周期保持稳定",
+              "mirror_text": "中国/香港信贷敞口出现系统性损失，信贷成本跳升",
+              "threshold": {
+                "metric": "ecl_as_pct_of_avg_loans",
+                "operator": ">",
+                "value": 0.8
+              },
+              "source_type": "sec_filing_field"
             },
             {
-              "assumption_text": "股息政策可持续：EPS（剔 notable）50% 派息 + 回购，不会被被迫长期削减",
-              "mirror_text": "被迫长期削股息（资本不足、监管要求或持续性亏损导致派息政策中断）"
-            },
-            {
-              "assumption_text": "信贷成本不跳升（ECL 不会大幅恶化）",
-              "mirror_text": "信贷成本跳升（ECL 大幅增加，拨备周期恶化侵蚀利润）"
+              "assumption_text": "汇丰的资本充足率与盈利能力支撑当前分红政策（50% 派息率+回购），不会被监管或经营压力迫使长期削减",
+              "mirror_text": "被迫长期削减股息——分红政策从 50% 派息率下调或暂停回购",
+              "threshold": {
+                "event": "dividend_cut_or_buyback_suspension",
+                "occurred": false
+              },
+              "source_type": "press_release_text"
             }
           ],
-          "manual_items": [
-            {
-              "text": "价格图形型：现价 ~$91 贴 52周高/ATH（$95.21）、近 1 年涨 ~50%、P/TBV ~1.9x（对银行偏贵），几乎无安全边际——确认加仓线落在现价大幅下方（1.3x TBV ≈ $61）",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            },
-            {
-              "text": "观察项：香港/内地收紧内地客户离岸投资账户（逼近态、未破），直接打 HSBC 港区财富增量获客渠道——ADD 前必确认未恶化成 thesis 破局",
-              "reason": "政策/监管动态型，不可自动核对",
-              "cadence": "monthly"
-            },
-            {
-              "text": "每次复盘用最新每股有形净资产 TNAV 重算 P/TBV 加仓线（×5 转 ADR），不锁死价——需人工查最新 TNAV 公告",
-              "reason": "需人工查最新 TNAV 数据",
-              "cadence": "monthly"
-            }
-          ],
+          "manual_items": [],
           "filer_type": "foreign_issuer_20f_6k",
           "next_verdict": {
-            "event": "H1 2026 业绩公告（半年报）— 关注 NIM 走势、信贷成本/ECL 变化、股息政策延续、中国敞口风险、香港财富管理获客渠道是否受政策收紧影响",
+            "event": "H1 2026 中期业绩发布（约 2026-08 初）——核对 NIM 趋势、ECL 变化、港区财富管理获客/AUM 增长、CET1 资本充足率",
             "date": null,
-            "source_note": "Q1'26 已报（截至 2026-06-06 读数）；H1 2026 半年报日期文本未明示"
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "p_tbv",
             "anchor_value": 1.3,
-            "note": "P/TBV 1.3x ≈ $61（−33%，股息率回升至 ~6%）；TNAV $9.46/普通股，ADR ×5 = $47.3/ADR；价格表：1.2x≈$57、1.3x≈$61、1.4x≈$66、1.5x≈$71；现价 ~$91 ⇒ P/TBV ~1.9x（偏贵，几乎无安全边际）"
+            "note": "P/TBV 1.3x ≈ $61/ADR（基于 TNAV $9.46/普通股 × 5 = $47.3/ADR）。每次复盘用最新每股 TNAV 重算，不锁死价。1 ADR = 5 普通股。P/E 被拨备周期 + notable items（1Q26 马耳他/英国寿险出售、$0.2B 物业出售收益）扭曲，故用 P/TBV。合理 P/TBV ≈ ROTE/权益成本：穿越周期报告 ROTE ~13%、权益成本（港/中国敞口）~10-11% ⇒ 合理 P/TBV ~1.3-1.6x。现价 ~$91、P/TBV ~1.9x（对银行偏贵，多数银行 ~1x）、股息率 ~4%。价格表(TNAV/ADR $47.3)：1.2x≈$57、1.3x≈$61、1.4x≈$66、1.5x≈$71。加仓时股息率回升至 ~6%。Q1'26 读数：营收 $18.6B(+6%)、报告 PBT $9.4B(−1%，ECL 拖累)、ROTE 17.3%(剔notable 18.7%)、CET1 14.0%。股息政策=EPS(剔notable) 50% 派息，2025 全年 $0.75/普通股 + $6B 回购。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 22.01,
-          "in_tok": 2364,
-          "out_tok": 2460,
+          "dur_s": 176.57,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       }
     },
     "BRK.B": {
-      "qwen-turbo": {
+      "deepseek-v4-flash": {
         "extraction": {
-          "holding_reason_raw": "伯克希尔 = 价值投资的载体本身：多元控股 + 保险浮存金长期复利，管理稳健、极少出现永久性本金损失。买 BRK.B ≈ 买「稳健价值投资」这个能力圈，长期持有不折腾。",
+          "ticker": "BRK.B",
+          "holding_reason_raw": "伯克希尔是价值投资的载体本身：多元控股 + 保险浮存金长期复利，管理稳健、极少出现永久性本金损失。买BRK.B≈买'稳健价值投资'这个能力圈，长期持有不折腾。",
           "key_assumptions": [
             {
-              "text": "伯克希尔的多元控股和保险浮存金长期复利模式能持续有效",
+              "text": "伯克希尔的保险浮存金成本长期低于国债利率，且承保端综合成本率持续低于100，使浮存金成为可靠的负成本杠杆，这是其超越普通股权投资者的结构性优势",
               "judgeable": true
             },
             {
-              "text": "伯克希尔的管理团队保持稳健，极少出现永久性本金损失",
+              "text": "伯克希尔多元控股结构使其能在不同行业和经济周期中持续将资本从成熟业务重新配置到高回报领域，形成超越单一业务公司的抗周期和复利能力",
               "judgeable": true
+            },
+            {
+              "text": "伯克希尔的价值投资文化和资本配置纪律能通过制度和企业文化传承延续至后巴菲特时代，管理层更替不会破坏其长期竞争优势",
+              "judgeable": true
+            }
+          ],
+          "open_questions": [
+            {
+              "field": "key_assumptions",
+              "reason": "条件3不合格（同义复述原话'极少出现永久性本金损失'，未增加新信息）",
+              "text": "伯克希尔投资组合和业务结构天然具有低永久性资本损失风险的特征"
             }
           ],
           "mirrors": [
             {
-              "assumption_text": "伯克希尔的多元控股和保险浮存金长期复利模式能持续有效",
-              "mirror_text": "伯克希尔的多元控股或保险浮存金模式失效，导致无法持续创造复利"
+              "assumption_text": "伯克希尔的保险浮存金成本长期低于国债利率，且承保端综合成本率持续低于100，使浮存金成为可靠的负成本杠杆，这是其超越普通股权投资者的结构性优势",
+              "mirror_text": "伯克希尔保险业务综合成本率连续三年超过105，或浮存金隐含融资成本持续高于同期国债利率",
+              "threshold": {
+                "metric": "insurance_combined_ratio_3yr_avg",
+                "operator": ">=",
+                "value": 105
+              },
+              "source_type": "sec_filing_field"
             },
             {
-              "assumption_text": "伯克希尔的管理团队保持稳健，极少出现永久性本金损失",
-              "mirror_text": "伯克希尔的管理层出现重大失误，导致本金损失"
+              "assumption_text": "伯克希尔多元控股结构使其能在不同行业和经济周期中持续将资本从成熟业务重新配置到高回报领域，形成超越单一业务公司的抗周期和复利能力",
+              "mirror_text": "伯克希尔五大非保险业务（BNSF、BHE、制造业、服务与零售、金融产品）中有三项以上出现连续两年运营利润下滑",
+              "threshold": {
+                "metric": "non_insurance_segments_declining_count",
+                "operator": ">=",
+                "value": 3
+              },
+              "source_type": "sec_filing_field"
+            },
+            {
+              "assumption_text": "伯克希尔的价值投资文化和资本配置纪律能通过制度和企业文化传承延续至后巴菲特时代，管理层更替不会破坏其长期竞争优势",
+              "mirror_text": "后巴菲特时代管理层完成一笔超过净资产15%的大型收购，且该收购在三年内累计减值超过收购金额的30%",
+              "threshold": {
+                "metric": "cumulative_impairment_pct_of_acquisition_cost",
+                "operator": ">=",
+                "value": 0.3
+              },
+              "source_type": "sec_filing_field"
             }
           ],
           "manual_items": [
             {
-              "text": "巴菲特两栏法（单钥匙 8x）",
+              "text": "两栏法运营倍数需人工按每期财报重算，当前读数约9-11x（2026-06-06），未触发8x加仓信号",
               "reason": "价格图形型",
               "cadence": "monthly"
             }
           ],
-          "filer_type": "other",
-          "next_verdict": null,
+          "filer_type": "domestic_10k",
+          "next_verdict": {
+            "event": "Q2 2026 10-Q财报发布（约2026年8月初）",
+            "date": null,
+            "source_note": ""
+          },
           "entry_anchor": {
             "anchor_type": "operating_multiple_2col",
             "anchor_value": 8.0,
-            "note": "9 到 11x，未触发"
+            "note": "巴菲特两栏法：运营倍数 = (现价 − 每股投资) ÷ 运营每股利润。每股投资 = 6430亿÷21.57亿≈$298/股（Q1 2026）；运营每股利润 = TTM运营利润 ÷ 21.57亿股。当前读数2026-06-06约9-11x，未触发8x。P/B不设（巴菲特2018已弃用1.2x回购上限，book越来越低估真实价值）。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 2.97,
-          "in_tok": 2021,
-          "out_tok": 300,
+          "dur_s": 71.31,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       },
       "glm-5.2-fast-preview": {
         "extraction": {
-          "holding_reason_raw": "伯克希尔 = 价值投资的载体本身：多元控股 + 保险浮存金长期复利，管理稳健、极少出现永久性本金损失。买 BRK.B ≈ 买「稳健价值投资」这个能力圈，长期持有不折腾。",
+          "ticker": "BRK.B",
+          "holding_reason_raw": "价值投资的载体本身：多元控股 + 保险浮存金长期复利，管理稳健、极少出现永久性本金损失。买 BRK.B ≈ 买「稳健价值投资」这个能力圈，长期持有不折腾。",
           "key_assumptions": [
             {
-              "text": "多元控股 + 保险浮存金长期复利——浮存金作为低成本/零成本杠杆持续驱动复利引擎",
+              "text": "保险浮存金作为低成本结构性资金来源持续复利",
               "judgeable": true
-            },
+            }
+          ],
+          "open_questions": [
             {
-              "text": "管理稳健、极少出现永久性本金损失——核心管理层资本配置纪律维持巴菲特遗产标准",
-              "judgeable": true
+              "field": "key_assumptions",
+              "reason": "条件3不过：同义复述用户原话'管理稳健'，未增加新的可证伪信息维度；条件4存疑：'管理稳健'难以对应单一可判定阈值事件",
+              "text": "管理稳健、极少出现永久性本金损失"
             }
           ],
           "mirrors": [
             {
-              "assumption_text": "多元控股 + 保险浮存金长期复利——浮存金作为低成本/零成本杠杆持续驱动复利引擎",
-              "mirror_text": "保险浮存金出现持续性承保亏损（巨灾频发/赔付率结构性恶化），浮存金不再是低成本杠杆，或多元控股组合丧失分散效益，复利引擎失效"
+              "assumption_text": "保险浮存金作为低成本结构性资金来源持续复利",
+              "mirror_text": "综合成本率超过100%，承保出现亏损，浮存金不再低成本",
+              "threshold": {
+                "metric": "combined_ratio",
+                "operator": ">",
+                "value": 100
+              },
+              "source_type": "sec_filing_field"
             },
             {
-              "assumption_text": "管理稳健、极少出现永久性本金损失——核心管理层资本配置纪律维持巴菲特遗产标准",
-              "mirror_text": "后巴菲特时代核心管理层（Abel 等）出现重大资本配置失误，或投资组合发生永久性本金损失（非暂时性浮亏），动摇稳健根基"
+              "assumption_text": "保险浮存金作为低成本结构性资金来源持续复利",
+              "mirror_text": "浮存金规模同比下降，复利引擎失效",
+              "threshold": {
+                "metric": "insurance_float_yoy",
+                "operator": "<",
+                "value": 0
+              },
+              "source_type": "sec_filing_field"
             }
           ],
           "manual_items": [
             {
-              "text": "巴菲特两栏法运营倍数重算：每股投资 =（现金+国库券+股票组合公允值）÷ B股等价数；运营每股利润 = TTM 运营利润（剔除投资收益）÷ B股等价数；运营倍数 =（现价 − 每股投资）÷ 运营每股利润；< 8x 为 ADD 候选。当前 2026-06-06 读数约 9-11x，未触发",
-              "reason": "估值倍数需按最新一手财报手动重算，含公允值组合与 TTM 运营利润逐季更新",
-              "cadence": "quarterly"
+              "text": "巴菲特两栏法运营倍数 < 8x 为加仓信号；需每季度按最新10-Q手动重算：①每股投资=(现金+国库券+股票组合公允值)÷B股等价数（Q1 2026约$643B÷21.57亿股≈$298/股）；②运营每股利润=TTM运营利润(剔除投资收益)÷B股等价数，须四季加总非单季×4；③运营倍数=(现价−每股投资)÷运营每股利润。当前2026-06-06读数约9-11x，未触发ADD。",
+              "reason": "价格图形型",
+              "cadence": "monthly"
             }
           ],
           "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "Q2 2026 伯克希尔季报发布后重算两栏法运营倍数（更新每股投资与 TTM 运营每股利润）",
+            "event": "Q2 2026 10-Q（约2026年8月），重算两栏法运营倍数是否低于8x并核查浮存金/综合成本率",
             "date": null,
-            "source_note": "伯克希尔通常 8 月初披露 Q2，具体日期待公司公告确认"
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "operating_multiple_2col",
             "anchor_value": 8.0,
-            "note": "巴菲特两栏法：运营倍数 < 8x 为 ADD 触发线；2026-06-06 读数约 9-11x，未触发；每股投资 ≈ $298（Q1 2026：现金+国库券+股票组合公允值 ≈ $6430 亿 ÷ 21.57 亿 B股等价数）"
+            "note": "巴菲特两栏法，单钥匙8x运营倍数。每股投资≈$298（Q1 2026: 现金+国库券+股票组合公允值约$643B ÷ 21.57亿B股）。运营每股利润=TTM运营利润(剔除投资收益)÷B股等价数，须四季加总非单季×4。运营倍数=(现价−每股投资)÷运营每股利润。当前读数2026-06-06约9-11x，未触发。P/B不设(2018已弃用1.2x回购上限)。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 15.77,
-          "in_tok": 1934,
-          "out_tok": 1664,
+          "dur_s": 58.94,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       }
     },
     "MCO": {
-      "qwen-turbo": {
+      "deepseek-v4-flash": {
         "extraction": {
-          "holding_reason_raw": "穆迪是评级双寡头（Moody's / S&P）之一，核心评级业务护城河强（监管准入 + 网络效应 + 客户黏性），现金流稳定。策略：逆势、越跌越买。",
+          "ticker": "MCO",
+          "holding_reason_raw": "穆迪是评级双寡头（Moody's / S&P）之一，核心评级业务护城河强（监管准入 + 网络效应 + 客户黏性），现金流稳定",
           "key_assumptions": [
             {
-              "text": "监管准入 + 网络效应 + 客户黏性",
+              "text": "监管准入（NRSRO认证制度）限制新竞争者进入，双寡头格局难以被打破",
               "judgeable": true
             },
             {
-              "text": "现金流稳定",
+              "text": "发行人切换评级机构成本高（单一评级导致融资成本上升），客户粘性不可逆，竞品难以蚕食份额",
               "judgeable": true
             }
           ],
+          "open_questions": [],
           "mirrors": [
             {
-              "assumption_text": "监管准入 + 网络效应 + 客户黏性",
-              "mirror_text": "监管政策变化导致准入门槛降低或出现新竞争者"
+              "assumption_text": "监管准入（NRSRO认证制度）限制新竞争者进入，双寡头格局难以被打破",
+              "mirror_text": "SEC批准新的NRSRO认证机构，或修改NRSRO认定规则降低准入门槛",
+              "threshold": {
+                "event": "sec_grants_new_nrsro_or_relaxes_rules",
+                "occurred": false
+              },
+              "source_type": "news_headline"
             },
             {
-              "assumption_text": "现金流稳定",
-              "mirror_text": "核心业务收入大幅下滑或现金流断裂"
+              "assumption_text": "发行人切换评级机构成本高（单一评级导致融资成本上升），客户粘性不可逆，竞品难以蚕食份额",
+              "mirror_text": "穆迪在单季度内失去2家以上主要投资级发行人客户",
+              "threshold": {
+                "event": "moodys_loses_multiple_major_issuer_clients_in_quarter",
+                "occurred": false
+              },
+              "source_type": "news_headline"
             }
           ],
-          "manual_items": [
-            {
-              "text": "价格图形型",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            }
-          ],
+          "manual_items": [],
           "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "下一次财报发布",
-            "date": "2026-10-31",
-            "source_note": "按 Q3 2026 10-Q 滚动重算"
+            "event": "Q3 2026 财报（约2026年10月）",
+            "date": null,
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "ttm_gaap_pe",
             "anchor_value": 25.0,
-            "note": "25x ≈ 394 美元"
+            "note": "25x ≈ $394（按Q2 2026 10-Q滚动重算：TTM GAAP摊薄EPS 15.76）。现价≈$475≈30x，距加仓线约-17%。reverse DCF参考：现价隐含未来十年FCF年增~9%+永续3%，25x隐含增速~7%。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 3.26,
-          "in_tok": 2215,
-          "out_tok": 290,
+          "dur_s": 73.26,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       },
       "glm-5.2-fast-preview": {
         "extraction": {
-          "holding_reason_raw": "穆迪是评级双寡头（Moody's / S&P）之一，核心评级业务护城河强（监管准入 + 网络效应 + 客户黏性），现金流稳定。策略：逆势、越跌越买。",
+          "ticker": "MCO",
+          "holding_reason_raw": "穆迪是评级双寡头（Moody's / S&P）之一，核心评级业务护城河强（监管准入 + 网络效应 + 客户黏性），现金流稳定。",
           "key_assumptions": [
             {
-              "text": "评级双寡头格局（Moody's / S&P）稳定，无新竞争者颠覆行业结构。",
+              "text": "监管准入壁垒（NRSRO资质要求）维持评级行业双寡头格局，新竞争者无法有效蚕食MCO市场份额",
               "judgeable": true
+            }
+          ],
+          "open_questions": [
+            {
+              "field": "key_assumptions",
+              "reason": "条件3不过：'网络效应与客户黏性维持评级业务稳定现金流'系同义复述用户原话'网络效应+客户黏性'及'现金流稳定'，未增加新信息",
+              "text": "网络效应与客户黏性维持评级业务稳定现金流"
             },
             {
-              "text": "核心评级业务护城河强：NRSRO 监管准入壁垒 + 全球发债人/投资人依赖的网络效应 + 客户黏性，三者构成可持续竞争优势。",
-              "judgeable": true
-            },
-            {
-              "text": "自由现金流稳定且维持低双位数增长轨迹（reverse DCF 参考：现价约 $450 隐含未来十年 FCF 年增 ~9% + 永续 3%，而 25x 加仓线隐含增速降至 ~7%，明显低于 MCO 实际低双位数轨迹）。",
-              "judgeable": true
-            },
-            {
-              "text": "MCO 收益干净、无大额股权公允值波动（区别于 GOOGL），GAAP 摊薄 EPS 可直接加总用于 TTM P/E 估值，无需特别剔除非经常性项目。",
-              "judgeable": true
+              "field": "key_assumptions",
+              "reason": "条件3不过：'评级双寡头格局难以被颠覆'系同义复述用户原话'护城河强'，未增加新信息",
+              "text": "评级双寡头格局难以被颠覆"
             }
           ],
           "mirrors": [
             {
-              "assumption_text": "评级双寡头格局（Moody's / S&P）稳定，无新竞争者颠覆行业结构。",
-              "mirror_text": "SEC 或国际监管放开新 NRSRO 准入、或出现市场份额有意义的新评级机构，双寡头格局实质松动。"
-            },
-            {
-              "assumption_text": "核心评级业务护城河强：NRSRO 监管准入壁垒 + 全球发债人/投资人依赖的网络效应 + 客户黏性，三者构成可持续竞争优势。",
-              "mirror_text": "监管改革削弱 NRSRO 认证门槛（如 SEC 降低准入要求），或 AI/替代信用评估模型被市场广泛采纳侵蚀网络效应与客户黏性。"
-            },
-            {
-              "assumption_text": "自由现金流稳定且维持低双位数增长轨迹（reverse DCF 参考：现价约 $450 隐含未来十年 FCF 年增 ~9% + 永续 3%，而 25x 加仓线隐含增速降至 ~7%，明显低于 MCO 实际低双位数轨迹）。",
-              "mirror_text": "自由现金流连续下滑或发债市场结构性萎缩导致评级收入下降，FCF 增速跌至个位数甚至负增长。"
-            },
-            {
-              "assumption_text": "MCO 收益干净、无大额股权公允值波动（区别于 GOOGL），GAAP 摊薄 EPS 可直接加总用于 TTM P/E 估值，无需特别剔除非经常性项目。",
-              "mirror_text": "GAAP EPS 出现大额非经常性项目或股权公允值波动，导致 TTM 摊薄 EPS 失真、需人工调整后方可用于 P/E 估值。"
+              "assumption_text": "监管准入壁垒（NRSRO资质要求）维持评级行业双寡头格局，新竞争者无法有效蚕食MCO市场份额",
+              "mirror_text": "SEC放松NRSRO准入监管或显著降低新评级机构进入门槛",
+              "threshold": {
+                "event": "sec_reduces_nrsro_barriers",
+                "occurred": false
+              },
+              "source_type": "press_release_text"
             }
           ],
           "manual_items": [
             {
-              "text": "Reverse DCF 一次性锈：现价约 $450 隐含「未来十年 FCF 年增 ~9% + 永续 3%」；25x 加仓线隐含增速降至 ~7%，须明显低于 MCO 低双位数实际轨迹才算真有安全边际。此判断对折现率极敏感（9% 算便宜、≥9% 变满价），不进自动线，人工一次性复核。",
-              "reason": "估值判断型（reverse DCF 对折现率极敏感，不可自动核对）",
-              "cadence": "one_time"
-            },
-            {
-              "text": "现价约 $475（今日简报）≈30x TTM P/E，距 25x 加仓线约 −17%，未触发 ADD。需人工跟踪价格是否回落至加仓区间。",
-              "reason": "价格快照型，需人工复查触发距离",
+              "text": "Reverse DCF参考锈：现价约$450隐含未来十年FCF年增~9%+永续3%，25x隐含增速~7%——用户注明不进线，仅一次性参考锈",
+              "reason": "价格图形型",
               "cadence": "monthly"
             }
           ],
           "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "Q3 2026 财报（10-Q）— 滚动重算 TTM GAAP 摊薄 EPS、检验 FCF 是否维持低双位数增长、确认收益仍干净无大额非经常项",
+            "event": "Q3 2026 10-Q发布（预计2026年10月下旬），重算TTM GAAP摊薄EPS更新25x加仓线",
             "date": null,
-            "source_note": "当前读数基于 Q2 2026 10-Q（2026-07-24 重算），下一季报约 2026-10，具体日期待公司公布"
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "ttm_gaap_pe",
             "anchor_value": 25.0,
-            "note": "TTM GAAP P/E 单钥匙 25x 加仓线；按最新 10-Q 四季 GAAP 摊薄 EPS 滚动重算，不写死价格。当前读数 2026-07-24（Q2 2026 10-Q）：TTM GAAP 摊薄 EPS ≈ $15.76（= 旧 TTM $13.94 − Q2'25 $3.21 + Q2'26 $5.03）；25x 线 ≈ $394（较 6/06 旧线 $349 上抬约 13%）；现价约 $475 ≈ 30x，未触发。"
+            "note": "TTM GAAP P/E法，单钥匙25x。按最新10-Q四季GAAP摊薄EPS重算。当前读数2026-07-24（Q2 2026 10-Q滚动）：TTM GAAP摊薄EPS≈$15.76（=旧TTM $13.94 − Q2'25 $3.21 + Q2'26 $5.03），25x加仓线≈$394（较6/06旧线$349上抬约13%），现价约$475≈30x，未触发，距加仓线约−17%。Reverse DCF参考锈：现价约$450隐含未来十年FCF年增~9%+永续3%，25x隐含增速~7%——不进线。MCO收益干净、无大额股权公允值波动，不需特别剔除。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 28.67,
-          "in_tok": 2095,
-          "out_tok": 3040,
+          "dur_s": 98.91,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       }
     },
     "GOOGL": {
-      "qwen-turbo": {
+      "deepseek-v4-flash": {
         "extraction": {
-          "holding_reason_raw": "按 Benedict Evans「模型商品化 → 价值沉淀到分发+应用层」的推导:基础模型大概率走电力/平板屏的路(造起来难、却没定价权),AI 的胜负手不是 benchmark 而是分发。Alphabet 握着全世界最深的分发——Search / Chrome / Android / Workspace / YouTube 数十亿默认入口,把 Gemini 嵌进每个用户的选择时刻,不需要赢模型质量,只需「足够好 + 默认在位」。买 GOOGL = 押「分发护城河」这个 job,而不是押「谁家模型最强」这个会被商品化的 task。",
+          "ticker": "GOOGL",
+          "holding_reason_raw": "押「分发护城河」这个 job，而不是押「谁家模型最强」这个会被商品化的 task。基于 Benedict Evans 框架：模型商品化→价值沉淀到分发+应用层。Alphabet 拥有 Search/Chrome/Android/Workspace/YouTube 数十亿默认入口，把 Gemini 嵌进每个用户的选择时刻，不需要赢模型质量，只需「足够好+默认在位」。",
           "key_assumptions": [
             {
-              "text": "基础模型大概率走电力/平板屏的路(造起来难、却没定价权)",
+              "text": "Alphabet 的搜索/Chrome/Android/Workspace/YouTube 默认分发网络构成结构性切换成本，使竞品难以通过 AI 模型质量优势突破",
               "judgeable": true
+            }
+          ],
+          "open_questions": [
+            {
+              "field": "key_assumptions",
+              "reason": "条件3（同义复述）：用户原文已直接陈述「基础模型大概率走电力/平板屏的路（造起来难、却没定价权）」",
+              "text": "基础模型将商品化，失去定价权，如同电力或面板行业"
             },
             {
-              "text": "AI 的胜负手不是 benchmark 而是分发",
-              "judgeable": true
-            },
-            {
-              "text": "Alphabet 握着全世界最深的分发——Search / Chrome / Android / Workspace / YouTube 数十亿默认入口",
-              "judgeable": true
-            },
-            {
-              "text": "把 Gemini 嵌进每个用户的选择时刻,不需要赢模型质量,只需「足够好 + 默认在位」",
-              "judgeable": true
-            },
-            {
-              "text": "买 GOOGL = 押「分发护城河」这个 job,而不是押「谁家模型最强」这个会被商品化的 task",
-              "judgeable": true
+              "field": "key_assumptions",
+              "reason": "条件3（同义复述）：用户原文已直接陈述「不需要赢模型质量，只需足够好+默认在位」",
+              "text": "Gemini 只需达到‘足够好’水平，不需要赢模型 benchmark"
             }
           ],
           "mirrors": [
             {
-              "assumption_text": "基础模型大概率走电力/平板屏的路(造起来难、却没定价权)",
-              "mirror_text": "基础模型具备定价权或技术壁垒被突破"
-            },
-            {
-              "assumption_text": "AI 的胜负手不是 benchmark 而是分发",
-              "mirror_text": "AI 的胜负手回归到模型性能基准测试"
-            },
-            {
-              "assumption_text": "Alphabet 握着全世界最深的分发——Search / Chrome / Android / Workspace / YouTube 数十亿默认入口",
-              "mirror_text": "Alphabet 分发渠道被其他平台替代或削弱"
-            },
-            {
-              "assumption_text": "把 Gemini 嵌进每个用户的选择时刻,不需要赢模型质量,只需「足够好 + 默认在位」",
-              "mirror_text": "Gemini 模型质量显著优于竞争对手或用户选择不再依赖默认入口"
-            },
-            {
-              "assumption_text": "买 GOOGL = 押「分发护城河」这个 job,而不是押「谁家模型最强」这个会被商品化的 task",
-              "mirror_text": "模型性能成为 AI 竞争的核心，分发优势不再主导市场"
+              "assumption_text": "Alphabet 的搜索/Chrome/Android/Workspace/YouTube 默认分发网络构成结构性切换成本，使竞品难以通过 AI 模型质量优势突破",
+              "mirror_text": "Google 全球搜索市场份额跌破 70%，表明用户可通过竞品 AI 绕过 Google 默认分发",
+              "threshold": {
+                "metric": "google_search_global_market_share_pct",
+                "operator": "<",
+                "value": 70
+              },
+              "source_type": "manual"
             }
           ],
-          "manual_items": [
-            {
-              "text": "归一化运营 P/E 法（单钥匙 25x）：ADD 只在归一化运营 P/E 跌破 25x 时亮，每次复查按最新一手 10-Q 重算，不写死价格",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            }
-          ],
+          "manual_items": [],
           "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "下一次 10-Q 或 10-K 公布",
-            "date": "2026-10-31",
-            "source_note": "按 Q2'26 一手 8-K/10-Q 重算"
+            "event": "Q3'26 财报（2026年10月）",
+            "date": null,
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "normalized_operating_pe",
             "anchor_value": 25.0,
-            "note": "25x ≈ 250 美元"
+            "note": "归一化运营 P/E 法（单钥匙 25x）。归一化运营每股利润=运营利润×（1-17%税率）÷摊薄股数，TTM 四季加总。最新读数（2026-07-23 按 Q2'26 10-Q 重算）：TTM 运营利润≈1,476亿，归一化每股运营利润≈$10.0，25x≈$250。当前现价~$325≈32.5x，未触发。买入价 $379.67≈38x 属满估值区。ADD 线不锢买入价，只锢最新一手基本面。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 7.37,
-          "in_tok": 2492,
-          "out_tok": 731,
+          "dur_s": 115.66,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       },
       "glm-5.2-fast-preview": {
         "extraction": {
-          "holding_reason_raw": "按 Benedict Evans「模型商品化 → 价值沉淀到分发+应用层」的推导：基础模型大概率走电力/平板屏的路（造起来难、却没定价权），AI 的胜负手不是 benchmark 而是分发。Alphabet 握着全世界最深的分发——Search / Chrome / Android / Workspace / YouTube 数十亿默认入口，把 Gemini 嵌进每个用户的选择时刻，不需要赢模型质量，只需「足够好 + 默认在位」。买 GOOGL = 押「分发护城河」这个 job，而不是押「谁家模型最强」这个会被商品化的 task。",
+          "ticker": "GOOGL",
+          "holding_reason_raw": "按 Benedict Evans「模型商品化 → 价值沉淀到分发+应用层」的推导:基础模型大概率走电力/平板屏的路(造起来难、却没定价权),AI 的胜负手不是 benchmark 而是分发。Alphabet 握着全世界最深的分发——Search / Chrome / Android / Workspace / YouTube 数十亿默认入口,把 Gemini 嵌进每个用户的选择时刻,不需要赢模型质量,只需「足够好 + 默认在位」。买 GOOGL = 押「分发护城河」这个 job,而不是押「谁家模型最强」这个会被商品化的 task。",
           "key_assumptions": [
             {
-              "text": "AI 基础模型会商品化（造起来难但没定价权），价值沉淀到分发+应用层",
+              "text": "AI 原生交互范式不会替代 GOOGL 现有分发入口成为主流用户选择时刻——Search/Chrome/Android/Workspace/YouTube 的默认入口地位在 AI 时代持续有效",
               "judgeable": true
             },
             {
-              "text": "AI 的胜负手是分发而非 benchmark / 模型质量",
+              "text": "监管不会强制拆分 GOOGL 的分发资产（Chrome/Android/Search 等）——默认入口结构的完整性是分发护城河的前提",
               "judgeable": true
-            },
+            }
+          ],
+          "open_questions": [
             {
-              "text": "Alphabet 握有世界最深的分发——Search / Chrome / Android / Workspace / YouTube 数十亿默认入口，构成不可替代的分发护城河",
-              "judgeable": true
-            },
-            {
-              "text": "Gemini 嵌入每个用户选择时刻，「足够好 + 默认在位」即可，不需要赢模型质量",
-              "judgeable": true
-            },
-            {
-              "text": "不用 FCF 当估值线——2026 capex 指引 1800–1900 亿美元、大头是增长性 capex，会把 FCF 压到失真（Q2'26 单季 FCF 已转负 -58.6 亿），分母会骗人",
-              "judgeable": true
+              "field": "key_assumptions",
+              "reason": "条件4不过——行业层面判断，无法从单一发行人申报文件设定可判定阈值",
+              "text": "基础模型商品化——模型层丧失定价权，AI 价值沉淀到分发+应用层而非模型层"
             }
           ],
           "mirrors": [
             {
-              "assumption_text": "AI 基础模型会商品化（造起来难但没定价权），价值沉淀到分发+应用层",
-              "mirror_text": "头部模型厂商（OpenAI/Anthropic 等）建立可持续定价权与用户切换成本，模型商品化论被证伪"
+              "assumption_text": "AI 原生交互范式不会替代 GOOGL 现有分发入口成为主流用户选择时刻——Search/Chrome/Android/Workspace/YouTube 的默认入口地位在 AI 时代持续有效",
+              "mirror_text": "Google Search & other 收入 YoY 增速转负，反映 AI 原生竞品正在蚕食分发入口用户基数",
+              "threshold": {
+                "metric": "search_and_other_rev_yoy",
+                "operator": "<",
+                "value": 0
+              },
+              "source_type": "sec_filing_field"
             },
             {
-              "assumption_text": "AI 的胜负手是分发而非 benchmark / 模型质量",
-              "mirror_text": "出现 AI 原生新分发范式绕过 Google 入口（如超级 Agent 成为用户默认入口，取代 Search/Chrome 的选择时刻地位）"
-            },
-            {
-              "assumption_text": "Alphabet 握有世界最深的分发——Search / Chrome / Android / Workspace / YouTube 数十亿默认入口，构成不可替代的分发护城河",
-              "mirror_text": "DOJ 反垄断裁决强制剥离 Chrome/Android 等核心分发渠道，分发护城河被法律拆解"
-            },
-            {
-              "assumption_text": "Gemini 嵌入每个用户选择时刻，「足够好 + 默认在位」即可，不需要赢模型质量",
-              "mirror_text": "竞争对手模型质量差距拉大到用户主动绕过默认 Gemini 选择替代品（如 ChatGPT 默认入口流量超越 Gemini），「足够好」不再够用"
-            },
-            {
-              "assumption_text": "不用 FCF 当估值线——2026 capex 指引 1800–1900 亿美元、大头是增长性 capex，会把 FCF 压到失真（Q2'26 单季 FCF 已转负 -58.6 亿），分母会骗人",
-              "mirror_text": "capex 增速显著放缓且 FCF 恢复持续正值（增长性 capex 投入期结束），FCF 重新成为有效估值口径，归一化运营 P/E 法「FCF 失真」前提不再成立"
+              "assumption_text": "监管不会强制拆分 GOOGL 的分发资产（Chrome/Android/Search 等）——默认入口结构的完整性是分发护城河的前提",
+              "mirror_text": "反垄断裁决强制 GOOGL 剥离分发资产（Chrome/Android/Search 等），默认入口结构被打破",
+              "threshold": {
+                "event": "antitrust_divestiture_order",
+                "occurred": false
+              },
+              "source_type": "news_headline"
             }
           ],
-          "manual_items": [
-            {
-              "text": "DOJ 反垄断案件进展追踪：是否进入 remedies 阶段并涉及 Chrome/Android 强制剥离",
-              "reason": "法律事件型",
-              "cadence": "monthly"
-            },
-            {
-              "text": "AI 原生分发范式监控：是否有超级 Agent / 新入口取代 Search 成为用户默认选择时刻",
-              "reason": "定性事件型",
-              "cadence": "monthly"
-            }
-          ],
+          "manual_items": [],
           "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "Q3'26 财报：验证 Search 增速（当前 +17%）、Cloud 营业利润率（当前 35.6%）、合并营业利润率（当前 34%）是否维持，并按最新 10-Q 重算归一化运营 P/E 是否触及 25x ADD 线",
+            "event": "Q3'26 10-Q（约 2026-10 下旬）— 检查 Search & other revenue YoY 增速是否转负、Cloud 营业利润率趋势",
             "date": null,
-            "source_note": "按 Q2'26 重算日 2026-07-23 推算，下一季约 2026-10 月底；具体日期待 Alphabet IR 公布"
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "normalized_operating_pe",
             "anchor_value": 25.0,
-            "note": "25x ≈ $250；2026-07-23 最新读数（Q2'26 一手 10-Q 重算）：TTM 运营利润 ≈1,476 亿 ×(1-17%) ≈1,225 亿 ÷ 122.5 亿股 ≈ $10.0/股，现价 $325 ≈ 32.5x，未触发；距现价约 -23%。买入价 $379.67 ≈ 38x 属满估值区、非安全边际。较 6/06 读数（$9.8/股、37x）盈利微升+价格回落双驱动。每次复查按最新 10-Q 重算，不写死价格。"
+            "note": "归一化运营 P/E 法（单钥匙 25x）；ADD 信号在归一化运营 P/E < 25x 时触发，每次复查按最新 10-Q 重算。归一化运营每股利润＝运营利润(Income from operations, 已剔除 OI&E 里股权公允值收益)×(1−正常税率约17%)÷摊薄股数；TTM 四季加总，别单季×4。不用 FCF 当线——2026 capex 指引1800–1900亿美元大头是增长性 capex，Q2'26 FCF 已转负-58.6亿，分母会失真。2026-07-23读数(Q2'26 8-K/10-Q): TTM运营利润≈1,476亿×(1-17%)≈1,225亿÷122.5亿股≈归一化每股运营利润$10.0；现价$325≈32.5x，未触发；25x≈$250。买入价$379.67≈38x，属满估值区。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 67.18,
-          "in_tok": 2331,
-          "out_tok": 6851,
+          "dur_s": 143.13,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       }
     },
     "NOW": {
-      "qwen-turbo": {
+      "deepseek-v4-flash": {
         "extraction": {
+          "ticker": "NOW",
           "holding_reason_raw": "ServiceNow = 企业数字化工作流平台，跨 IT/HR/客服 横向扩展，净留存率高、平台黏性强、大客户扩张式增长。价值角度：高留存 SaaS 平台，复利式增长 + 强现金流。",
           "key_assumptions": [
             {
-              "text": "高留存 SaaS 平台，复利式增长 + 强现金流",
+              "text": "高净留存率反映企业客户将 ServiceNow 深度嵌入核心工作流后切换成本极高，竞品难以争夺份额",
               "judgeable": true
             },
             {
-              "text": "净留存率高、平台黏性强、大客户扩张式增长",
+              "text": "平台跨 IT/HR/客服横向扩展的相邻市场空间未被主要竞争对手（微软、Salesforce）封锁",
               "judgeable": true
+            }
+          ],
+          "open_questions": [
+            {
+              "field": "key_assumptions",
+              "reason": "规则1不合格：不是关于 moat/不被颠覆的结构性判断，而是增长轨迹描述",
+              "text": "大客户扩张式增长表明产品在客户预算中的优先级持续提升"
             }
           ],
           "mirrors": [
             {
-              "assumption_text": "高留存 SaaS 平台，复利式增长 + 强现金流",
-              "mirror_text": "SaaS 平台留存率下降，增长放缓，现金流恶化"
+              "assumption_text": "高净留存率反映企业客户将 ServiceNow 深度嵌入核心工作流后切换成本极高，竞品难以争夺份额",
+              "mirror_text": "净留存率持续下滑至低于 115% 或出现大客户迁移至竞品的公开事件",
+              "threshold": {
+                "metric": "net_retention_rate",
+                "operator": "<",
+                "value": 115.0
+              },
+              "source_type": "sec_filing_field"
             },
             {
-              "assumption_text": "净留存率高、平台黏性强、大客户扩张式增长",
-              "mirror_text": "净留存率下降，平台黏性减弱，大客户扩张停滞"
+              "assumption_text": "平台跨 IT/HR/客服横向扩展的相邻市场空间未被主要竞争对手（微软、Salesforce）封锁",
+              "mirror_text": "微软或 Salesforce 在 ITSM/HR/客服任一领域推出与 ServiceNow 功能直接竞争的平台并获头部客户采用",
+              "threshold": {
+                "event": "competitor_launched_competing_workflow_platform",
+                "occurred": true
+              },
+              "source_type": "news_headline"
             }
           ],
-          "manual_items": [
-            {
-              "text": "价格图形型",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            }
-          ],
-          "filer_type": "other",
-          "next_verdict": {
-            "event": "最新指引年度的 Non-GAAP EPS 重算",
-            "date": "2026-06-06",
-            "source_note": "每次复盘用最新指引年度的 Non-GAAP EPS 重算"
-          },
+          "manual_items": [],
+          "filer_type": "domestic_10k",
+          "next_verdict": null,
           "entry_anchor": {
             "anchor_type": "forward_non_gaap_pe",
             "anchor_value": 22.0,
-            "note": "22x ≈ $88"
+            "note": "22x forward Non-GAAP P/E ≈ $88 (基于 forward Non-GAAP EPS ~$4.00, 2026-06-06 数据)。反向 DCF 锚：FCF FY2025 $4.576B − SBC ~$2.2B ≈ owner earnings ~$2.4B；市值 ~$117B ⇒ 收益率 ~2%，r=9% 隐含永续增速 ~7% vs 实际增长 ~20%。SBC ~$2B/年是真成本，28x 不等于便宜。现价 ~$112 (28x forward Non-GAAP P/E)。注：本仓为 trade (≤3m) 交易仓，价值线为参考边际。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 3.07,
-          "in_tok": 2240,
-          "out_tok": 340,
+          "dur_s": 86.33,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       },
       "glm-5.2-fast-preview": {
         "extraction": {
-          "holding_reason_raw": "ServiceNow = 企业数字化工作流平台，跨 IT/HR/客服 横向扩展，净留存率高、平台黏性强、大客户扩张式增长。价值角度：高留存 SaaS 平台，复利式增长 + 强现金流。本仓为 trade（≤3m）交易仓，价值线为参考边际、非长线越跌越买承诺。",
+          "ticker": "NOW",
+          "holding_reason_raw": "企业数字化工作流平台，跨 IT/HR/客服 横向扩展，净留存率高、平台黏性强、大客户扩张式增长。价值角度：高留存 SaaS 平台，复利式增长 + 强现金流。",
           "key_assumptions": [
             {
-              "text": "ServiceNow 是企业数字化工作流平台，跨 IT/HR/客服 横向扩展，净留存率高、平台黏性强",
+              "text": "跨模块横向扩展（IT/HR/客服）持续驱动大客户扩张增长",
               "judgeable": true
             },
             {
-              "text": "大客户扩张式增长，平台黏性驱动持续扩张（营收增速 ~20%）",
-              "judgeable": true
-            },
-            {
-              "text": "高留存 SaaS 平台，复利式增长 + 强现金流（FCF FY2025 $4.576B）",
-              "judgeable": true
-            },
-            {
-              "text": "SBC ~$2B/年是真稀释成本，现读数 ~28x Non-GAAP P/E 不等于便宜，需像样折价（22x）才加仓",
+              "text": "平台黏性来自工作流嵌入，切换成本阻止竞品蚕食份额",
               "judgeable": true
             }
           ],
+          "open_questions": [],
           "mirrors": [
             {
-              "assumption_text": "ServiceNow 是企业数字化工作流平台，跨 IT/HR/客服 横向扩展，净留存率高、平台黏性强",
-              "mirror_text": "净留存率（NRR）从高位持续下降，或大客户续约率显著下滑，平台黏性减弱"
+              "assumption_text": "跨模块横向扩展（IT/HR/客服）持续驱动大客户扩张增长",
+              "mirror_text": "大客户（>$1M ACV）数量增速显著放缓，跨模块扩展停滞",
+              "threshold": {
+                "metric": "customers_over_1m_acv_yoy_growth",
+                "operator": "<",
+                "value": 10
+              },
+              "source_type": "sec_filing_field"
             },
             {
-              "assumption_text": "大客户扩张式增长，平台黏性驱动持续扩张（营收增速 ~20%）",
-              "mirror_text": "大客户净扩张停止或转负，IT/HR/客服横向扩展遇瓶颈，营收增速从 ~20% 大幅回落"
-            },
-            {
-              "assumption_text": "高留存 SaaS 平台，复利式增长 + 强现金流（FCF FY2025 $4.576B）",
-              "mirror_text": "FCF 增速显著放缓或转负，复利增长引擎失效"
-            },
-            {
-              "assumption_text": "SBC ~$2B/年是真稀释成本，现读数 ~28x Non-GAAP P/E 不等于便宜，需像样折价（22x）才加仓",
-              "mirror_text": "SBC 占营收比持续上升或绝对额大幅增加，owner earnings 进一步恶化，Non-GAAP 口口径也不再可信"
+              "assumption_text": "平台黏性来自工作流嵌入，切换成本阻止竞品蚕食份额",
+              "mirror_text": "净留存率跌破关键阈值，客户流失或缩减加剧",
+              "threshold": {
+                "metric": "net_retention_rate",
+                "operator": "<",
+                "value": 110
+              },
+              "source_type": "sec_filing_field"
             }
           ],
-          "manual_items": [
-            {
-              "text": "反向 DCF / owner-earnings 锚：FCF FY2025 $4.576B − SBC ~$2.2B ≈ owner earnings ~$2.4B；市值 ~$117B ⇒ 收益率 ~2%，r=9% 隐含永续增速 ~7% vs 实际增长 ~20%——需人工定期重算",
-              "reason": "估值模型型",
-              "cadence": "quarterly"
-            },
-            {
-              "text": "拆股后现价 ~$112（5:1 拆股，股数 ~10.4亿），52周高 $211 已跌约 -47%，52周低 $81；绝对估值未到低位",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            }
-          ],
+          "manual_items": [],
           "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "Q2 FY2026 财报（更新年度 Non-GAAP EPS 指引，重算 forward Non-GAAP P/E）",
+            "event": "Q2 FY2026 财报（约 2026-07），核对净留存率与大客户（>$1M ACV）增速",
             "date": null,
-            "source_note": "文本提及 Q1'26 已报（营收 +22%、GAAP EPS +2%），下一季度约 2026 年 7 月；未给具体日期"
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "forward_non_gaap_pe",
             "anchor_value": 22.0,
-            "note": "22x ≈ $88（拆股后，forward Non-GAAP EPS ~$4.00）；现读数 ~28x（TTM GAAP ~56x、P/FCF ~26x）；每次复盘用最新指引年度 Non-GAAP EPS 重算，不锁死价。口径选择：GAAP 利润被 SBC+Armis 摊销压制（~13.5% 利润率），GAAP EPS 几乎不增长，故不用 GAAP 当钥匙"
+            "note": "Forward Non-GAAP P/E 单钥匙 22x ≈ $88。现读数（2026-06-06，已 5:1 拆股，股数~10.4亿）：现价~$112（市值~$117B），forward Non-GAAP EPS~$4.00 ⇒ ~28x；TTM GAAP P/E~56x、P/FCF~26x。口径选择：NOW GAAP 利润被 SBC（~$2B/年）+ Armis 摊销吃至~13.5%利润率，GAAP EPS 几乎不增长（Q1'26 +2% vs 营收+22%），TTM GAAP P/E 56x 为噪音——故用 forward Non-GAAP（公司指引口径）。但 SBC 是真成本，28x 不等于便宜。反向 DCF 辅锚（不锁价）：FCF FY2025 $4.576B − SBC~$2.2B ≈ owner earnings~$2.4B，市值~$117B ⇒ 收益率~2%，r=9% 隐含永续增速~7% vs 实际~20%。持仓周期：trade（≤3m），价值线为参考边际、非长线越跌越买承诺。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 27.96,
-          "in_tok": 2123,
-          "out_tok": 3086,
+          "dur_s": 88.36,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       }
     },
     "NFLX": {
-      "qwen-turbo": {
+      "deepseek-v4-flash": {
         "extraction": {
-          "holding_reason_raw": "奈飞 = 全球流媒体规模龙头，最大订阅基数 + 自制内容飞轮 + 已验证的定价权（多次提价 churn 可控），广告档与打击共享账号打开新增长。价值角度：规模经济 + 定价权带来的自由现金流转正与扩张。",
+          "ticker": "NFLX",
+          "holding_reason_raw": "全球流媒体规模龙头，最大订阅基数 + 自制内容飞轮 + 已验证的定价权（多次提价 churn 可控），广告档与打击共享账号打开新增长。价值角度：规模经济 + 定价权带来的自由现金流转正与扩张。",
           "key_assumptions": [
             {
-              "text": "全球流媒体规模龙头",
+              "text": "Netflix 的订阅基数规模优势带来内容成本摊薄效应，使同等内容质量下利润率高于竞争对手——竞争对手无法在不牺牲利润的前提下复制其内容库规模，构成结构性成本护城河。",
               "judgeable": true
             },
             {
-              "text": "最大订阅基数",
+              "text": "Netflix 的内容库广度与推荐算法创造高切换成本，用户的支付意愿高于其他流媒体，使得 Netflix 可以在不引发异常流失的前提下持续提价，定价权是结构性的而非周期性的。",
               "judgeable": true
+            }
+          ],
+          "open_questions": [
+            {
+              "field": "key_assumptions",
+              "reason": "同义复述用户原话（Rule 3 不合格）",
+              "text": "规模经济 + 定价权带来的自由现金流转正与扩张将成为可持续趋势"
             },
             {
-              "text": "自制内容飞轮",
-              "judgeable": true
-            },
-            {
-              "text": "已验证的定价权（多次提价 churn 可控）",
-              "judgeable": true
-            },
-            {
-              "text": "广告档与打击共享账号打开新增长",
-              "judgeable": true
-            },
-            {
-              "text": "规模经济",
-              "judgeable": true
-            },
-            {
-              "text": "定价权带来的自由现金流转正与扩张",
-              "judgeable": true
+              "field": "key_assumptions",
+              "reason": "同义复述用户原话（Rule 3 不合格）；且为增长驱动陈述而非结构性护城河假设",
+              "text": "广告档与打击共享账号将持续打开新增长空间"
             }
           ],
           "mirrors": [
             {
-              "assumption_text": "全球流媒体规模龙头",
-              "mirror_text": "流媒体市场出现更具竞争力的新玩家并取代奈飞主导地位"
+              "assumption_text": "Netflix 的订阅基数规模优势带来内容成本摊薄效应，使同等内容质量下利润率高于竞争对手——竞争对手无法在不牺牲利润的前提下复制其内容库规模，构成结构性成本护城河。",
+              "mirror_text": "Netflix 的内容摊销占营收比例连续两个季度超过 45%，或主要竞争对手（Disney+等）流媒体营业利润率与 Netflix 的差距收窄至 500bps 以内且订阅基数持续增长，表明规模优势未能转化为效率保护。",
+              "threshold": {
+                "metric": "content_amortization_pct_revenue",
+                "operator": ">=",
+                "value": 0.45,
+                "period": "2q_consecutive"
+              },
+              "source_type": "sec_filing_field"
             },
             {
-              "assumption_text": "最大订阅基数",
-              "mirror_text": "订阅用户数大幅下降或增长停滞"
-            },
-            {
-              "assumption_text": "自制内容飞轮",
-              "mirror_text": "自制内容质量下滑或无法持续产出"
-            },
-            {
-              "assumption_text": "已验证的定价权（多次提价 churn 可控）",
-              "mirror_text": "提价导致用户流失严重，churn 率显著上升"
-            },
-            {
-              "assumption_text": "广告档与打击共享账号打开新增长",
-              "mirror_text": "广告业务未达预期或共享账号问题未解决"
-            },
-            {
-              "assumption_text": "规模经济",
-              "mirror_text": "规模扩大后成本不降反升"
-            },
-            {
-              "assumption_text": "定价权带来的自由现金流转正与扩张",
-              "mirror_text": "自由现金流未能转正或扩张"
+              "assumption_text": "Netflix 的内容库广度与推荐算法创造高切换成本，用户的支付意愿高于其他流媒体，使得 Netflix 可以在不引发异常流失的前提下持续提价，定价权是结构性的而非周期性的。",
+              "mirror_text": "Netflix 在任一季度报告全球付费净增用户为负，或管理层在财报电话会上披露的季度流失率超过 4%。",
+              "threshold": {
+                "metric": "global_paid_net_adds",
+                "operator": "<=",
+                "value": 0
+              },
+              "source_type": "press_release_text"
             }
           ],
-          "manual_items": [
-            {
-              "text": "价格图形型",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            }
-          ],
-          "filer_type": "other",
+          "manual_items": [],
+          "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "2026年Q2财报发布",
-            "date": "2026-07-24",
-            "source_note": "根据公司财报日历"
+            "event": "NFLX Q2 2026 财报（2026年7月）——营收增速、利润率、付费净增用户数是否偏离指引",
+            "date": null,
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "normalized_fwd_gaap_pe",
             "anchor_value": 22.0,
-            "note": "22x ≈ $68"
+            "note": "归一化 forward GAAP 摊薄 P/E < 22x 才 ADD。归一化 forward EPS ~$3.10（剔除 Q1'26 WBD 一次性 termination fee ~$0.50/股），22x ≈ $68。现价 ~$82（2026-06-06），市值 ~$352B，距加仓价 -17%。reverse DCF 锚：归一化净利 ~$11B，市值 ~$352B ⇒ 收益率 ~3.1%，r=9% 隐含永续增速 ~5.9% vs 实际营收 ~13%+利润率扩张。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 4.2,
-          "in_tok": 2371,
-          "out_tok": 484,
+          "dur_s": 94.95,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       },
       "glm-5.2-fast-preview": {
         "extraction": {
-          "holding_reason_raw": "奈飞 = 全球流媒体规模龙头，最大订阅基数 + 自制内容飞轮 + 已验证的定价权（多次提价 churn 可控），广告档与打击共享账号打开新增长。价值角度：规模经济 + 定价权带来的自由现金流转正与扩张。",
+          "ticker": "NFLX",
+          "holding_reason_raw": "全球流媒体规模龙头，最大订阅基数 + 自制内容飞轮 + 已验证的定价权（多次提价 churn 可控），广告档与打击共享账号打开新增长。价值角度：规模经济 + 定价权带来的自由现金流转正与扩张。",
           "key_assumptions": [
             {
-              "text": "全球流媒体规模龙头，最大订阅基数 + 自制内容飞轮构成护城河",
+              "text": "最大订阅基数构成规模护城河，竞品短期难以追平规模优势",
               "judgeable": true
             },
             {
-              "text": "已验证的定价权：多次提价 churn 可控",
+              "text": "自制内容飞轮维持投入产出效率，内容投入持续转化为营收增长",
               "judgeable": true
+            }
+          ],
+          "open_questions": [
+            {
+              "field": "key_assumptions",
+              "reason": "criterion 3 同义复述——用户 holding reason 已用'已验证的定价权（多次提价 churn 可控）'+ value perspective '定价权带来的 FCF 扩张'隐含了前瞻性判断，候选'定价权将持续有效'未额外增加信息",
+              "text": "定价权将持续有效——后续提价仍能控制 churn"
             },
             {
-              "text": "广告档与打击共享账号打开新增长（FY2026 广告翻倍至 ~$3B）",
-              "judgeable": true
+              "field": "key_assumptions",
+              "reason": "criterion 3 同义复述 holding reason 原文'规模经济 + 定价权带来的自由现金流转正与扩张'",
+              "text": "规模经济 + 定价权带来的自由现金流转正与扩张"
             },
             {
-              "text": "规模经济 + 定价权带来自由现金流转正与扩张",
-              "judgeable": true
-            },
-            {
-              "text": "NFLX SBC 小、GAAP 利润干净（需剔除一次性项），适用 GAAP P/E 口径",
-              "judgeable": true
-            },
-            {
-              "text": "reverse DCF：r=9% 隐含永续增速 ~5.9% vs 实际营收 ~13% + 利润率扩张 → 合理偏便宜（仅作锚，不锁价）",
-              "judgeable": false
+              "field": "key_assumptions",
+              "reason": "criterion 3 同义复述——用户原话'广告档与打击共享账号打开新增长'，候选'构成可持续第二增长曲线'仅加'可持续'修饰，未实质性增加可证伪的新信息",
+              "text": "广告档与打击共享账号构成可持续第二增长曲线"
             }
           ],
           "mirrors": [
             {
-              "assumption_text": "全球流媒体规模龙头，最大订阅基数 + 自制内容飞轮构成护城河",
-              "mirror_text": "订阅基数停滞或下降，或自制内容飞轮失效（竞争加剧导致内容 ROI 下降，Disney+/Amazon 等追赶缩小差距）"
+              "assumption_text": "最大订阅基数构成规模护城河，竞品短期难以追平规模优势",
+              "mirror_text": "NFLX 营收增速降至低个位数（<8% YoY），提示规模优势正被竞品蚕食或市场趋于饱和",
+              "threshold": {
+                "metric": "revenue_yoy_growth",
+                "operator": "<",
+                "value": 8
+              },
+              "source_type": "sec_filing_field"
             },
             {
-              "assumption_text": "已验证的定价权：多次提价 churn 可控",
-              "mirror_text": "提价导致 churn 显著上升超出可控范围，定价权被证伪"
-            },
-            {
-              "assumption_text": "广告档与打击共享账号打开新增长（FY2026 广告翻倍至 ~$3B）",
-              "mirror_text": "广告档收入未达预期（FY2026 广告未翻倍至 ~$3B），或打击共享账号导致净订户流失"
-            },
-            {
-              "assumption_text": "规模经济 + 定价权带来自由现金流转正与扩张",
-              "mirror_text": "自由现金流停止增长或转负，利润率扩张停滞或逆转"
-            },
-            {
-              "assumption_text": "NFLX SBC 小、GAAP 利润干净（需剔除一次性项），适用 GAAP P/E 口径",
-              "mirror_text": "SBC 变得重大，GAAP 利润不再干净，估值口径需修正"
-            },
-            {
-              "assumption_text": "reverse DCF：r=9% 隐含永续增速 ~5.9% vs 实际营收 ~13% + 利润率扩张 → 合理偏便宜（仅作锚，不锁价）",
-              "mirror_text": "营收增速显著低于隐含永续增速 ~5.9%（降至单位数增长），利润率扩张停止"
+              "assumption_text": "自制内容飞轮维持投入产出效率，内容投入持续转化为营收增长",
+              "mirror_text": "运营利润率跌破 28%（vs 当前 32.3% / FY26 指引 31.5%），内容成本增速持续超过营收增速，飞轮投入产出效率下降",
+              "threshold": {
+                "metric": "operating_margin",
+                "operator": "<",
+                "value": 28
+              },
+              "source_type": "sec_filing_field"
             }
           ],
-          "manual_items": [
-            {
-              "text": "归一化 forward GAAP EPS 需手动剔除一次性项（如 Q1'26 WBD termination fee ~$0.50/股计入 interest and other income），每季用最新四季度归一化 EPS 重算加仓价",
-              "reason": "需人工判断一次性项并调整，非自动可核对",
-              "cadence": "quarterly"
-            },
-            {
-              "text": "52周高 $134、低 $75，现价距 52周低 ~9%，价格水平/技术位置观察",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            }
-          ],
+          "manual_items": [],
           "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "Q2'26 财报：验证营收增速 +16% 是否可持续、营业利润率 31.5% 指引是否 on track、广告收入翻倍进度",
+            "event": "Q2'26 财报（约 2026-07）：验证营收增速是否维持双位数、运营利润率是否维持 30%+、广告收入是否沿翻倍至 ~$3B 路径推进",
             "date": null,
-            "source_note": "文本未给出 Q2'26 财报具体日期；FY2026 指引营收 $50.7–51.7B(~12–14%)、利润率 31.5%、广告翻倍至 ~$3B 为需验证基准"
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "normalized_fwd_gaap_pe",
             "anchor_value": 22.0,
-            "note": "归一化 forward GAAP 摊薄 P/E < 22x 才 ADD；22x ≈ $68（归一化 forward EPS ~$3.10，需剔除 Q1'26 WBD termination fee ~$0.50/股一次性收入）。每次复盘用最新四季度归一化 EPS 重算，不锁死价。价格表(归一化 $3.10)：20x≈$62、22x≈$68、24x≈$74、26x≈$81。"
+            "note": "归一化 forward GAAP 摊薄 P/E < 22x 才 ADD；每次复盘用最新四季度归一化 EPS 重算，不锁死价。归一化 forward EPS ~$3.10（已自动剔除一次性），22x ≈ $68（−17%）。口径选择：NFLX SBC 小、GAAP 利润干净，适用 GAAP P/E；须剔除 Q1'26 $2.8B WBD termination fee（计入 interest and other income，灌高报告 EPS ~$0.50/股）。报告 TTM P/E ~26.9x 低估真实估值（归一化 TTM ~31x）。价格表（归一化 $3.10）：20x≈$62、22x≈$68、24x≈$74、26x≈$81。现价 ~$82，52周高 $134/低 $75，已跌约 −39%，距52周低 ~9%。reverse DCF 锚（仅作锚不锁价）：归一化净利 ~$11B，市值 ~$352B，收益率 ~3.1%，r=9% 隐含永续增速 ~5.9% vs 实际营收 ~13%+利润率扩张。2025-11 已 10:1 拆股，股数 ~42.98亿。FY2026 指引营收 $50.7–51.7B（~12–14%）、利润率 31.5%、广告翻倍至 ~$3B。Q1'26 营收 $12.25B(+16%)、营业利润率 32.3%。2026-04 Reed Hastings 退出董事会。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 31.03,
-          "in_tok": 2224,
-          "out_tok": 3429,
+          "dur_s": 126.24,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       }
     },
     "CRM": {
-      "qwen-turbo": {
+      "deepseek-v4-flash": {
         "extraction": {
-          "holding_reason_raw": "Salesforce = 全球第一大企业 CRM SaaS（Sales / Service / Marketing / Commerce + Data Cloud + Slack + Tableau / MuleSoft + Agentforce），深嵌企业销售与客服工作流、客户数据与流程沉淀形成高转换成本，订阅经常性收入叠加持续扩张的营业利润率与强自由现金流。AI 角度（同 GOOGL「分发 > 模型」母题）：买 CRM = 押 Agentforce 把 agentic AI 嵌进已装机企业客户的既有 CRM 入口与数据（Customer 360 / Data Cloud）这个 job，而不是押「哪家模型最强」这个会被商品化的 task——护城河在分发 + 数据 + 工作流锁定，不在模型质量。",
+          "ticker": "CRM",
+          "holding_reason_raw": "Salesforce 是全球第一大企业 CRM SaaS，深嵌企业销售与客服工作流，客户数据与流程沉淀形成高转换成本，订阅经常性收入叠加持续扩张的营业利润率与强自由现金流。AI 角度押 Agentforce 把 agentic AI 嵌进已装机企业客户的既有 CRM 入口与数据（Customer 360 / Data Cloud），护城河在分发 + 数据 + 工作流锁定，不在模型质量。",
           "key_assumptions": [
             {
-              "text": "CRM SaaS 领域的市场领导地位",
+              "text": "高切换成本使现有客户续约率维持高位，竞品难以通过价格战或功能迭代大规模切走企业客户",
               "judgeable": true
             },
             {
-              "text": "高转换成本",
+              "text": "Agentforce 的 AI 分发优势（嵌入既有 CRM 入口与数据）使 Salesforce 在 AI 变现上优于纯模型厂商，而非被模型商品化威胁侵蚀",
               "judgeable": true
-            },
+            }
+          ],
+          "open_questions": [
             {
-              "text": "订阅经常性收入模式",
-              "judgeable": true
-            },
-            {
-              "text": "营业利润率和自由现金流的持续增长",
-              "judgeable": true
-            },
-            {
-              "text": "AI 技术通过 Agentforce 嵌入现有 CRM 入口与数据",
-              "judgeable": true
-            },
-            {
-              "text": "护城河在于分发、数据和工作流锁定而非模型质量",
-              "judgeable": true
+              "field": "key_assumptions",
+              "reason": "条件3（同义复述）：用户原话已直接陈述「持续扩张的营业利润率与强自由现金流」，改写后未增加超出原文的信息量",
+              "text": "持续扩张的营业利润率与强自由现金流将驱动每股内在价值增长"
             }
           ],
           "mirrors": [
             {
-              "assumption_text": "CRM SaaS 领域的市场领导地位",
-              "mirror_text": "CRM SaaS 市场领导地位被其他竞争者超越"
+              "assumption_text": "高切换成本使现有客户续约率维持高位，竞品难以通过价格战或功能迭代大规模切走企业客户",
+              "mirror_text": "CRM 季度订阅收入同比增长低于 5%，或 RPO 增速持续下降，表明竞品开始蚕食份额",
+              "threshold": {
+                "metric": "crm_subscription_revenue_yoy",
+                "operator": "<",
+                "value": 5
+              },
+              "source_type": "sec_filing_field"
             },
             {
-              "assumption_text": "高转换成本",
-              "mirror_text": "客户能够轻易切换到其他 CRM 平台"
-            },
-            {
-              "assumption_text": "订阅经常性收入模式",
-              "mirror_text": "订阅收入模式被破坏或客户流失率显著上升"
-            },
-            {
-              "assumption_text": "营业利润率和自由现金流的持续增长",
-              "mirror_text": "营业利润率和自由现金流出现下滑趋势"
-            },
-            {
-              "assumption_text": "AI 技术通过 Agentforce 嵌入现有 CRM 入口与数据",
-              "mirror_text": "Agentforce 的 AI 技术未能有效嵌入现有 CRM 入口与数据"
-            },
-            {
-              "assumption_text": "护城河在于分发、数据和工作流锁定而非模型质量",
-              "mirror_text": "模型质量成为主要竞争因素"
+              "assumption_text": "Agentforce 的 AI 分发优势（嵌入既有 CRM 入口与数据）使 Salesforce 在 AI 变现上优于纯模型厂商，而非被模型商品化威胁侵蚀",
+              "mirror_text": "管理层在财报电话会或新闻稿中调低 Agentforce 年度收入/采用率指引",
+              "threshold": {
+                "event": "agentforce_guidance_downgraded",
+                "occurred": true
+              },
+              "source_type": "news_headline"
             }
           ],
-          "manual_items": [
-            {
-              "text": "价格图形型",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            }
-          ],
+          "manual_items": [],
           "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "下次按最新一手 10-Q 重算 EPS",
+            "event": "CRM FY26 Q2 2026 季度财报发布日（预计 2025 年 8 月下旬）",
             "date": null,
-            "source_note": "按最新一手 10-Q 重算 EPS"
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "ttm_gaap_pe",
             "anchor_value": 18.0,
-            "note": "18x ≈ $140（按 TTM GAAP EPS ~$7.80）"
+            "note": "18x ≈ $140（TTM GAAP EPS ~$7.80）。参考价位表：16x≈$125, 18x≈$140, 20x≈$156, 22x≈$172。现价~$151.78（6/18收）≈19.4x。owner-earnings 交叉锚：owner earnings ~$10B / 市值~$132B ⇒ ~7.6% 收益率。下次按最新 10-Q 重算 EPS，不写死价格。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 5.21,
-          "in_tok": 2113,
-          "out_tok": 610,
+          "dur_s": 67.49,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       },
       "glm-5.2-fast-preview": {
-        "extraction": {
-          "holding_reason_raw": "Salesforce = 全球第一大企业 CRM SaaS（Sales / Service / Marketing / Commerce + Data Cloud + Slack + Tableau / MuleSoft + Agentforce），深嵌企业销售与客服工作流、客户数据与流程沉淀形成高转换成本，订阅经常性收入叠加持续扩张的营业利润率与强自由现金流。AI 角度（同 GOOGL「分发 > 模型」母题）：买 CRM = 押 Agentforce 把 agentic AI 嵌进已装机企业客户的既有 CRM 入口与数据（Customer 360 / Data Cloud）这个 job，而不是押「哪家模型最强」这个会被商品化的 task——护城河在分发 + 数据 + 工作流锁定，不在模型质量。",
-          "key_assumptions": [
-            {
-              "text": "Salesforce 是全球第一大企业 CRM SaaS，深嵌企业销售与客服工作流，客户数据与流程沉淀形成高转换成本（Customer 360 / Data Cloud 装机基础）。",
-              "judgeable": true
-            },
-            {
-              "text": "订阅经常性收入 + 持续扩张的营业利润率 + 强自由现金流三者叠加，构成可持续的商业模式护城河。",
-              "judgeable": true
-            },
-            {
-              "text": "AI 分发母题：Agentforce 把 agentic AI 嵌进既有 CRM 入口与数据，护城河在分发 + 数据 + 工作流锁定，不在模型质量——模型会被商品化，分发渠道不会被。",
-              "judgeable": true
-            },
-            {
-              "text": "CRM 的 GAAP 利润已干净（FY26 GAAP 营业利润率 ~20%、净利率 ~18%），不像 NOW 被 SBC 压失真，用 GAAP P/E 估值不自欺。",
-              "judgeable": true
-            }
-          ],
-          "mirrors": [
-            {
-              "assumption_text": "Salesforce 是全球第一大企业 CRM SaaS，深嵌企业销售与客服工作流，客户数据与流程沉淀形成高转换成本（Customer 360 / Data Cloud 装机基础）。",
-              "mirror_text": "主要竞品（Microsoft Dynamics / HubSpot 等）以更低 TCO 或更深度 AI 集成侵蚀 CRM 工作流锁定，或企业客户在可量化的数量上迁出 Salesforce 平台。"
-            },
-            {
-              "assumption_text": "订阅经常性收入 + 持续扩张的营业利润率 + 强自由现金流三者叠加，构成可持续的商业模式护城河。",
-              "mirror_text": "FCF 增长停滞或营业利润率扩张逆转为压缩（如 SBC 费用率回升、收入增速大幅放缓导致经营杠杆失效）。"
-            },
-            {
-              "assumption_text": "AI 分发母题：Agentforce 把 agentic AI 嵌进既有 CRM 入口与数据，护城河在分发 + 数据 + 工作流锁定，不在模型质量——模型会被商品化，分发渠道不会被。",
-              "mirror_text": "Agentforce 在装机客户中采纳率不及预期，或 agentic AI 通过替代分发渠道（Microsoft Copilot / 独立 AI agent / 通用 LLM 平台）绕过 Salesforce CRM 入口触达企业工作流，使「分发锁定」失效。"
-            },
-            {
-              "assumption_text": "CRM 的 GAAP 利润已干净（FY26 GAAP 营业利润率 ~20%、净利率 ~18%），不像 NOW 被 SBC 压失真，用 GAAP P/E 估值不自欺。",
-              "mirror_text": "GAAP 利润质量恶化：营业利润率或净利率显著压缩，或一次性项目（重组费用、减值等）使 GAAP EPS 大幅失真，TTM GAAP P/E 锚不再可靠。"
-            }
-          ],
-          "manual_items": [
-            {
-              "text": "Agentforce 采纳与装机客户渗透：跟踪 Salesforce 财报/电话会中 Agentforce 相关指标（交易数、付费席位、Data Cloud 消费增量），评估 agentic AI 是否真正嵌入既有 CRM 工作流。",
-              "reason": "定性业务指标，非标准 SEC 财务报表科目，需人工读取财报/电话会披露",
-              "cadence": "quarterly"
-            },
-            {
-              "text": "owner-earnings 交叉锚重算：~$10B owner earnings / 市值 ~$132B ≈ 7.6% 收益率；每次 10-Q 后按最新数据重算，观察是否显著偏离（不进线，仅交叉验证）。",
-              "reason": "owner-earnings（净利润 + D&A - 维护性 CapEx - SBC 调整）为 Buffett 专项计算，需逐项判断而非标准报表直取",
-              "cadence": "quarterly"
-            }
-          ],
-          "filer_type": "domestic_10k",
-          "next_verdict": {
-            "event": "Q2 FY26 10-Q / earnings — 重算 TTM GAAP EPS，更新 ADD 线价位",
-            "date": null,
-            "source_note": "用户原话：「下次按最新一手 10-Q 重算 EPS，不写死价格」；CRM 财年截止 1/31，Q2 FY26（截至 2025-07-31）预计 2025 年 8 月底/9 月初披露，具体日期待公司确认"
-          },
-          "entry_anchor": {
-            "anchor_type": "ttm_gaap_pe",
-            "anchor_value": 18.0,
-            "note": "ADD 线 = 18x ≈ $140（TTM GAAP EPS ~$7.80）；现价 ~$151.78(6/18收) ≈ 19.4x，高于线 → HOLD，跌破 ~$140 进 ADD 候选。参考价位表(EPS$7.80)：16x≈$125 / 18x≈$140 / 20x≈$156 / 22x≈$172。owner-earnings 交叉锚（不进线）：~$10B/~$132B ≈ 7.6% 收益率。下次按最新一手 10-Q 重算 EPS。"
-          }
-        },
+        "extraction": null,
         "metrics": {
-          "status": "pass",
-          "dur_s": 32.05,
-          "in_tok": 1997,
-          "out_tok": 3290,
+          "status": "other",
+          "dur_s": 116.94,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
-          "error": null
+          "error": "ValidationError: 1 validation error for EntryExtraction\nmanual_items\n  Input should be a valid list [type=list_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.13/v/list_type"
         }
       }
     },
     "FIS": {
-      "qwen-turbo": {
+      "deepseek-v4-flash": {
         "extraction": {
-          "holding_reason_raw": "FIS（Fidelity National Information Services）= 银行核心系统与支付处理商，银行更换核心系统的转换成本极高、合同长、客户黏性强，收入偏经常性。价值角度：嵌入金融基础设施的「收过路费」生意。",
+          "ticker": "FIS",
+          "holding_reason_raw": "银行核心系统与支付处理商，银行更换核心系统的转换成本极高、合同长、客户黏性强，收入偏经常性。嵌入金融基础设施的「收过路费」生意。",
           "key_assumptions": [
             {
-              "text": "银行更换核心系统的转换成本极高、合同长、客户黏性强",
+              "text": "银行核心系统市场的监管合规要求（如Basel III、CCAR等）构成天然进入壁垒，新进入者需要数年才能获得必要的监管认证和银行信任，FIS的现有合规基础设施构成结构性优势",
               "judgeable": true
             },
             {
-              "text": "收入偏经常性",
+              "text": "FIS的核心银行系统作为银行关键任务基础设施，银行出于风险规避考虑不会轻易采用未经长期验证的云原生替代方案，现有安装基数构成防御护城河",
               "judgeable": true
-            },
+            }
+          ],
+          "open_questions": [
             {
-              "text": "嵌入金融基础设施的「收过路费」生意",
-              "judgeable": true
+              "field": "key_assumptions",
+              "reason": "is_paraphrase",
+              "text": "切换成本锁定客户，竞品难蚕食份额"
             }
           ],
           "mirrors": [
             {
-              "assumption_text": "银行更换核心系统的转换成本极高、合同长、客户黏性强",
-              "mirror_text": "核心银行份额流失"
+              "assumption_text": "银行核心系统市场的监管合规要求构成天然进入壁垒，新进入者需要数年才能获得必要的监管认证和银行信任，FIS的现有合规基础设施构成结构性优势",
+              "mirror_text": "云原生/新兴核心系统提供商获得主要银行监管机构（OCC/Fed）合规认证，并赢得一家资产规模超500亿美元的银行客户",
+              "threshold": {
+                "event": "cloud_native_core_wins_major_bank_client_with_regulatory_approval",
+                "occurred": true
+              },
+              "source_type": "news_headline"
             },
             {
-              "assumption_text": "收入偏经常性",
-              "mirror_text": "被云原生替代"
-            },
-            {
-              "assumption_text": "嵌入金融基础设施的「收过路费」生意",
-              "mirror_text": "再现大额减值"
+              "assumption_text": "FIS的核心银行系统作为银行关键任务基础设施，银行出于风险规避考虑不会轻易采用未经长期验证的云原生替代方案，现有安装基数构成防御护城河",
+              "mirror_text": "FIS在财报中披露因一家或多家大型银行客户迁移至云原生/第三方核心系统导致核心银行解决方案收入或客户数下降",
+              "threshold": {
+                "metric": "banking_solutions_revenue_yoy",
+                "operator": "<",
+                "value": -0.02
+              },
+              "source_type": "sec_filing_field"
             }
           ],
-          "manual_items": [
-            {
-              "text": "加仓信号 · P/FCF 法（单钥匙 9x）：仅当 P/FCF < 9x（≈$37）才 ADD；每次复盘用最新 FY FCF 指引 ÷ 股数重算，不锁死价。",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            },
-            {
-              "text": "为什么用 P/FCF、不用 GAAP 也不用 Adjusted（关键，两边都失真且方向相反）：GAAP TTM P/E ~8x 是假便宜——Q1'26 与 Global Payments 换股（卖 Worldpay 少数股权、换入 issuer processing）产生巨额一次性 GAAP 收益，Q1 单季 GAAP EPS $4.58 vs Adjusted $1.36，把 TTM 分母灌高、P/E 压假低；Forward Adjusted P/E ~6.5x 又太乐观——加回了大量收购无形摊销，而 FIS 是连环高杠杆收购方，加回它恰好掩盖了本台账「破的条件」所指的 M&A 毁价/大额减值风险，是自欺。现金不会骗→ 用 P/FCF 绕开两边失真。",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            },
-            {
-              "text": "FIS ≠ 优质复利机 + 折价（跟 BRK/GOOGL/MCO/FDS/VEEV/NFLX 不同），是“真便宜但有争议”：pro forma 增长仅 ~6%、总债 $21B/杠杆 3.6x、连环并购 record 一般，Morningstar 公允价仅 $19（说现价溢价 138%，典型 value-trap 警告）。这条线是“越跌越买”还是“接价值陷阱的飞刀”，取决于本台账三条破局条件有没有触发（核心银行份额流失 / 被云原生替代 / 再现大额减值）——ADD 前必须先确认三条都未破。",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            },
-            {
-              "text": "reverse DCF / owner-earnings 锚（仅作锚）：FCF ~$2.1B ÷ 市值 ~$21.5B ⇒ FCF 收益率 ~9.8%，r=9% 隐含永续增速 ≈ 0%——市场把 FIS 当零增长/萎缩现金牛定价。若它只是守住（pro forma +5~6%），~10% FCF 收益率 + 增长，赔率很好；若破局条件触发，便宜会更便宜。",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            }
-          ],
-          "filer_type": "other",
+          "manual_items": [],
+          "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "FY2026 指引更新",
-            "date": "2026-06-06",
-            "source_note": "现读数 2026-06-06：现价 ~$41（6/5 IR），基本贴 52周低 $40.33（52周高 $82.74、ATH $137.54），从 52周高跌 ~50%；股数 516.88M、市值 ~$21.5B。FY2026 指引：Adjusted EPS $6.22–6.32、营收 $13.77–13.85B、FCF $2.05–2.15B（FCF/股 ~$4.06）；股息 $0.44/季、~4% 收益率。价格表(P/FCF)：8x≈$32、 9x≈$37、 10x≈$41、 11x≈$45。加仓价/安全边际 = P/FCF 9x ≈ $37（−10%）"
+            "event": "FIS Q2 2026 财报发布（届时关注FCF指引更新、核心银行解决方案收入增速、客户流失情况）",
+            "date": null,
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "p_fcf",
             "anchor_value": 9.0,
-            "note": "9x ≈ $37"
+            "note": "P/FCF 9x ≈ $37（基于FY2026 FCF指引$2.05-2.15B，股数516.88M，FCF/股≈$4.06）。reverse DCF：FCF ~$2.1B ÷ 市值~$21.5B ⇒ FCF收益率~9.8%，r=9%隐含永续增速≈0%——市场按零增长现金牛定价。加仓价：P/FCF 9x ≈ $37（现价~$41，-10%）。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 8.6,
-          "in_tok": 2528,
-          "out_tok": 1109,
+          "dur_s": 85.62,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       },
       "glm-5.2-fast-preview": {
         "extraction": {
+          "ticker": "FIS",
           "holding_reason_raw": "银行核心系统与支付处理商，银行更换核心系统的转换成本极高、合同长、客户黏性强，收入偏经常性。价值角度：嵌入金融基础设施的「收过路费」生意。",
           "key_assumptions": [
             {
-              "text": "银行更换核心系统的转换成本极高——核心系统迁移风险大、成本高，构成护城河",
+              "text": "云原生核心银行系统短期内无法实质替代 FIS 传统核心系统，转换成本壁垒仍有效",
               "judgeable": true
             },
             {
-              "text": "合同长、客户黏性强，客户流失率低",
+              "text": "FIS 连环高杠杆并购不会再现大额商誉减值",
               "judgeable": true
-            },
+            }
+          ],
+          "open_questions": [
             {
-              "text": "收入偏经常性，嵌入金融基础设施的「收过路费」生意模式提供稳定现金流",
-              "judgeable": true
+              "field": "key_assumptions",
+              "reason": "criterion_3_paraphrase——「份额不流失」是 holding_reason 中「转换成本极高、合同长、客户黏性强」的直接推论，属换词重写，未多出新信息",
+              "text": "银行核心系统市场份额不流失（转换成本锁定客户，份额保持稳定）"
             }
           ],
           "mirrors": [
             {
-              "assumption_text": "银行更换核心系统的转换成本极高——核心系统迁移风险大、成本高，构成护城河",
-              "mirror_text": "核心银行份额流失（客户迁移至竞争对手，证明转换成本并非不可逾越）"
+              "assumption_text": "云原生核心银行系统短期内无法实质替代 FIS 传统核心系统，转换成本壁垒仍有效",
+              "mirror_text": "一家美国 Top-50 银行宣布从 FIS 核心系统迁移至云原生平台（如 Thought Machine / Temenos / Mambu）",
+              "threshold": {
+                "event": "top50_bank_fis_core_migration_to_cloud_native",
+                "occurred": false
+              },
+              "source_type": "news_headline"
             },
             {
-              "assumption_text": "合同长、客户黏性强，客户流失率低",
-              "mirror_text": "被云原生核心系统替代（云原生新型方案侵蚀 FIS 银行核心系统份额，客户主动迁移）"
-            },
-            {
-              "assumption_text": "收入偏经常性，嵌入金融基础设施的「收过路费」生意模式提供稳定现金流",
-              "mirror_text": "再现大额减值（连环并购毁价/商誉大额减值，侵蚀经常性收入的价值基础）"
+              "assumption_text": "FIS 连环高杠杆并购不会再现大额商誉减值",
+              "mirror_text": "10-K 商誉减值费用超过 $1B",
+              "threshold": {
+                "metric": "goodwill_impairment_charge",
+                "operator": ">",
+                "value": 1000000000
+              },
+              "source_type": "sec_filing_field"
             }
           ],
-          "manual_items": [
-            {
-              "text": "核心银行系统市场份额是否流失（查第三方市场报告及竞品披露）",
-              "reason": "市场份额型",
-              "cadence": "quarterly"
-            },
-            {
-              "text": "是否被云原生核心系统替代（跟踪 Thought Machine / 10x Banking 等云原生竞品动向及大行迁移公告）",
-              "reason": "竞争格局型",
-              "cadence": "quarterly"
-            },
-            {
-              "text": "是否再现大额商誉/无形资产减值（查 10-K goodwill impairment 及 MD&A reporting unit 测试）",
-              "reason": "财报定性型",
-              "cadence": "quarterly"
-            }
-          ],
+          "manual_items": [],
           "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "Q2'26 财报：FCF 指引是否维持 $2.05–2.15B、是否有减值信号、核心银行份额趋势",
-            "date": "2026-08",
-            "source_note": "FIS 通常 7 月底/8 月初报 Q2"
+            "event": "Q2 FY2026 财报（约 2026-08）—检验银行核心收入趋势；10-K FY2026（约 2027-02）—商誉减值披露",
+            "date": null,
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "p_fcf",
             "anchor_value": 9.0,
-            "note": "P/FCF < 9x ≈ $37 才 ADD；FY2026 FCF 指引 $2.05–2.15B / 股 516.88M → FCF/股 ~$4.06；每次复盘用最新 FY FCF 指引重算，不锁死价；现价 ~$41 ≈ 10x；GAAP P/E 与 Adjusted P/E 双向失真（换股一次性收益 vs 加回收购摊销），故用 P/FCF"
+            "note": "P/FCF 9x ≈ $37（−10% vs 现价 $41 2026-06-06）。每次复盘用最新 FY FCF 指引 ÷ 股数重算，不锁死价。FY2026 指引 FCF $2.05–2.15B，FCF/股 ~$4.06，股数 516.88M，市值 ~$21.5B。不用 GAAP P/E（~8x 假便宜，Q1'26 与 Global Payments 换股一次性 GAAP 收益灌高分母，Q1 单季 GAAP EPS $4.58 vs Adjusted $1.36）也不用 Forward Adj P/E（~6.5x 太乐观，加回收购无形摊销掩盖 M&A 减值风险）。reverse DCF 仅作锚：FCF ~$2.1B ÷ 市值 ~$21.5B ⇒ FCF 收益率 ~9.8%，r=9% 隐含永续增速≈0%。Morningstar 公允价 $19。价格表：8x≈$32、9x≈$37、10x≈$41、11x≈$45。总债 $21B/杠杆 3.6x。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 69.63,
-          "in_tok": 2387,
-          "out_tok": 7363,
+          "dur_s": 90.98,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       }
     },
     "CGNX": {
-      "qwen-turbo": {
+      "deepseek-v4-flash": {
         "extraction": {
-          "holding_reason_raw": "Cognex = 工业机器视觉全球龙头（视觉系统 + ID/条码读取 + 深度学习视觉软件），是 Tony Fadell「AI + 具体硬件 + 真实痛点」母题在公开市场最纯的代理——对应纺织缺陷检测、Greyparrot 这类用摄像头把质检/识别变成能省下来的钱的生意。护城河：视觉算法与深度学习的长期积累 + 一旦嵌进客户产线/质检流程后的高转换成本 + 在消费电子/汽车/物流/半导体的长期客户关系与品牌。买的是「把工厂的眼睛这件事做到足够好且默认在位」这个 job，不是押某一代 AI 模型谁最强（那是会被商品化的 task）。慢但干净：无负债、高毛利、强现金流、持续回购。",
+          "ticker": "CGNX",
+          "holding_reason_raw": "Cognex是工业机器视觉全球龙头（视觉系统+ID/条码读取+深度学习视觉软件），是Tony Fadell「AI+具体硬件+真实痛点」母题在公开市场最纯的代理——对应纺织缺陷检测、Greyparrot这类用摄像头把质检/识别变成能省下来的钱的生意",
           "key_assumptions": [
             {
-              "text": "视觉算法与深度学习的长期积累",
+              "text": "Cognex在工业视觉领域的高转换成本（一旦嵌入产线/质检流程后）和长期客户关系形成结构性壁垒，即使竞品有同等技术也难以撬动存量客户，护城河不依赖某代AI模型的领先性",
               "judgeable": true
             },
             {
-              "text": "高转换成本",
-              "judgeable": true
-            },
-            {
-              "text": "长期客户关系与品牌",
+              "text": "Cognex在视觉算法和深度学习的长期积累形成数据飞轮和工业场景理解壁垒，竞争对手难以在同等精度和稳定性水平上复制其方案",
               "judgeable": true
             }
           ],
+          "open_questions": [],
           "mirrors": [
             {
-              "assumption_text": "视觉算法与深度学习的长期积累",
-              "mirror_text": "视觉算法与深度学习能力被其他竞争者快速追赶"
+              "assumption_text": "Cognex在工业视觉领域的高转换成本（一旦嵌入产线/质检流程后）和长期客户关系形成结构性壁垒，即使竞品有同等技术也难以撬动存量客户，护城河不依赖某代AI模型的领先性",
+              "mirror_text": "Cognex在10-K/10-Q中披露核心客户流失、客户集中度风险显著上升，或公开新闻报道竞品在Cognex核心客户产线中批量替代其方案",
+              "threshold": {
+                "event": "cognex_core_customer_loss_or_competitor_replacement_disclosed",
+                "occurred": false
+              },
+              "source_type": "sec_filing_field"
             },
             {
-              "assumption_text": "高转换成本",
-              "mirror_text": "客户能够低成本切换到其他供应商"
-            },
-            {
-              "assumption_text": "长期客户关系与品牌",
-              "mirror_text": "客户关系和品牌影响力被削弱或取代"
+              "assumption_text": "Cognex在视觉算法和深度学习的长期积累形成数据飞轮和工业场景理解壁垒，竞争对手难以在同等精度和稳定性水平上复制其方案",
+              "mirror_text": "竞争对手在工业质检场景中公开宣布达到或超越Cognex的精度/稳定性指标，或获得Cognex核心客户的批量订单",
+              "threshold": {
+                "event": "competitor_claims_accuracy_parity_or_wins_cognex_customer",
+                "occurred": false
+              },
+              "source_type": "news_headline"
             }
           ],
-          "manual_items": [
-            {
-              "text": "价格图形型",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            }
-          ],
-          "filer_type": "other",
+          "manual_items": [],
+          "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "10-Q 报告发布",
-            "date": "2026-09-30",
-            "source_note": "下次 10-Q 后须用最新口径重算"
+            "event": "Cognex Q2 2025 10-Q filing（预计2025年7月底-8月初），须用最新口径重算归一化EPS",
+            "date": null,
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "normalized_pe",
-            "anchor_value": 25.0,
-            "note": "25x ≈ $30–33"
+            "anchor_value": 28.0,
+            "note": "归一化EPS ~$1.2（TTM谷值净利~$110M与上轮峰值~$280M之间中枢，caca 2026-06-08选定方法）。起步加仓线~$40≈33x；安全边际/重仓线~$30-33≈25-28x。现价~$60-62远高于线、无边际，只盯不加。触价仅触发重新评估，非自动下单。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 3.58,
-          "in_tok": 2072,
-          "out_tok": 432,
+          "dur_s": 80.07,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       },
       "glm-5.2-fast-preview": {
         "extraction": {
-          "holding_reason_raw": "Cognex = 工业机器视觉全球龙头（视觉系统 + ID/条码读取 + 深度学习视觉软件），是 Tony Fadell「AI + 具体硬件 + 真实痛点」母题在公开市场最纯的代理——对应纺织缺陷检测、Greyparrot 这类用摄像头把质检/识别变成能省下来的钱的生意。买的是「把工厂的眼睛这件事做到足够好且默认在位」这个 job，不是押某一代 AI 模型谁最强（那是会被商品化的 task）。慢但干净：无负债、高毛利、强现金流、持续回购。",
+          "ticker": "CGNX",
+          "holding_reason_raw": "工业机器视觉全球龙头（视觉系统 + ID/条码读取 + 深度学习视觉软件），是 Tony Fadell「AI + 具体硬件 + 真实痛点」母题在公开市场最纯的代理——对应纺织缺陷检测、Greyparrot 这类用摄像头把质检/识别变成能省下来的钱的生意。买的是「把工厂的眼睛这件事做到足够好且默认在位」这个 job，不是押某一代 AI 模型谁最强（那是会被商品化的 task）。慢但干净：无负债、高毛利、强现金流、持续回购。",
           "key_assumptions": [
             {
-              "text": "视觉算法与深度学习的长期积累构成技术壁垒，使 Cognex 在工业机器视觉领域保持领先。",
+              "text": "嵌入客户产线/质检流程后高转换成本锁定客户，竞品难蚕食核心份额",
               "judgeable": true
             },
             {
-              "text": "一旦嵌入客户产线/质检流程，高转换成本锁定客户，形成护城河。",
+              "text": "AI 模型层会被商品化，工业视觉竞争壁垒在于嵌入式集成与场景积累而非模型本身",
               "judgeable": true
-            },
+            }
+          ],
+          "open_questions": [
             {
-              "text": "在消费电子/汽车/物流/半导体的长期客户关系与品牌巩固在位优势。",
-              "judgeable": true
-            },
-            {
-              "text": "「把工厂的眼睛做到足够好且默认在位」这个 job 不会被通用 AI 模型商品化颠覆——买的是默认在位的 job，不是押某代 AI 模型谁最强。",
-              "judgeable": true
-            },
-            {
-              "text": "无负债、高毛利、强现金流、持续回购的财务质量可持续。",
-              "judgeable": true
-            },
-            {
-              "text": "归一化 EPS ~$1.2（取 TTM 跫值净利 ~$110M 与上轮峰值 ~$280M 之间中枢）作为穿越周期估值中枢。",
-              "judgeable": true
+              "field": "key_assumptions",
+              "reason": "criterion_4_no_checkable_mirror",
+              "text": "视觉算法与深度学习的长期积累构成技术壁垒，竞品难以短期复制——难以从 SEC 文件字段中找到可直接判定的镜像阈值（R&D 占比等指标过于间接）"
             }
           ],
           "mirrors": [
             {
-              "assumption_text": "视觉算法与深度学习的长期积累构成技术壁垒，使 Cognex 在工业机器视觉领域保持领先。",
-              "mirror_text": "新进入者（如中国视觉算法公司或 AI 视觉初创）在工业级深度学习视觉算法上追平或超越 Cognex，侵蚀技术领先地位。"
+              "assumption_text": "嵌入客户产线/质检流程后高转换成本锁定客户，竞品难蚕食核心份额",
+              "mirror_text": "毛利率显著压缩至 70% 以下，表明转换成本不足以维持定价权、竞品正侵蚀份额",
+              "threshold": {
+                "metric": "gross_margin_pct",
+                "operator": "<",
+                "value": 70
+              },
+              "source_type": "sec_filing_field"
             },
             {
-              "assumption_text": "一旦嵌入客户产线/质检流程，高转换成本锁定客户，形成护城河。",
-              "mirror_text": "客户产线视觉方案标准化/模块化，或竞争对手提供兼容替代方案使迁移成本大幅下降，转换成本护城河失效。"
-            },
-            {
-              "assumption_text": "在消费电子/汽车/物流/半导体的长期客户关系与品牌巩固在位优势。",
-              "mirror_text": "核心客户行业（消费电子/汽车/半导体）大规模转向自研视觉方案或采用替代供应商，长期客户关系瓦解。"
-            },
-            {
-              "assumption_text": "「把工厂的眼睛做到足够好且默认在位」这个 job 不会被通用 AI 模型商品化颠覆——买的是默认在位的 job，不是押某代 AI 模型谁最强。",
-              "mirror_text": "通用 AI 视觉模型（如开源计算机视觉模型）使工业视觉检测性能商品化到客户无需 Cognex 专有方案即可达标，在位优势不再构成壁垒。"
-            },
-            {
-              "assumption_text": "无负债、高毛利、强现金流、持续回购的财务质量可持续。",
-              "mirror_text": "毛利显著下降、自由现金流转负、停止回购或出现实质性负债，财务质量恶化。"
-            },
-            {
-              "assumption_text": "归一化 EPS ~$1.2（取 TTM 跫值净利 ~$110M 与上轮峰值 ~$280M 之间中枢）作为穿越周期估值中枢。",
-              "mirror_text": "下次 10-Q 显示净利持续低于跫值 ~$110M 或峰值大幅下修，归一化 EPS 中枢 ~$1.2 被证伪，需下调估值锚。"
+              "assumption_text": "AI 模型层会被商品化，工业视觉竞争壁垒在于嵌入式集成与场景积累而非模型本身",
+              "mirror_text": "AI 视觉竞品以模型能力为卖点赢得 Cognex 核心大客户合同，表明模型层非商品化而是关键差异化",
+              "threshold": {
+                "event": "ai_vision_competitor_wins_cognex_major_customer",
+                "occurred": false
+              },
+              "source_type": "news_headline"
             }
           ],
           "manual_items": [
             {
-              "text": "价格触线监控：现价 ~$60-62 远高于起步加仓线 ~$40（33x）和安全边际/重仓线 ~$30-33（25-28x），只盯不加；触价仅触发重新评估是否加仓，非自动下单。",
+              "text": "现价 ~$60-62，需触 $40 起步加仓线或 $30-33 安全边际线才重新评估；触价仅触发重新评估、非自动下单",
               "reason": "价格图形型",
               "cadence": "monthly"
             },
             {
-              "text": "归一化 EPS 重算：下次 10-Q 后须用最新口径重算归一化 EPS ~$1.2 中枢假设及对应加仓/安全边际价格线。",
-              "reason": "依赖财报人工重算",
-              "cadence": "quarterly"
-            },
-            {
-              "text": "1 股 trinket 仓在加到有意义仓位前不进每日盯防。",
-              "reason": "仓位管理型",
+              "text": "1 股 trinket 仓，在加到有意义仓位前不进每日盯防",
+              "reason": "价格图形型",
               "cadence": "monthly"
             }
           ],
           "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "下次 10-Q 发布后须用最新口径重算归一化 EPS ~$1.2 中枢——若净利持续低于跫值 ~$110M 或峰值大幅下修，估值锚需下调",
+            "event": "下一次 10-Q 季报发布后需用最新口径重算归一化 EPS（TTM 谷值净利与上轮峰值中枢可能变化）",
             "date": null,
-            "source_note": "thesis 文本提及「下次 10-Q 后须用最新口径重算」，未给具体日期"
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "normalized_pe",
             "anchor_value": 25.0,
-            "note": "穿越周期归一化 P/E（caca 2026-06-08 选定）。归一化 EPS ~$1.2（TTM 跫值净利 ~$110M 与上轮峰值 ~$280M 中枢）。起步加仓线 ≈$40（33x）；安全边际/重仓线 ≈$30-33（25-28x，真有边际）。现价 ~$60-62 远高于线。"
+            "note": "穿越周期归一化 P/E（caca 2026-06-08 选定）。归一化 EPS ~$1.2（TTM 谷值净利 ~$110M 与上轮峰值 ~$280M 之间中枢）。起步加仓线 ≈ $40 ≈ 33x；安全边际/重仓线 ≈ $30–33 ≈ 25–28x（anchor_value 取 25x 即真有边际下限）；现价 ~$60–62 远高于线、无边际，只盯不加。下次 10-Q 后须用最新口径重算。触价仅触发重新评估、非自动下单。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 24.89,
-          "in_tok": 1983,
-          "out_tok": 2782,
+          "dur_s": 112.81,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       }
     },
     "NVDA": {
-      "qwen-turbo": {
+      "deepseek-v4-flash": {
         "extraction": {
+          "ticker": "NVDA",
           "holding_reason_raw": "NVIDIA = AI 算力的事实标准。护城河不在单颗 GPU，而在 CUDA 软件生态 + 开发者锁定 + 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）——训练与推理工作流深度绑定 CUDA，迁移成本极高。买 NVDA = 押「AI 基础设施的卖铲人」这个 job：只要算力需求持续扩张、且生态锁定不被打破，就持续收税；而不是押「哪一代模型最强」这个会被商品化的 task。",
           "key_assumptions": [
             {
-              "text": "CUDA 软件生态 + 开发者锁定 + 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）",
+              "text": "全球 AI 基础设施资本开支维持高速增长（年均 20%+），不会因宏观周期或技术边际效益递减而显著放缓",
               "judgeable": true
             },
             {
-              "text": "训练与推理工作流深度绑定 CUDA，迁移成本极高",
-              "judgeable": true
-            },
-            {
-              "text": "只要算力需求持续扩张、且生态锁定不被打破，就持续收税",
+              "text": "CUDA 生态的开发者锁定效应使得竞品（AMD ROCm、定制 ASIC）在主流 AI 训练/推理工作负载中无法达到等效性能或成本优势，难以获取显著份额",
               "judgeable": true
             }
           ],
+          "open_questions": [],
           "mirrors": [
             {
-              "assumption_text": "CUDA 软件生态 + 开发者锁定 + 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）",
-              "mirror_text": "CUDA 生态被替代或出现更优技术方案"
+              "assumption_text": "全球 AI 基础设施资本开支维持高速增长（年均 20%+），不会因宏观周期或技术边际效益递减而显著放缓",
+              "mirror_text": "超大规模云厂商（MSFT/AMZN/GOOG）AI 资本开支指引增速连续两个季度低于 15%",
+              "threshold": {
+                "metric": "hyperscaler_ai_capex_yoy",
+                "operator": "<",
+                "value": 0.15
+              },
+              "source_type": "sec_filing_field"
             },
             {
-              "assumption_text": "训练与推理工作流深度绑定 CUDA，迁移成本极高",
-              "mirror_text": "训练与推理工作流可低成本迁移至其他平台"
-            },
-            {
-              "assumption_text": "只要算力需求持续扩张、且生态锁定不被打破，就持续收税",
-              "mirror_text": "算力需求萎缩或生态锁定被打破"
+              "assumption_text": "CUDA 生态的开发者锁定效应使得竞品（AMD ROCm、定制 ASIC）在主流 AI 训练/推理工作负载中无法达到等效性能或成本优势，难以获取显著份额",
+              "mirror_text": "AMD ROCm 在 MLPerf 训练基准测试中达到 NVIDIA 同等性能的 85% 以上，且被至少一家主要云厂商宣布规模部署",
+              "threshold": {
+                "metric": "amd_mlperf_train_perf_ratio",
+                "operator": ">=",
+                "value": 0.85
+              },
+              "source_type": "news_headline"
             }
           ],
           "manual_items": [],
           "filer_type": "domestic_10k",
-          "next_verdict": {
-            "event": "财报日",
-            "date": "2026-09-30",
-            "source_note": "根据公司财报发布日推断"
-          },
+          "next_verdict": null,
           "entry_anchor": {
             "anchor_type": "normalized_pe",
             "anchor_value": 22.0,
-            "note": "中枢 EPS 用 S1 温和消化 ~$5.9 × 22x"
+            "note": "中枢 EPS ~$5.9 × 22x ≈ $130。注：中枢基准取 TTM GAAP EPS $6.53（含投资收益、偏慷慨），故此线已偏保守。方法演变：A（forward P/E 信增长延续）经 steelman B 自检未通过，弃用 → 改用 B。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 4.19,
-          "in_tok": 2005,
-          "out_tok": 464,
+          "dur_s": 69.61,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       },
       "glm-5.2-fast-preview": {
         "extraction": {
-          "holding_reason_raw": "NVIDIA = AI 算力的事实标准。护城河不在单颗 GPU，而在 CUDA 软件生态 + 开发者锁定 + 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）——训练与推理工作流深度绑定 CUDA，迁移成本极高。买 NVDA = 押「AI 基础设施的卖铲人」这个 job：只要算力需求持续扩张、且生态锁定不被打破，就持续收税；而不是押「哪一代模型最强」这个会被商品化的 task。（caca 2026-06-11 审定：框架照此定稿。）",
+          "ticker": "NVDA",
+          "holding_reason_raw": "NVIDIA = AI 算力的事实标准。护城河不在单颗 GPU，而在 CUDA 软件生态 + 开发者锁定 + 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）——训练与推理工作流深度绑定 CUDA，迁移成本极高。买 NVDA = 押「AI 基礎设施的卖铲人」这个 job：只要算力需求持续扩张、且生态锁定不被打破，就持续收税；而不是押「哪一代模型最强」这个会被商品化的 task。",
           "key_assumptions": [
             {
-              "text": "CUDA 软件生态 + 开发者锁定构成核心护城河：训练与推理工作流深度绑定 CUDA，迁移成本极高。",
+              "text": "CUDA 软件生态 + 开发者锁定 + 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）构成极高迁移成本，竞品难以蚕食份额",
               "judgeable": true
             },
             {
-              "text": "数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）形成单颗 GPU 以外的差异化壁垒。",
-              "judgeable": true
-            },
-            {
-              "text": "AI 算力需求将持续扩张（卖铲人逻辑成立的前提）。",
-              "judgeable": true
-            },
-            {
-              "text": "生态锁定在可预见未来不会被打破，CUDA 垄断地位可持续。",
+              "text": "AI 算力需求持续扩张是 NVDA 作为卖铲人持续收税的前提——模型竞争本身会被商品化，但底层算力需求不会",
               "judgeable": true
             }
           ],
+          "open_questions": [],
           "mirrors": [
             {
-              "assumption_text": "CUDA 软件生态 + 开发者锁定构成核心护城河：训练与推理工作流深度绑定 CUDA，迁移成本极高。",
-              "mirror_text": "竞争软件栈（AMD ROCm / OpenAI Triton / 开源标准）达到临界开发者采用规模，CUDA 迁移成本显著下降，训练与推理工作流不再深度绑定 CUDA。"
+              "assumption_text": "CUDA 软件生态 + 开发者锁定 + 数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）构成极高迁移成本，竞品难以蚕食份额",
+              "mirror_text": "NVDA 毛利率大幅压缩，反映 CUDA 定价权被竞品（AMD ROCm / 云厂商自研芯片）侵蚀",
+              "threshold": {
+                "metric": "gaap_gross_margin",
+                "operator": "<",
+                "value": 65
+              },
+              "source_type": "sec_filing_field"
             },
             {
-              "assumption_text": "数据中心级全栈整合（NVLink / InfiniBand / 整机柜系统）形成单颗 GPU 以外的差异化壁垒。",
-              "mirror_text": "竞争对手（AMD、超大规模客户自研 ASIC）在全栈整合层面追平 NVLink / InfiniBand / 整机柜能力，或解耦架构使互连商品化，全栈溢价被压缩。"
-            },
-            {
-              "assumption_text": "AI 算力需求将持续扩张（卖铲人逻辑成立的前提）。",
-              "mirror_text": "模型 Scaling Laws 出现边际递减、超大规模客户 capex 周期转向收缩、推理需求不足以消化已部署算力，算力需求增长停滞或下滑。"
-            },
-            {
-              "assumption_text": "生态锁定在可预见未来不会被打破，CUDA 垄断地位可持续。",
-              "mirror_text": "跨平台抽象层 / 开放标准使 CUDA 依赖度降至临界线以下，或反垄断/监管强制开放 CUDA 生态，垄断地位被结构性打破。"
+              "assumption_text": "AI 算力需求持续扩张是 NVDA 作为卖铲人持续收税的前提——模型竞争本身会被商品化，但底层算力需求不会",
+              "mirror_text": "数据中心算力需求增长停滞或收缩，NVDA Data Center 收入 YoY 转负",
+              "threshold": {
+                "metric": "dc_rev_yoy_growth",
+                "operator": "<",
+                "value": 0
+              },
+              "source_type": "sec_filing_field"
             }
           ],
-          "manual_items": [
-            {
-              "text": "深价线 ≈ $130（穿越周期归一化：中枢 EPS ~$5.9 × 22x）；现价 ~$203 高出约 36%，默认 HOLD；仅当回落至 ~$130 带且 thesis 未破时重估 ADD。",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            }
-          ],
+          "manual_items": [],
           "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "NVDA 下一季度财报（Q2 FY2027）：数据中心收入增速与 forward guidance 是否印证算力需求持续扩张",
+            "event": "NVDA Q2 FY2027 财报（约 2026-08 下旬）",
             "date": null,
-            "source_note": "thesis 定稿 2026-06-11，NVDA 财年 1 月结束，Q1 FY27 约已报，Q2 FY27 预计 2026-08；具体日期以公司 IR 公告为准"
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "normalized_pe",
             "anchor_value": 22.0,
-            "note": "穿越周期归一化 P/E：中枢 EPS ~$5.9（S1 温和消化）× 22x ≈ $130；TTM GAAP EPS $6.53（含投资收益、偏慷慨）为基准故已偏保守。方法 A（forward P/E 信增长延续）经 steelman B 自检未通过弃用。现价 ~$203 → 默认 HOLD 不加仓。"
+            "note": "穿越周期归一化：中枢 EPS ~$5.9 × 22x ≈ $130 深价线。TTM GAAP EPS $6.53（含投资收益、偏慷慨）故此线偏保守。方法 A『forward P/E 信增长延续』经 steelman 自检未通过（疑可得性偏差），弃用。现价 ~$203 高出约 36% → 默认 HOLD，仅当回落至 ~$130 带、且 thesis 未破时重估 ADD。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 20.78,
-          "in_tok": 1919,
-          "out_tok": 2144,
+          "dur_s": 89.99,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       }
     },
     "VEEV": {
-      "qwen-turbo": {
+      "deepseek-v4-flash": {
         "extraction": {
-          "holding_reason_raw": "Veeva = 生命科学行业的垂直 SaaS（CRM + 临床/质量/监管云），深嵌药企合规与监管流程、转换成本高、行业垄断地位。价值角度：垂直护城河 + 监管刚需 + 高利润订阅。",
+          "ticker": "VEEV",
+          "holding_reason_raw": "生命科学行业的垂直SaaS（CRM+临床/质量/监管云），深嵌药企合规与监管流程、转换成本高、行业垄断地位。垂直护城河+监管刚需+高利润订阅。",
           "key_assumptions": [
             {
-              "text": "垂直护城河",
+              "text": "Veeva在生命科学CRM市场的份额超过80%，且其Vault平台（临床/质量/监管云）的替代成本包括数据迁移、FDA系统重新验证（GxP/21 CFR Part 11合规）、员工再培训，总成本超过新建一套系统，因此现有客户几乎没有切换动力",
               "judgeable": true
             },
             {
-              "text": "监管刚需",
+              "text": "FDA和EMA的监管标准持续趋严，尤其是21 CFR Part 11（电子记录/签名合规）和质量体系要求，使得已通过Veeva平台验证的药企在监管合规上形成路径依赖，无法转向未经验证的替代方案",
               "judgeable": true
             },
             {
-              "text": "高利润订阅",
+              "text": "Veeva的订阅制收入占比超过85%，且毛利率维持在70%以上，高利润订阅模式使公司能够持续投入约20%收入的研发以维护护城河，同时保持行业领先的运营利润率",
               "judgeable": true
             }
           ],
+          "open_questions": [],
           "mirrors": [
             {
-              "assumption_text": "垂直护城河",
-              "mirror_text": "竞争对手进入并获得市场份额"
+              "assumption_text": "Veeva在生命科学CRM市场的份额超过80%，且其Vault平台（临床/质量/监管云）的替代成本包括数据迁移、FDA系统重新验证（GxP/21 CFR Part 11合规）、员工再培训，总成本超过新建一套系统，因此现有客户几乎没有切换动力",
+              "mirror_text": "一家Top 20药企正式宣布从Veeva CRM或Vault平台迁移至替代方案，并给出具体时间表",
+              "threshold": {
+                "event": "top20_pharma_veeva_migration_announced",
+                "occurred": true
+              },
+              "source_type": "press_release_text"
             },
             {
-              "assumption_text": "监管刚需",
-              "mirror_text": "监管要求发生变化，不再需要 Veeva 的服务"
+              "assumption_text": "FDA和EMA的监管标准持续趋严，尤其是21 CFR Part 11（电子记录/签名合规）和质量体系要求，使得已通过Veeva平台验证的药企在监管合规上形成路径依赖，无法转向未经验证的替代方案",
+              "mirror_text": "FDA或EMA批准一家竞争对手的临床数据管理平台符合21 CFR Part 11合规要求，并被一家Top 10药企正式采用",
+              "threshold": {
+                "event": "fda_approves_competing_platform_part11",
+                "occurred": true
+              },
+              "source_type": "press_release_text"
             },
             {
-              "assumption_text": "高利润订阅",
-              "mirror_text": "订阅模式被颠覆或客户转向其他付费方式"
+              "assumption_text": "Veeva的订阅制收入占比超过85%，且毛利率维持在70%以上，高利润订阅模式使公司能够持续投入约20%收入的研发以维护护城河，同时保持行业领先的运营利润率",
+              "mirror_text": "Veeva报告订阅业务毛利率连续两个季度低于65%",
+              "threshold": {
+                "metric": "subscription_gross_margin_pct",
+                "operator": "<",
+                "value": 65
+              },
+              "source_type": "sec_filing_field"
             }
           ],
           "manual_items": [
             {
-              "text": "价格图形型",
+              "text": "股价较52周高$310已跌约37%，需关注是否出现技术性破位",
+              "reason": "价格图形型",
+              "cadence": "monthly"
+            },
+            {
+              "text": "52周低点$148作为价格支撑参考",
               "reason": "价格图形型",
               "cadence": "monthly"
             }
           ],
-          "filer_type": "other",
+          "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "财报日",
-            "date": "2026-07-24",
-            "source_note": "根据最新财报的四季 GAAP 摄薄 EPS 重算"
+            "event": "Q2 FY2027 earnings report（预计2026年8月底-9月初），届时可获取最新四季GAAP摊薄EPS重算TTM P/E",
+            "date": null,
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "ttm_gaap_pe",
             "anchor_value": 25.0,
-            "note": "25x ≈ $141"
+            "note": "TTM GAAP P/E 25x。截至2026-06-06：TTM GAAP EPS ~$5.65，25x≈$141。当前TTM GAAP P/E ~32x，现价~$180。SBC约$5亿/年已计入GAAP成本。reverse DCF：市值~$29B，GAAP净利~$0.9B，盈利收益率~3.1%，r=9%时隐含永续增速~5.9%，低于实际~14%增长，合理偏便宜但非白菜价，溢价成长股需像样折价。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 3.28,
-          "in_tok": 2235,
-          "out_tok": 291,
+          "dur_s": 60.62,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       },
       "glm-5.2-fast-preview": {
         "extraction": {
-          "holding_reason_raw": "Veeva = 生命科学行业的垂直 SaaS（CRM + 临床/质量/监管云），深嵌药企合规与监管流程、转换成本高、行业垄断地位。价值角度：垂直护城河 + 监管刚需 + 高利润订阅。",
+          "ticker": "VEEV",
+          "holding_reason_raw": "生命科学行业的垂直 SaaS（CRM + 临床/质量/监管云），深嵌药企合规与监管流程、转换成本高、行业垄断地位。价值角度：垂直护城河 + 监管刚需 + 高利润订阅。",
           "key_assumptions": [
             {
-              "text": "Veeva 深嵌药企合规与监管流程，转换成本高——客户切换 CRM/临床/质量/监管云需迁移大量验证数据和合规文档，迁移风险与成本极高。",
+              "text": "Veeva 平台深嵌药企 GxP 合规与监管流程，高转换成本锁定客户基础，竞品难以蚕食份额",
               "judgeable": true
             },
             {
-              "text": "Veeva 在生命科学垂直 SaaS 中占据行业垄断/主导地位，无明显同等量级竞争者。",
+              "text": "Veeva 在生命科学垂直 SaaS 中保持行业垄断地位，竞品无法在多产品线（CRM、Vault 临床/质量/监管）同时形成有效替代",
               "judgeable": true
+            }
+          ],
+          "open_questions": [
+            {
+              "field": "key_assumptions",
+              "reason": "criterion_3_paraphrase",
+              "text": "监管合规需求构成 Veeva 产品刚需属性——同义复述原话'监管刚需'，未多出可证伪信息；需用户补充具体判定阈值（如：哪条监管法规若变更会削弱刚需？）才能构造镜像"
             },
             {
-              "text": "监管刚需属性——药企合规与监管流程是强制要求，Veeva 的云服务对应不可裁撤的合规支出。",
-              "judgeable": true
-            },
-            {
-              "text": "高利润订阅模式——GAAP 净利 ~$0.9B/年、owner earnings 已含 SBC 成本，盈利收益率 ~3.1%。",
-              "judgeable": true
+              "field": "key_assumptions",
+              "reason": "criterion_3_paraphrase",
+              "text": "高利润订阅模式可持续——同义复述原话'高利润订阅'；需用户指明利润率阈值与时间窗口方可镜像"
             }
           ],
           "mirrors": [
             {
-              "assumption_text": "Veeva 深嵌药企合规与监管流程，转换成本高——客户切换 CRM/临床/质量/监管云需迁移大量验证数据和合规文档，迁移风险与成本极高。",
-              "mirror_text": "重要药企客户（尤其 Top 20 大药企）宣布迁移至替代平台（如 Salesforce Health Cloud），或出现可验证的大客户流失/续约率显著下降。"
+              "assumption_text": "Veeva 平台深嵌药企 GxP 合规与监管流程，高转换成本锁定客户基础，竞品难以蚕食份额",
+              "mirror_text": "Veeva dollar net retention rate 连续两季低于 110%，表明客户流失加速、转换成本护城河弱化",
+              "threshold": {
+                "metric": "dollar_net_retention_rate",
+                "operator": "<",
+                "value": 110
+              },
+              "source_type": "press_release_text"
             },
             {
-              "assumption_text": "Veeva 在生命科学垂直 SaaS 中占据行业垄断/主导地位，无明显同等量级竞争者。",
-              "mirror_text": "竞品（Salesforce Health Cloud、Medata、Oracle 等）在 CRM、临床、质量或监管云任一细分取得可验证的份额突破，蚕食 Veeva 核心业务。"
-            },
-            {
-              "assumption_text": "监管刚需属性——药企合规与监管流程是强制要求，Veeva 的云服务对应不可裁撤的合规支出。",
-              "mirror_text": "监管环境变化降低 Veeva 平台的不可替代性（如 FDA/EMA 推动标准化数据接口、开放替代合规路径），或竞品取得等效监管认证/验证。"
-            },
-            {
-              "assumption_text": "高利润订阅模式——GAAP 净利 ~$0.9B/年、owner earnings 已含 SBC 成本，盈利收益率 ~3.1%。",
-              "mirror_text": "GAAP 净利率或经营利润率持续压缩（SBC 占收入比上升、定价权减弱、增速显著放缓至个位数），使 owner earnings 盈利收益率进一步恶化。"
+              "assumption_text": "Veeva 在生命科学垂直 SaaS 中保持行业垄断地位，竞品无法在多产品线（CRM、Vault 临床/质量/监管）同时形成有效替代",
+              "mirror_text": "主要竞品（如 Salesforce Health Cloud / IQVIA）在 Veeva 多个核心产品线同时赢得头部药企客户合同，形成跨产品线替代",
+              "threshold": {
+                "event": "competitor_wins_top_pharma_multi_product_contract",
+                "occurred": false
+              },
+              "source_type": "news_headline"
             }
           ],
-          "manual_items": [
-            {
-              "text": "竞品在生命科学垂直 SaaS 各细分（CRM/临床/质量/监管云）的份额变化与客户迁移动态——需人工跟踪行业新闻、客户公告与竞品财报。",
-              "reason": "竞争格局/客户迁移动态不可从 Veeva 单独财报自动核对",
-              "cadence": "quarterly"
-            },
-            {
-              "text": "FDA/EMA 等监管机构的政策变化（数据标准化接口、替代合规路径）是否削弱 Veeva 平台的不可替代性。",
-              "reason": "监管政策变化需人工跟踪机构公告",
-              "cadence": "quarterly"
-            }
-          ],
+          "manual_items": [],
           "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "Veeva 下一季财报发布（财年截止 1/31，按最新四季 GAAP 摄薄 EPS 重算 TTM GAAP P/E，判断是否跌破 25x 触发 ADD）",
+            "event": "Veeva Q2 FY2027 财报（财季截至 2026-07-31，预计 2026 年 8–9 月发布）——核查 dollar net retention rate 是否跌破 110%、各产品线（R&D Solutions / Commercial Solutions）营收增速",
             "date": null,
-            "source_note": "Veeva 财年截止 1 月 31 日；2026-06-06 读数时 Q1 FY2027 财报（截至 2026-04-30）应已发布，下一季为 Q2 FY2027（截至 2026-07-31），通常 8 月底/9 月初发布。具体日期以 Veeva IR 公告为准。"
+            "source_note": ""
           },
           "entry_anchor": {
             "anchor_type": "ttm_gaap_pe",
             "anchor_value": 25.0,
-            "note": "单钥匙 25x TTM GAAP P/E。用 GAAP 不用 Non-GAAP（SBC ~$5亿/年是真实稀释成本，Non-GAAP 加回会美化至 ~20x）。2026-06-06 读数：TTM GAAP EPS ≈ $5.65，现价 ~$180 ≈ 32x，未触发；25x ≈ $141（距现价约 −22%，接近 52 周低 $148）。每次复查按最新四季财报 GAAP 摄薄 EPS 重算，不写死价格。reverse DCF 辅助：现价 ~$29B 市值、owner earnings 盈利收益率 ~3.1%，r=9% 隐含永续增速 ~5.9% < 实际 ~14%，「合理偏便宜」但非白菜价。"
+            "note": "TTM GAAP P/E 法，单钥匙 25x。TTM EPS = 最近四季 GAAP 摄薄 EPS 加总（财年截止 1/31，别单季×4）。踩 GAAP 不踩 Non-GAAP：Non-GAAP 加回约 $5 亿/年 SBC，SBC 是真实股权稀释成本；用 Non-GAAP 会美化成 ~20x。当前读数 2026-06-06：TTM GAAP EPS ≈ $5.65，现价 ≈ $180 ≈ 32x，未触发；25x ≈ $141，距现价约 −22%（接近 52 周低 $148）。Reverse DCF（只做锈、不进线）：现价 ~$29B 市值、GAAP 净利 ~$0.9B（已含 SBC）、盈利收益率 ~3.1%，r=9% 时隐含永续增速 ~5.9%，低于实际 ~14% 增长——合理偏便宜但非白菜价，溢价成长股需像样折价再加。Forward Non-GAAP ~20x 不作为加仓钥匙。"
           }
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 25.81,
-          "in_tok": 2114,
-          "out_tok": 2670,
+          "dur_s": 100.37,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       }
     },
     "QQQ": {
-      "qwen-turbo": {
+      "deepseek-v4-flash": {
         "extraction": {
-          "holding_reason_raw": "QQQ = 纳斯达克100宽基指数，我的底仓 + 能力圈核心。逻辑：只要大盘不被结构性颠覆，宽基指数长期向上；策略是越跌越买、不择时清仓，用底仓承接波动。",
+          "ticker": "QQQ",
+          "holding_reason_raw": "只要大盘不被结构性颠覆，宽基指数长期向上",
           "key_assumptions": [
             {
-              "text": "只要大盘不被结构性颠覆，宽基指数长期向上",
+              "text": "纳斯达克100指数所代表的美国科技/成长型上市公司作为整体，其长期盈利增长趋势不会被颠覆性技术迭代、监管框架重构或地缘结构性脱钩所打断",
               "judgeable": true
             }
           ],
+          "open_questions": [],
           "mirrors": [
             {
-              "assumption_text": "只要大盘不被结构性颠覆，宽基指数长期向上",
-              "mirror_text": "纳斯达克100指数被结构性颠覆"
+              "assumption_text": "纳斯达克100指数所代表的美国科技/成长型上市公司作为整体，其长期盈利增长趋势不会被颠覆性技术迭代、监管框架重构或地缘结构性脱钩所打断",
+              "mirror_text": "出现颠覆性技术（如AI替代效应导致科技巨头盈利模式根本性转变）、或重大监管（如反垄断拆分、数字税大幅提高）、或地缘事件（如中美科技脱钩实质性影响指数成分股收入结构）",
+              "threshold": {
+                "event": "structural_disruption_of_nasdaq100",
+                "occurred": true
+              },
+              "source_type": "manual"
             }
           ],
           "manual_items": [
             {
-              "text": "价格图形型",
+              "text": "出现颠覆性技术（如AI替代效应导致科技巨头盈利模式根本性转变）、或重大监管（如反垄断拆分、数字税大幅提高）、或地缘事件（如中美科技脱钩实质性影响指数成分股收入结构）",
               "reason": "价格图形型",
               "cadence": "monthly"
             }
@@ -2347,196 +2294,176 @@
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 1.86,
-          "in_tok": 1743,
-          "out_tok": 177,
+          "dur_s": 42.08,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       },
       "glm-5.2-fast-preview": {
         "extraction": {
-          "holding_reason_raw": "QQQ = 纳斯达克100宽基指数，我的底仓 + 能力圈核心。逻辑：只要大盘不被结构性颠覆，宽基指数长期向上；策略是越跌越买、不择时清仓，用底仓承接波动。",
-          "key_assumptions": [
+          "ticker": "QQQ",
+          "holding_reason_raw": "只要大盘不被结构性颠覆，宽基指数长期向上",
+          "key_assumptions": [],
+          "open_questions": [
             {
-              "text": "大盘不会被结构性颠覆——纳斯达克100宽基指数天然分散、自动定期再平衡，单一个股或行业崩塌不会击穿指数整体结构。",
-              "judgeable": true
-            },
-            {
-              "text": "宽基指数长期向上——美国经济增长与科技创新驱动的长期趋势支撑纳斯达克100成分企业盈利中枢持续抬升。",
-              "judgeable": true
+              "field": "key_assumptions",
+              "reason": "条件3——同义复述原话，未多出信息",
+              "text": "只要大盘不被结构性颠覆，宽基指数长期向上"
             }
           ],
-          "mirrors": [
-            {
-              "assumption_text": "大盘不会被结构性颠覆——纳斯达克100宽基指数天然分散、自动定期再平衡，单一个股或行业崩塌不会击穿指数整体结构。",
-              "mirror_text": "纳斯达克100指数编制规则发生根本性变更（如权重上限大幅下调导致头部科技股被强制削减至极低权重），或监管/地缘因素导致核心成分股被系统性剥离指数。"
-            },
-            {
-              "assumption_text": "宽基指数长期向上——美国经济增长与科技创新驱动的长期趋势支撑纳斯达克100成分企业盈利中枢持续抬升。",
-              "mirror_text": "纳斯达克100指数出现连续多年（如5年+）绝对负回报，且成分企业整体盈利中枢持续下移、无法用周期性回调解释。"
-            }
-          ],
-          "manual_items": [
-            {
-              "text": "纳斯达克100指数季度再平衡/年度再 constitution 时成分股是否出现大面积替换或权重规则根本性变更。",
-              "reason": "ETF/指数公告型，v1 数据源不覆盖指数编制细节",
-              "cadence": "quarterly"
-            },
-            {
-              "text": "QQQ 基金跟踪误差是否持续扩大偏离基准，AUM/流动性是否出现异常萎缩。",
-              "reason": "ETF/基金公告型，v1 数据源不覆盖基金运营数据",
-              "cadence": "monthly"
-            },
-            {
-              "text": "纳斯达克100指数是否出现连续多年绝对负回报且盈利中枢下移的结构性衰退迹象。",
-              "reason": "价格图形型 + 指数基本面型，需人工综合判断",
-              "cadence": "monthly"
-            }
-          ],
+          "mirrors": [],
+          "manual_items": [],
           "filer_type": "etf_fund",
           "next_verdict": null,
           "entry_anchor": null
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 13.5,
-          "in_tok": 1677,
-          "out_tok": 1301,
+          "dur_s": 15.98,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       }
     },
     "SPGI": {
-      "qwen-turbo": {
+      "deepseek-v4-flash": {
         "extraction": {
-          "holding_reason_raw": "逆势投资，越跌越买，评级机构，在软件股受AI冲击的情况下被市场错杀，主要业务是评级",
+          "ticker": "MCO",
+          "holding_reason_raw": "评级机构在软件股受AI冲击的情况下被市场错杀，主要业务是评级",
           "key_assumptions": [
             {
-              "text": "主要业务是评级",
+              "text": "评级业务受SEC NRSRO监管制度保护，持有牌照的现有评级机构享有法定准入壁垒，AI初创公司无法绕过牌照要求进入市场",
               "judgeable": true
+            },
+            {
+              "text": "评级机构的收入与债券发行量挂钩，而非软件许可或订阅，因此AI对软件生产力的提升不会直接冲击评级业务收入",
+              "judgeable": true
+            }
+          ],
+          "open_questions": [
+            {
+              "field": "key_assumptions",
+              "reason": "test1（不是关于生意的判断，而是关于市场定价的误判描述）& test3（同义复述原话「被市场错杀」）",
+              "text": "市场对MCO的抛售是基于AI冲击软件股的误判，而非MCO基本面变化"
             }
           ],
           "mirrors": [
             {
-              "assumption_text": "主要业务是评级",
-              "mirror_text": "主要业务被颠覆或不再具有竞争力"
-            }
-          ],
-          "manual_items": [
+              "assumption_text": "评级业务受SEC NRSRO监管制度保护，持有牌照的现有评级机构享有法定准入壁垒，AI初创公司无法绕过牌照要求进入市场",
+              "mirror_text": "SEC修改或废除NRSRO制度，允许非持牌机构（包括AI公司）开展评级业务",
+              "threshold": {
+                "event": "sec_nrsro_regulation_change_ai_eligibility",
+                "occurred": true
+              },
+              "source_type": "press_release_text"
+            },
             {
-              "text": "价格图形型",
-              "reason": "价格图形型",
-              "cadence": "monthly"
+              "assumption_text": "评级机构的收入与债券发行量挂钩，而非软件许可或订阅，因此AI对软件生产力的提升不会直接冲击评级业务收入",
+              "mirror_text": "MCO评级业务收入连续两个季度同比下降超过10%",
+              "threshold": {
+                "metric": "mco_rating_revenue_yoy",
+                "operator": "<",
+                "value": -0.1
+              },
+              "source_type": "sec_filing_field"
             }
           ],
-          "filer_type": "other",
-          "next_verdict": null,
+          "manual_items": [],
+          "filer_type": "domestic_10k",
+          "next_verdict": {
+            "event": "MCO下次季度财报发布日",
+            "date": null,
+            "source_note": ""
+          },
           "entry_anchor": null
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 1.74,
-          "in_tok": 1695,
-          "out_tok": 122,
+          "dur_s": 52.54,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       },
       "glm-5.2-fast-preview": {
         "extraction": {
-          "holding_reason_raw": "逆势投资，越跌越买，评级机构，在软件股受AI冲击的情况下被市场错杀，主要业务是评级",
+          "ticker": "MCO",
+          "holding_reason_raw": "评级机构，在软件股受AI冲击的情况下被市场错杀，主要业务是评级",
           "key_assumptions": [
             {
-              "text": "评级机构业务具有结构性护城河（准入壁垒/监管认可/网络效应），不易被新进入者颠覆",
+              "text": "信用评级业务依靠监管准入壁垒与品牌信任构成结构性护城河，AI无法替代其核心评级功能，评级收入不受AI颠覆影响",
               "judgeable": true
+            }
+          ],
+          "open_questions": [
+            {
+              "field": "key_assumptions",
+              "reason": "test_1_not_about_business: 市场定价行为非业务护城河判断",
+              "text": "市场将评级机构错归类为软件股导致定价错误"
             },
             {
-              "text": "市场将该公司归入'软件股'类别并因AI冲击叙事错杀，但其核心收入来源是评级而非软件，AI颠覆逻辑不适用",
-              "judgeable": true
-            },
-            {
-              "text": "当前下跌属于市场情绪驱动的错杀而非基本面恶化，价格会回归合理水平（逆势投资有效）",
-              "judgeable": true
+              "field": "key_assumptions",
+              "reason": "test_3_paraphrase: 「越跌越买」为操作策略非结构性假设",
+              "text": "逆势投资越跌越买"
             }
           ],
           "mirrors": [
             {
-              "assumption_text": "评级机构业务具有结构性护城河（准入壁垒/监管认可/网络效应），不易被新进入者颠覆",
-              "mirror_text": "监管层放开评级市场准入门槛或批准新竞争者进入NRSRO名单，导致市场份额被蚕食"
-            },
-            {
-              "assumption_text": "市场将该公司归入'软件股'类别并因AI冲击叙事错杀，但其核心收入来源是评级而非软件，AI颠覆逻辑不适用",
-              "mirror_text": "AI开始实质性替代信用评级流程（如AI驱动的替代评级产品获得市场或监管认可），评级业务收入占比明显下滑"
-            },
-            {
-              "assumption_text": "当前下跌属于市场情绪驱动的错杀而非基本面恶化，价格会回归合理水平（逆势投资有效）",
-              "mirror_text": "下季度财报显示评级业务收入/发债量同比显著下滑，证明下跌是基本面驱动而非情绪错杀"
+              "assumption_text": "信用评级业务依靠监管准入壁垒与品牌信任构成结构性护城河，AI无法替代其核心评级功能，评级收入不受AI颠覆影响",
+              "mirror_text": "MCO评级业务（Ratings segment）收入同比增速转负，或竞争对手推出AI评级产品获监管认可并蚕食市场份额",
+              "threshold": {
+                "metric": "ratings_segment_revenue_yoy_growth",
+                "operator": "<",
+                "value": 0
+              },
+              "source_type": "sec_filing_field"
             }
           ],
-          "manual_items": [
-            {
-              "text": "越跌越买策略执行——监控价格跌幅与加仓节奏，价格图形型不可自动核对",
-              "reason": "价格图形型",
-              "cadence": "monthly"
-            }
-          ],
+          "manual_items": [],
           "filer_type": "domestic_10k",
           "next_verdict": {
-            "event": "下一季度财报——重点看评级业务收入与发债量是否维持/增长，验证下跌是否为错杀而非基本面恶化",
+            "event": "下次财报季——MCO Ratings segment 收入同比增速（10-K/10-Q 披露）",
             "date": null,
-            "source_note": "用户未提供具体财报日期"
+            "source_note": ""
           },
           "entry_anchor": null
         },
         "metrics": {
           "status": "pass",
-          "dur_s": 10.55,
-          "in_tok": 1638,
-          "out_tok": 1013,
+          "dur_s": 84.31,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
           "error": null
         }
       }
     },
     "GDXU": {
-      "qwen-turbo": {
-        "extraction": {
-          "holding_reason_raw": "逆势投资，越跌越买",
-          "key_assumptions": [],
-          "mirrors": [],
-          "manual_items": [],
-          "filer_type": "other",
-          "next_verdict": null,
-          "entry_anchor": null
-        },
+      "deepseek-v4-flash": {
+        "extraction": null,
         "metrics": {
-          "status": "pass",
-          "dur_s": 0.71,
-          "in_tok": 1676,
-          "out_tok": 24,
+          "status": "other",
+          "dur_s": 17.04,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
-          "error": null
+          "error": "ValidationError: 2 validation errors for EntryExtraction\nholding_reason_raw\n  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\nfiler_type\n  Input should be 'foreign_issuer_20f_6k', 'domestic_10k',"
         }
       },
       "glm-5.2-fast-preview": {
-        "extraction": {
-          "holding_reason_raw": "逆势投资，越跌越买",
-          "key_assumptions": [],
-          "mirrors": [],
-          "manual_items": [],
-          "filer_type": "other",
-          "next_verdict": null,
-          "entry_anchor": null
-        },
+        "extraction": null,
         "metrics": {
-          "status": "pass",
-          "dur_s": 5.43,
-          "in_tok": 1618,
-          "out_tok": 478,
+          "status": "other",
+          "dur_s": 5.82,
+          "in_tok": null,
+          "out_tok": null,
           "retries_429": 0,
-          "error": null
+          "error": "ValidationError: 2 validation errors for EntryExtraction\nholding_reason_raw\n  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type\nfiler_type\n  Input should be 'foreign_issuer_20f_6k', 'domestic_10k',"
         }
       }
     }

@@ -2,164 +2,164 @@
   fields:
     holding_reason_raw:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
     key_assumptions:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
     mirrors:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
 - case: HSBC
   fields:
     holding_reason_raw:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
     key_assumptions:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
     mirrors:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
 - case: BRK.B
   fields:
     holding_reason_raw:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
     key_assumptions:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
     mirrors:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
 - case: MCO
   fields:
     holding_reason_raw:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
     key_assumptions:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
     mirrors:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
 - case: GOOGL
   fields:
     holding_reason_raw:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
     key_assumptions:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
     mirrors:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
 - case: NOW
   fields:
     holding_reason_raw:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
     key_assumptions:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
     mirrors:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
 - case: NFLX
   fields:
     holding_reason_raw:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
     key_assumptions:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
     mirrors:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
 - case: CRM
   fields:
     holding_reason_raw:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
     key_assumptions:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
     mirrors:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
 - case: FIS
   fields:
     holding_reason_raw:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
     key_assumptions:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
     mirrors:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
 - case: CGNX
   fields:
     holding_reason_raw:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
     key_assumptions:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
     mirrors:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
 - case: NVDA
   fields:
     holding_reason_raw:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
     key_assumptions:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
     mirrors:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
 - case: VEEV
   fields:
     holding_reason_raw:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
     key_assumptions:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
     mirrors:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
 - case: QQQ
   fields:
     holding_reason_raw:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
     key_assumptions:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
     mirrors:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
 - case: SPGI
   fields:
     holding_reason_raw:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
     key_assumptions:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview
     mirrors:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
 - case: GDXU
   fields:
     holding_reason_raw:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
     key_assumptions:
       A: glm-5.2-fast-preview
-      B: qwen-turbo
+      B: deepseek-v4-flash
     mirrors:
-      A: qwen-turbo
+      A: deepseek-v4-flash
       B: glm-5.2-fast-preview

@@ -1,7 +1,7 @@
 """P4 估值锚/破条件候选可执行性过滤测试（condition_classify 驱动，无网络）。"""
 from __future__ import annotations
 
-from thesis_watch.menu import MenuMirror, filter_executable_mirrors
+from thesis_watch.orchestrator import MenuMirror, filter_executable_mirrors
 
 
 def _m(text: str) -> MenuMirror:

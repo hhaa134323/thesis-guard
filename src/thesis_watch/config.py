@@ -47,6 +47,15 @@ def get_task_model(cfg: dict) -> dict:
     return _llm(cfg).get("task_model", {}) or {}
 
 
+def get_agent_model(cfg: dict) -> dict:
+    """Agent loop 主模型配置（OpenAI Agents SDK + deepseek-v4-flash）。
+    形如 {provider, base_url, model, api_key_env}。Phase 5 后 extract / generate_menu 也走
+    agent_model（移植自 entry_agent/menu，pydantic-ai 已删）。run_l1 eval 用 model_override
+    在同一端点跑多模型对比（deepseek vs glm）。
+    """
+    return _llm(cfg).get("agent_model", {}) or {}
+
+
 def get_llm_limits(cfg: dict) -> dict:
     """限流 / token / 并发上限。429 与其它错误分开计数（见 eval-report per-call 表）。"""
     ll = _llm(cfg)

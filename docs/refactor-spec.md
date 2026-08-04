@@ -103,20 +103,24 @@ LLM 只在指定节点被调用，做指定的事（抽 ticker、抽 card、生�
 
 ## 5. Phase 计划
 
-| Phase | 天数 | 内容 | 依赖 |
-|---|---|---|---|
-| 0 | 0.5 | 验证 DeepSeek V4-Flash tool-use | 无 |
-| 1 | 2-3 | orchestrator.py + 5 tools + guardrails + system prompt | Phase 0 通过 |
-| 2 | 1-2 | 砍 entry_loop + 修 ticker_resolver + wire serve.py | Phase 1 |
-| 3 | 1-2 | 前端 SSE streaming + inline 编辑 | Phase 2 |
-| 4 | 1-2 | check_agent agent loop | Phase 2 |
-| 5 | 1-2 | 测试 + eval 重跑 + docs | Phase 2-4 |
+| Phase | 天数 | 内容 | 依赖 | 状态（2026-08-04） |
+|---|---|---|---|---|
+| 0 | 0.5 | 验证 DeepSeek V4-Flash tool-use | 无 | ✅ |
+| 1 | 2-3 | orchestrator.py + 5 tools + guardrails + system prompt | Phase 0 通过 | ✅ |
+| 2 | 1-2 | 砍 entry_loop + 修 ticker_resolver + wire serve.py | Phase 1 | ✅ |
+| 3 | 1-2 | 前端 SSE streaming + inline 编辑 | Phase 2 | ✅ |
+| 4 | 1-2 | check_agent agent loop | Phase 2 | ✅（commit de3e545） |
+| 5 | 1-2 | 测试 + eval 重跑 + docs | Phase 2-4 | 🔄 进行中（见下） |
+
+**Phase 5 进度（2026-08-04）**：
+- ✅ 测试重做：新增 32 个 agent-loop 行为测试（`tests/test_orchestrator_impl.py` 16 + `tests/test_check_agent.py` 16），覆盖 extract_card G3 / save_card G1·G4·G2 / check_agent 三态 + E1-E8。75 → 107 全绿。
+- ✅ 10 case 验收：pytest 离线覆盖 Case 4/6/7/10 + 1/2/8/9 的确定性部分（resolve_ticker / G4）；纯 live/浏览器 UX（Case 3/5 + 各 case 的 UX/翻译）列给 caca 验收。结果见 `docs/eval-refactor.md` 末尾「验收结果」。
+- ✅ 清理旧代码（删 llm.py / entry_agent.py / menu.py / pydantic-ai）：**已做**。caca 定切 deepseek；移植 extract+menu 到 OpenAI Agents SDK（`submit_extraction` / `submit_menu` tool call，不用 output_type——避 B4 thinking 冲突 + 短路空结构）；prompts + `MenuMirror`/`MenuCandidates` + `filter_executable_mirrors` 移入 `orchestrator.py`；删 `pydantic-ai`/`pydantic-evals`/`anthropic` 依赖；更新 5 consumer（`entry_cli` / `tests/test_menu_filter` / `scripts/day1_fds_validation` / `evals/run_l1` / `orchestrator`）；107 测试绿；live 验 deepseek extract + G3 双层 ok；W1 eval 重跑 deepseek vs glm 头对头确认不退（见 BLOCKERS B6 已解除）。
 
 ## 6. 验收标准
 
 ### Regression（不能退步）
-- 现有 83 测试全过（guardrail 层不动）
-- entry_loop 测试重写（状态机没了，改为 agent loop 行为测试）
+- 107 测试全过（guardrail 层不动 + Phase 5 补回 agent-loop 行为测试：旧 entry_loop 状态机测试 Phase 2 砍掉造成 83→75，Phase 5 新增 32 → 107）
 
 ### New acceptance cases（5 步讨论式流程）
 
