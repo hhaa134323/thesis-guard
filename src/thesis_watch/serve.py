@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 import uuid
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -31,7 +32,21 @@ os.environ.setdefault("THESIS_DB_PATH", DB_PATH)  # 让 orchestrator._get_store(
 CONFIG_PATH = os.environ.get("THESIS_CONFIG", "config.yaml")
 STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "static"
 
-app = FastAPI(title="Thesis Watch 录入 Agent", version="0.1")
+async def _lifespan(app):
+    """FastAPI lifespan：THESIS_SCHEDULER=1 → 启动 APScheduler 挂每日 run_daily_check（Stage 2 任务 3）。"""
+    if os.environ.get("THESIS_SCHEDULER") == "1":
+        from . import scheduler
+        sched = scheduler.start_scheduler()
+        cfg = scheduler._scheduler_config()
+        if sched is None:
+            print(f"[scheduler] apscheduler 未装（pip install apscheduler）；"
+                  f"每日 {cfg['check_time']} ({cfg['tz']}) 跑 run_daily_check 未生效")
+        else:
+            print(f"[scheduler] 已启动：每日 {cfg['check_time']} ({cfg['tz']}) 跑 run_daily_check")
+    yield
+
+
+app = FastAPI(title="Thesis Watch 录入 Agent", version="0.1", lifespan=_lifespan)
 
 
 @app.middleware("http")

@@ -14,3 +14,5 @@ uvicorn
 requests
 # 行情数据源：YahooPriceFetcher（Stage 2 安全边际监控；yfinance 取 regularMarketPrice / 52w 高低 / marketCap）
 yfinance
+# 自动化调度：scheduler.run_daily_check + APScheduler AsyncIOScheduler（Stage 2 任务 3）
+apscheduler
