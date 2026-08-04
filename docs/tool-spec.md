@@ -1,7 +1,7 @@
 # Agent Tool Spec
 
 > 对应 `docs/refactor-spec.md` Phase 1
-> Agent 有 5 个 tools。LLM 根据用户输入自主决定调哪个、什么时候调、怎么组合。
+> Agent 有 6 个 tools。LLM 根据用户输入自主决定调哪个、什么时候调、怎么组合。
 > 每个 tool 是一个 Python 函数，用 `@function_tool` 装饰器注册到 OpenAI Agents SDK。
 
 ## Tool 1: resolve_ticker
@@ -166,6 +166,36 @@
 
 ### 依赖
 - 现有 `fetchers/sec_edgar.py` 的 `fetch_latest_filing`
+
+---
+
+## Tool 6: fetch_filing_history
+
+### 给 LLM 的描述
+查询某 ticker 最近 N 份 SEC filing 列表（含日期 + 标题 + URL），让 agent 自己从中选需要的文件。
+与 check_filing 区别：返回多条、不限时间窗口。用于查找历史文件（如「我需要 2024 年的 10-K 来算估值基线」）。
+
+### 输入
+| 参数 | 类型 | 描述 |
+|---|---|---|
+| ticker | str | 英文 ticker |
+| form_type | str \| None | 可选：按表单类型筛（10-K/10-Q/20-F/6-K/8-K）；不传 = 任意表单 |
+| count | int | 默认 10，最大 50 |
+
+### 输出
+```json
+{"found": true, "filings": [{"form_type": "10-K", "filed_at": "2025-02-15", "url": "https://...", "title": "10-K 年报 · ..."}]}
+```
+或
+```json
+{"found": false}
+```
+
+### Guardrails
+- 无（纯查询）
+
+### 依赖
+- `fetchers/sec_edgar.py` 的 `fetch_filing_history`（新增：取前 N 条，不限 lookback）
 
 ---
 

@@ -232,6 +232,55 @@ def fetch_latest_filing(ticker: str, user_agent: str | None = None,
     return best
 
 
+def fetch_filing_history(ticker: str, form_type: str | None = None,
+                         count: int = 10, user_agent: str | None = None) -> list[FilingEvent]:
+    """取某 ticker 最近 N 份 SEC filing（不限 lookback 窗口）。
+
+    与 fetch_latest_filing 区别：返回多条，不限时间窗口。用于 agent 查历史 filing
+    （如估值基线需要的 2 年前 10-K）。form_type=None → 任意表单；按 filed_at 倒序取前 N。
+    无 CIK / 网络失败 / 空结果 → []（R5 不编造，调用方须明说「查不到」）。
+    """
+    if not ticker:
+        return []
+    n = 10 if count is None else count
+    if n <= 0:
+        return []
+    ua = user_agent or USER_AGENT
+    try:
+        ticker_map = _load_ticker_map(ua)
+    except Exception:
+        return []
+    cik = ticker_map.get(ticker.upper())
+    if cik is None:
+        return []
+    try:
+        resp = requests.get(_submissions_url(cik), headers={"User-Agent": ua}, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception:
+        return []
+    recent = data.get("filings", {}).get("recent", {})
+    forms = recent.get("form", [])
+    accs = recent.get("accessionNumber", [])
+    dates = recent.get("filingDate", [])
+    descs = recent.get("primaryDocDescription", [])
+    events: list[FilingEvent] = []
+    for i, form in enumerate(forms):
+        if form_type is not None and form != form_type:
+            continue
+        filed_date = dates[i] if i < len(dates) else ""
+        acc_no = accs[i] if i < len(accs) else ""
+        desc = descs[i] if i < len(descs) else ""
+        filed_at = _parse_filing_time("", filed_date)  # 用 filingDate（与 fetch_latest_filing 一致）
+        if filed_at is None:
+            continue
+        url = _filing_index_url(cik, acc_no)
+        title = _build_title(form, desc)
+        events.append(FilingEvent(ticker.upper(), form, None, title, url, filed_at))
+    events.sort(key=lambda e: e.filed_at, reverse=True)
+    return events[:n]
+
+
 # --- BaseFetcher subclass + 注册（Stage 2 数据源抽象层；base.py 定义接口/注册表） ---
 def _filing_event_to_dict(ev: "FilingEvent") -> dict:
     """FilingEvent -> plain dict（BaseFetcher.fetch 统一返回 list[dict]；字段/值与
@@ -273,6 +322,16 @@ class SecFetcher(BaseFetcher):
             return []
         return [_filing_event_to_dict(ev)]
 
+    def fetch_history(self, ticker: str, form_type: str | None = None,
+                      count: int = 10) -> list[dict]:
+        """取 ticker 最近 N 份 SEC filing（可选 form_type 过滤），返回 list[dict]。
+
+        与 fetch() 区别：返回多条（不限 lookback / 不限最近一份），供 agent 查历史 filing
+        （如 2 年前 10-K）。kwargs 同 fetch() + count；空 = 查不到（R5 不编造）。
+        """
+        events = fetch_filing_history(ticker, form_type=form_type, count=count)
+        return [_filing_event_to_dict(ev) for ev in events]
+
     # --- 透传 sec_edgar 现有能力（Stage 2 路由扩展用；check_filing 仅用 fetch） ---
     @staticmethod
     def forms_for_filer(filer_type) -> tuple[str, ...]:
@@ -286,5 +345,5 @@ class SecFetcher(BaseFetcher):
 FetcherRegistry.register("sec", SecFetcher)
 
 
-__all__ = ["FilingEvent", "fetch_filings", "fetch_latest_filing",
+__all__ = ["FilingEvent", "fetch_filings", "fetch_latest_filing", "fetch_filing_history",
            "forms_for_filer", "FORM_TYPE_LABELS", "USER_AGENT", "SecFetcher"]
