@@ -215,4 +215,4 @@ caca 选 (b)：`submit_extraction` 收紧 typed schema（`ExtractionInput` 镜�
 - **manual_items 不确定**：这 5 case 4 个（FDS/MCO/FIS/NVDA）新旧都 False（case-selection——这些 case 模型本就不产 manual_items）；VEEV old=True new=False（疑似 LLM 运行间 variance，5 样本不足以下结论）。typed schema 强制 `{text,reason,cadence}` 结构，但 manual_items 是「模型要不要识别价格图形型条件」的**识别**问题，非结构问题——schema 收紧未必帮识别。
 - **filer_type / entry_anchor 满分** ✓。
 
-**结论**：typed schema（434e1e1）达 next_verdict 目标（0.0→0.75，主目标）+ filer_type/entry_anchor 满分；manual_items 未达（5-case 不确定，需全 15-case 确认，但根因是识别非结构）。**待 caca 定**：(a) 接受（next_verdict 修好是大头，manual_items 留作后续 prompt 引导）；(b) 放松 `_ManualItemInput`（只 `{text}`，reason/cadence 全 default，降模型产出门槛）；(c) 跑全 30 确认 manual_items 15-case 率（40min，caca 定时机）。deepseek vs glm 持平待全量跑（5-case 只跑了 deepseek）。
+**结论**：typed schema（434e1e1）达 next_verdict 目标（0.0→0.75，主目标）+ filer_type/entry_anchor 满分；manual_items 未达（5-case 不确定，需全 15-case 确认，但根因是识别非结构）。**caca 已接受 (a)（2026-08-04）**：typed schema 为最终状态——next_verdict 修好是大头 + filer_type/entry_anchor 满分；manual_items 留作后续 prompt 引导（识别问题，非结构，不阻塞产品）。deepseek vs glm 持平 + manual_items 15-case 率待全量跑确认（可选，caca 定时机）。不自作主张切回 pydantic-ai/glm。

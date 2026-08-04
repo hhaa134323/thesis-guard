@@ -2,6 +2,21 @@
 
 > 规则：每次迭代写清楚——依据哪条用户反馈、砍了什么、为什么砍。KILL 判据体检结果也记这里。
 
+## v0.0.20 — 2026-08-04 — submit_extraction typed schema（next_verdict 强制 {event,date}）+ caca 接受
+
+**做了什么**
+- `submit_extraction`：loose `extraction: dict` → typed `ExtractionInput`（镜像 `EntryExtraction`：`next_verdict` 强制 `{event, date}` 对象非 string，`manual_items` 强制 `[{text,reason,cadence}]`，+ `_NVInput/_EAInput/_AssumptionInput/_MirrorInput/_ManualItemInput/_OQInput`）。`strict_mode=True` 被 SDK strict-schema 生成器拒（nested model `additionalProperties` 冲突，非 B4）→ `strict_mode=False`；typed model 仍由 SDK 按 pydantic parse args → string next_verdict 校验失败 → 强制 `{event,date}` 或 null。`_coerce_extraction` 保留兜底。EXTRACT_PROMPT next_verdict 行加 `{event,date}` 结构提示。commit 434e1e1。
+- **5-case deepseek 快验**（不跑全 30 省 40min，per caca 反馈）：next_verdict **0.0→0.75** ✅（typed 强制 date parseable：FDS=2026-06/MCO=2026-10/FIS=2026-08/NVDA=2026-08）；filer_type 1.0 ✅；entry_anchor_type/value 1.0 ✅；manual_items 0.0（5-case 不确定——4 个新旧都 False 是 case-selection，VEEV old=True new=False 疑 LLM variance；根因是「模型识别价格图形型条件」的识别问题非结构问题）。
+
+**依据**
+- v0.0.18 移植后 manual_items/next_verdict 退步（loose dict schema）；caca 选改进 schema（typed fields）。strict 失败 → 降级 strict_mode=False + typed model + coerce 兜底。
+
+**caca 决策**：**接受 (a)**（2026-08-04）——typed schema 为最终状态。next_verdict 修好是主目标 + filer_type/entry_anchor 满分；manual_items 留作后续 prompt 引导（识别问题，非结构，不阻塞产品）。不自作主张切回 pydantic-ai/glm。deepseek vs glm 持平 + manual_items 15-case 率待全量跑确认（可选，caca 定时机）。
+
+**自测**：107 pytest 绿；live G3 ok（FDS next_verdict={event, date='2026-06'} 非 string）。
+
+**状态**：Phase 5 收尾——extract/menu 移植 deepseek（v0.0.18）+ coercion 兜底（v0.0.19）+ typed schema 收紧 next_verdict（v0.0.20，caca 接受）。重构（Phase 0-5）完成。
+
 ## v0.0.19 — 2026-08-04 — W1 extract eval 重跑（deepseek 移植后）+ 修复 coercion bug
 
 **做了什么**
