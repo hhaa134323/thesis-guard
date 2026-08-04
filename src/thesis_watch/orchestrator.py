@@ -121,7 +121,11 @@ EXTRACT_PROMPT = """你是持仓条件录入助手。从用户给的 thesis 描�
   **输入隔离**：抽 key_assumptions 时不得把「加仓价 / 安全边际」类内容当输入——该段只流向 entry_anchor。
 - open_questions：四关拒掉的候选假设改写于此（field=key_assumptions，reason=哪条不过，text=原候选）；条件 3（同义复述）另由 harness 确定性兜底（is_paraphrase）。
 - mirrors：每条假设对应的镜像破局条件。每条须含 assumption_text（关联对应假设原文）+ mirror_text（破局事件）+ **threshold（可判定数值/布尔事件，如 {"metric":"service_rev_yoy","operator":"<","value":0} 或 {"event":"ceo_departed","occurred":false}）+ source_type（sec_filing_field / news_headline / press_release_text / manual）**——P3 任一缺失则该镜像不可判定，harness make_mirror 不生成（转 open_questions），不要给残缺镜像。
-- manual_items：价格图形型等不可自动核对项。
+- manual_items：价格图形型等**无结构化数据源、需用户手动检查**的条件（价格形态/技术图形/市场情绪），系统不接行情无法自动监控。
+  - **mirror vs manual_items 区分**：mirror=有结构化数据源可自动监控（SEC filing/财报数据/监管公告）；manual_items=无结构化数据源、需手动检查。
+  - **manual_items 正例**：「股价跌破 200 日均线」「突破前高失败回落」「成交量异常放大但价格不涨」。
+  - **manual_items 反例（这些应该是 mirror，不要放 manual_items）**：「营收增速低于 10%」（有财报数据，是 mirror）、「高管变更」（有 SEC 公告，是 mirror）。
+  - 每条 manual_items 须有：具体检查标准（非「看看股价走势」模糊描述）+ 可操作判定方式（如「月线收盘价是否跌破 200 日均线」）+ 建议检查频率。
 - filer_type：申报方类型（美国本土 10-K → domestic_10k；20-F/6-K 外国发行人 → foreign_issuer_20f_6k；ETF/ETN/基金/信托 → etf_fund）。
 - ETF/基金类（etf_fund）：无公司层面 10-K/20-F，破条件依赖指数成分/基金公告/价格规模数据，v1 数据源不覆盖 → 所有破条件记为 manual_items（人工自查），不进自动核对。
 - next_verdict：下一个能证伪 thesis 的事件+日期（财报日等）；不等于下次复盘日。**必须是 {event, date} 对象**（event=事件描述，date=YYYY-MM-DD 或 YYYY-MM；不确定 date 留 null），不要传一句话 string。
