@@ -24,7 +24,7 @@ from .models import (
     ThesisCard,
     to_dict,
 )
-from .orchestrator import agent as _thesis_agent
+from .orchestrator import agent as _thesis_agent, build_thesis_guard_agent
 from .schema import Assumption as ExtAssumption, EntryExtraction, MirrorSpec
 from .tier_map import lookup_tier
 
@@ -62,6 +62,7 @@ class EntrySession:
     user_id: str
     ticker: str
     cfg: dict
+    model_name: str | None = None  # Stage 2：按会话选模型；None 走 orchestrator.agent 单例（行为不变）
     stage: str = S_OPENING
     history: list = field(default_factory=list)  # agent input items（Runner.to_input_list 累积）
     card_draft: Any = None        # models.ThesisCard（extract_card 后建草稿；save_card 落库）
@@ -73,6 +74,12 @@ class EntrySession:
     card_id: str | None = None
     error: str | None = None
     metrics: dict = field(default_factory=lambda: {"turns": 0, "clarification_rounds": 0, "converged": False})
+    _agent: Any = field(default=None, init=False, repr=False)  # 按需构建的 agent（model_name=None → 单例）
+
+    def __post_init__(self) -> None:
+        """Stage 2：model_name 非空 → 按会话 build_thesis_guard_agent；None → 模块级单例（行为不变）。"""
+        self._agent = (_thesis_agent if not self.model_name
+                       else build_thesis_guard_agent(self.cfg, model_name=self.model_name))
 
     # ------------------------------------------------------------------ #
     # 对话入口（serve.py / evals/run_w2.py 调）
@@ -112,7 +119,7 @@ class EntrySession:
         input_items = (user_text if not self.history
                        else self.history + [{"role": "user", "content": user_text}])
         try:
-            result = Runner.run_sync(_thesis_agent, input_items, max_turns=_MAX_TURNS)
+            result = Runner.run_sync(self._agent, input_items, max_turns=_MAX_TURNS)
         except Exception as e:  # noqa: BLE001 —— guardrail trip / MaxTurns / 网络都兜底，不崩
             ename = type(e).__name__
             self.error = f"{ename}: {str(e)[:200]}"
@@ -134,7 +141,7 @@ class EntrySession:
         input_items = (user_text if not self.history
                        else self.history + [{"role": "user", "content": user_text}])
         try:
-            result = Runner.run_streamed(_thesis_agent, input_items, max_turns=_MAX_TURNS)
+            result = Runner.run_streamed(self._agent, input_items, max_turns=_MAX_TURNS)
         except Exception as e:  # noqa: BLE001
             self.error = f"{type(e).__name__}: {str(e)[:200]}"
             yield _sse("error", {"message": f"出错：{type(e).__name__}"})
@@ -312,8 +319,8 @@ class EntrySession:
         }
 
 
-def new_session(user_id: str, cfg: dict) -> EntrySession:
-    return EntrySession(user_id=user_id, ticker="", cfg=cfg)
+def new_session(user_id: str, cfg: dict, model_name: str | None = None) -> EntrySession:
+    return EntrySession(user_id=user_id, ticker="", cfg=cfg, model_name=model_name)
 
 
 __all__ = ["EntrySession", "new_session",

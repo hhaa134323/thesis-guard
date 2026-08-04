@@ -4,9 +4,9 @@
 确定性校验。本模块是 orchestration 层，定义 ThesisGuard agent：
 
 - 模型：DeepSeek V4-Flash，走百炼 OpenAI 兼容端点（chat_completions API）。
-- 5 个 @function_tool：resolve_ticker / extract_card / generate_menu / save_card /
-  check_filing。每个复用现有确定性逻辑（fetchers / entry_agent / menu / store /
-  conditions / condition_classify / redline），不重写抽取/mirror/存储代码。
+- 6 个 @function_tool：resolve_ticker / extract_card / generate_menu / save_card /
+  check_filing / fetch_filing_history。每个复用现有确定性逻辑（fetchers / entry_agent /
+  menu / store / conditions / condition_classify / redline），不重写抽取/mirror/存储代码。
 - 双保险：System Prompt（软，docs/agent-prompt.md 全文）+ SDK Guardrails（硬）。
   OutputGuardrail 调 redline.find_violations 查 R1-R3；InputGuardrail 关键词防用户诱导。
 - guardrail 层零改动：redline / conditions / condition_classify / schema / models 不动。
@@ -46,7 +46,7 @@ from .config import (
     get_redline_thresholds,
     load_config,
 )
-from .fetchers import sec_edgar, ticker_resolver
+from .fetchers import FetcherRegistry, ticker_resolver
 from .models import (
     Assumption,
     Confirmation,
@@ -445,7 +445,7 @@ SYSTEM_PROMPT = """你是 Thesis Guard 的 thesis 讨论伙伴。你的职责是
 
 ## 你有什么工具
 
-你有 5 个工具：
+你有 6 个工具：
 
 1. resolve_ticker(query) — 在 SEC 官方表中查找股票代码。
    - 输入英文 ticker（如 MCO/HSBC/NVDA）或英文公司名
@@ -469,8 +469,15 @@ SYSTEM_PROMPT = """你是 Thesis Guard 的 thesis 讨论伙伴。你的职责是
    - 保存前确认所有必填字段都有值
    - 5 个必填字段缺一不可，不允许部分保存
 
-5. check_filing(ticker) — 查询最近一份 SEC filing。
+5. check_filing(ticker, form_type?) — 查询最近一份 SEC filing。
+   - form_type 可选：按表单类型筛（10-K 年报 / 10-Q 季报 / 20-F 外国发行人年报 / 6-K / 8-K 重大事项）；不传 = 任意表单最近一份
    - 用于回答用户在确认阶段的问题（如"最近财报什么时候？"）
+
+6. fetch_filing_history(ticker, form_type?, count?) — 查询最近 N 份 SEC filing 列表。
+   - form_type 可选：按表单类型筛（10-K/10-Q/20-F/6-K/8-K）；不传 = 任意表单
+   - count 默认 10，最大 50
+   - 返回 filing 列表（含日期 + 标题 + URL），你可以从中选需要的文件
+   - 用于查找历史文件（如"我需要 2024 年的 10-K 来算估值基线"）
 
 ## 你怎么跟用户讨论
 
@@ -599,7 +606,7 @@ R7: 不写 Notion（你没有这个工具）
 
 
 # =========================================================================== #
-# 5 个 @function_tool —— 复用现有逻辑，guardrail 在 tool 内部插入确定性校验
+# 6 个 @function_tool —— 复用现有逻辑，guardrail 在 tool 内部插入确定性校验
 # =========================================================================== #
 
 
@@ -888,21 +895,57 @@ def save_card(
     )
 
 
-@function_tool
-def check_filing(ticker: str) -> dict:
+@function_tool(strict_mode=False)  # 加 form_type: str|None=None（可缺省），strict schema 不稳，关掉保可靠（与 save_card 同款）
+def check_filing(ticker: str, form_type: str | None = None) -> dict:
     """查询某 ticker 最近一份 SEC filing（10-K/10-Q/20-F/6-K），用于回答用户在确认阶段
-    的问题（如「最近财报什么时候？」）。返回 {form_type, filed_at, url, title} 或 {found:false}。
-    取不到明说「查不到」，不编造（R5）。"""
-    ev = sec_edgar.fetch_latest_filing(ticker)
-    if ev is None:
+    的问题（如「最近财报什么时候？」）。
+    form_type 可选：按表单类型筛（10-K 取最近年报 / 10-Q 最近季报 / 20-F、6-K 外国发行人 / 8-K 重大事项）；
+    不传 → 任意表单最近一份（行为不变）。
+    返回 {form_type, filed_at, url, title} 或 {found:false}。取不到明说「查不到」，不编造（R5）。"""
+    rows = FetcherRegistry.get("sec").fetch(ticker, form_type=form_type)
+    if not rows:
+        return {"found": False}
+    ev = rows[0]
+    return {
+        "found": True,
+        "form_type": ev["form_type"],
+        "filed_at": ev["filed_at"],
+        "url": ev["url"],
+        "title": ev["title"],
+    }
+
+
+def _fetch_filing_history_impl(ticker: str, form_type: str | None = None,
+                               count: int = 10) -> dict:
+    """fetch_filing_history 工具的纯逻辑实现（可独立单测，不经 SDK ctx）。
+    count 钳到 [0, 50]（防返回过多）；取多条 SEC filing（含日期 + 标题 + URL）。
+    无 CIK / 网络失败 / 空结果 → {found:False}（R5 不编造，让 agent 明说「查不到」）。"""
+    n = max(0, min(count, 50))
+    rows = FetcherRegistry.get("sec").fetch_history(ticker, form_type=form_type, count=n)
+    if not rows:
         return {"found": False}
     return {
         "found": True,
-        "form_type": ev.form_type,
-        "filed_at": ev.filed_at.date().isoformat() if hasattr(ev.filed_at, "date") else str(ev.filed_at),
-        "url": ev.url,
-        "title": ev.title,
+        "filings": [
+            {
+                "form_type": r["form_type"],
+                "filed_at": r["filed_at"],
+                "url": r["url"],
+                "title": r["title"],
+            }
+            for r in rows
+        ],
     }
+
+
+@function_tool(strict_mode=False)  # form_type: str|None=None 可缺省，与 check_filing 同款
+def fetch_filing_history(ticker: str, form_type: str | None = None, count: int = 10) -> dict:
+    """查询某 ticker 最近 N 份 SEC filing 列表（含日期 + 标题 + URL），用于查找历史文件
+    （如「我需要 2024 年的 10-K 来算估值基线」）。
+    form_type 可选：按表单类型筛（10-K/10-Q/20-F/6-K/8-K）；不传 = 任意表单。
+    count 默认 10，最大 50。返回 {found, filings:[{form_type,filed_at,url,title}]} 或 {found:false}。
+    取不到明说「查不到」，不编造（R5）。"""
+    return _fetch_filing_history_impl(ticker, form_type=form_type, count=count)
 
 
 # =========================================================================== #
@@ -946,37 +989,48 @@ agent = Agent(
     name="ThesisGuard",
     instructions=SYSTEM_PROMPT,
     model=_MODEL,
-    tools=[resolve_ticker, extract_card, generate_menu, save_card, check_filing],
+    tools=[resolve_ticker, extract_card, generate_menu, save_card, check_filing, fetch_filing_history],
     output_guardrails=[redline_guard],
     input_guardrails=[injection_guard],
 )
 
 
-def build_agent(cfg: dict | None = None) -> Agent:
-    """显式按 cfg 重建 agent（Phase 2 接 serve / 测试用）。cfg=None 走默认 config.yaml。"""
-    if cfg is None:
+def build_thesis_guard_agent(
+    cfg: dict | None = None, model_name: str | None = None
+) -> Agent:
+    """显式按 cfg 重建 agent（Phase 2 接 serve / 测试用）。cfg=None 走默认 config.yaml。
+    model_name 覆盖 config.yaml 的 llm.agent_model.model（Stage 2 前端按会话选模型用）；
+    None 走配置默认。cfg=None 且 model_name=None → 返回模块级单例 agent（行为不变）。"""
+    if cfg is None and not model_name:
         return agent
     from agents import Agent as _A
-    model = _build_model(cfg)
+    eff_cfg = cfg if cfg is not None else _CFG
+    model = _build_model(eff_cfg, model_override=model_name)
     return _A(
         name="ThesisGuard",
         instructions=SYSTEM_PROMPT,
         model=model,
-        tools=[resolve_ticker, extract_card, generate_menu, save_card, check_filing],
+        tools=[resolve_ticker, extract_card, generate_menu, save_card, check_filing, fetch_filing_history],
         output_guardrails=[redline_guard],
         input_guardrails=[injection_guard],
     )
 
 
+# 向后兼容别名（历史导出名；Stage 2 起改用 build_thesis_guard_agent）
+build_agent = build_thesis_guard_agent
+
+
 __all__ = [
     "SYSTEM_PROMPT",
     "agent",
+    "build_thesis_guard_agent",
     "build_agent",
     "resolve_ticker",
     "extract_card",
     "generate_menu",
     "save_card",
     "check_filing",
+    "fetch_filing_history",
     "redline_guard",
     "injection_guard",
     # extract / menu（Phase 5 移植自 entry_agent/menu，公共 API for entry_cli / evals / tests）

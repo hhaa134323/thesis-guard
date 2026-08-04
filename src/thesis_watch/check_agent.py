@@ -8,10 +8,12 @@ save_card 同款——实测 DeepSeek V4-Flash + chat_completions 用 output_typ
 而不先调 fetch，改走 submit_verdicts tool 才稳定）。模型走 DeepSeek V4-Flash（百炼
 chat_completions，与 orchestrator 同款 OpenAIChatCompletionsModel + set_default_openai_api）。
 
-输出格式不变：判决数据形 CondVerdict(cond_id/status/evidence_url/evidence_excerpt/reasoning)，
+输出格式：判决数据形 CondVerdict(cond_id/status/evidence_url/evidence_excerpt/reasoning/change)，
 status ∈ triggered|watch|untriggered（**三态**，非仓位建议——R1/R2/R6 红线；HOLD/ADD/CUT/PASS
-是作者个人 Notion 复查 skill v4，不是本产品模块，不混入）。run_all/run_check 公共签名 +
-返回 shape 不变（notify.py 依赖）。不动 orchestrator.py / serve.py / 前端。
+是作者个人 Notion 复查 skill v4，不是本产品模块，不混入）。change ∈
+new/worsened/improved/unchanged/resolved/escalated（**较上次**，agent 读 previous_verdicts 自判；
+非 watch transition 留空）。run_all/run_check 公共签名不变；run_check 返回增 `changes`
+（{cond_id:{change,text}}，notification.send_digest 读）。不动 orchestrator.py / serve.py / 前端。
 
 - evidence excerpt = SEC primaryDocDescription（原文片段），url = filings index；
 - evidence_self_check 回放（default_fetcher 抓 index 页）验 excerpt 能定位 → 不过降 watch（E1/E3）；
@@ -58,7 +60,7 @@ CHECK_PROMPT = """你是持仓条件核对 Agent。给定一张 thesis 卡的破
 ## 你有什么工具（必须按顺序调用）
 
 1. fetch_recent_filings() — 拉本卡标的最近 SEC filings（按 filer_type 自动路由表单：外国发行人主渠道 6-K，本土 10-K/10-Q/8-K，ETF/基金 v1 不自动核对）。返回 {filings:[{form,item,title,url,filed_at}], count, error?}。
-2. submit_verdicts(verdicts) — 提交逐条判决。verdicts 是数组，每条 {cond_id, status, evidence_url, evidence_excerpt, reasoning}。
+2. submit_verdicts(verdicts) — 提交逐条判决。verdicts 是数组，每条 {cond_id, status, evidence_url, evidence_excerpt, reasoning, change}。
 
 **流程（必须）**：先调 fetch_recent_filings 取 filings → 再根据 filings 调 submit_verdicts 提交逐条判决 → 然后简短收尾。
 - 不调 fetch_recent_filings 直接判 = 无据判定，禁止（R5）。
@@ -77,6 +79,25 @@ CHECK_PROMPT = """你是持仓条件核对 Agent。给定一张 thesis 卡的破
 - reasoning：一句话说明为什么这条 filing 击中（或不击中）该条件。
 untriggered 可留空 evidence_url/excerpt。
 
+## 较上次变化（输入含 previous_verdicts 时）
+
+你有上次的判断结果（previous_verdicts：每条 {cond_id, status, evidence_excerpt, refusal_code, date}）。
+除判断当前 status 外，每条 verdict 还要输出 change 字段：
+
+- new：上次无记录，这次是 watch（首次进入观察）
+- worsened：上次 watch，这次仍 watch，但情况恶化了（更接近触发）
+- improved：上次 watch，这次仍 watch，但情况改善了（远离触发）
+- unchanged：上次 watch，这次仍 watch，无变化
+- resolved：上次 watch，这次 untriggered，且条件确实解除了（不是「没有新 filing」）
+- escalated：上次 watch，这次 triggered
+
+注意：
+- 「没有新 filing」≠「条件解除」。若上次 watch 且今天无新相关 filing，change = unchanged（不是 resolved）。
+- 只有上次 watch 且有新 filing 明确显示条件不再成立时，才标 resolved。
+- triggered 从头就触发（无 watch 前史）→ change 留空（不算 watch transition）。
+- 首次就 untriggered（无 watch 前史）→ change 留空。
+- previous_verdicts 为空数组 = 首次检查，凡 watch 均为 new。
+
 ## 红线（不可违反）
 
 R1: 不给买卖 / 仓位建议（不说「建议买入 / 卖出 / 加仓 / 减仓」）
@@ -94,6 +115,7 @@ class CondVerdict(BaseModel):
     evidence_url: str = ""
     evidence_excerpt: str = ""
     reasoning: str = ""
+    change: str = ""  # 较上次：new/worsened/improved/unchanged/resolved/escalated（空=非 watch transition）
 
 
 class CheckVerdicts(BaseModel):
@@ -134,17 +156,25 @@ def _build_model(agent_model: dict) -> OpenAIChatCompletionsModel:
     return OpenAIChatCompletionsModel(model=model_name, openai_client=client)
 
 
-def build_check_agent(cfg: dict, *, model_override: str | None = None) -> tuple[Any, str, str]:
+def build_check_agent(
+    cfg: dict,
+    *,
+    model_name: str | None = None,
+    model_override: str | None = None,
+) -> tuple[Any, str, str]:
     """构造核对 Agent（OpenAI Agents SDK + DeepSeek V4-Flash）。
     走 submit_verdicts tool 提交结构化判决（不用 output_type——DeepSeek + chat_completions
     用 output_type 会短路成空 CheckVerdicts 不先调 fetch；改 tool call 与 orchestrator 同款稳定）。
     懒构建（不在模块 import 时 SystemExit，避免阻断 orchestrator/tests 导入）。
-    返回 (agent, model_name, provider)；model_override 覆盖模型名（eval --model 用）。"""
+    返回 (agent, model_name, provider)；model_name / model_override 覆盖模型名
+    （Stage 2 起用 model_name 统一命名；model_override 保留兼容 eval --model / entry_cli；
+    两者都给时 model_name 优先）。"""
     am = get_agent_model(cfg)
-    if model_override:
-        am = {**am, "model": model_override}
+    override = model_name or model_override
+    if override:
+        am = {**am, "model": override}
     provider = am.get("provider", "openai")
-    model_name = am.get("model", "")
+    used_model = am.get("model", "")
     model = _build_model(am)
     agent = Agent(
         name="ThesisCheck",
@@ -152,7 +182,7 @@ def build_check_agent(cfg: dict, *, model_override: str | None = None) -> tuple[
         model=model,
         tools=[fetch_recent_filings, submit_verdicts],
     )
-    return agent, model_name, provider
+    return agent, used_model, provider
 
 
 def _conditions_for_llm(card: ThesisCard) -> list[dict]:
@@ -172,12 +202,42 @@ def _filing_to_dict(f) -> dict:
             "filed_at": f.filed_at.isoformat(timespec="seconds")}
 
 
-def _build_input(card: ThesisCard) -> str:
-    """给 agent 的用户消息：只给卡的破局条件（filings 由 agent 调 fetch_recent_filings 自取）。"""
+def _prev_verdict_dict(r: CheckResult) -> dict:
+    """上次 CheckResult → 给 agent 看的 previous_verdict 项。
+    CheckResult 不存 LLM reasoning（只存 status + evidence + refusal_code + checked_at），
+    故以 evidence_excerpt + refusal_code 作「上次依据」的代理（agent 据此判较上次变化）。"""
+    excerpts = " | ".join(e.excerpt for e in (r.evidence or []) if e.excerpt)
+    status = r.status.value if hasattr(r.status, "value") else str(r.status)
+    return {
+        "cond_id": r.cond_id,
+        "status": status,
+        "evidence_excerpt": excerpts,
+        "refusal_code": r.refusal_code or "",
+        "date": (r.checked_at or "")[:10] or (r.checked_at or ""),
+    }
+
+
+def _get_prev_results(store: ThesisStore, card_id: str) -> dict[str, CheckResult]:
+    """读上次 CheckResult（每 cond 取最近一条；list_check_results 已按 checked_at DESC，
+    故每 cond 首次出现即最新）。首次检查（无历史）→ {}。"""
+    prev: dict[str, CheckResult] = {}
+    for r in store.list_check_results(card_id):
+        cid = getattr(r, "cond_id", "")
+        if cid and cid not in prev:
+            prev[cid] = r
+    return prev
+
+
+def _build_input(card: ThesisCard, prev_results: dict[str, CheckResult]) -> str:
+    """给 agent 的用户消息：卡的破局条件 + 上次判决（filings 由 agent 调 fetch_recent_filings 自取）。
+    previous_verdicts 仅含上次有记录的 cond（对齐 broken_conditions 顺序；无记录的 cond 不列，
+    agent 据此判 new）。首次检查 → previous_verdicts=[]。"""
     return json.dumps({
         "ticker": card.ticker,
         "filer_type": card.filer_type.value if hasattr(card.filer_type, "value") else str(card.filer_type),
         "broken_conditions": _conditions_for_llm(card),
+        "previous_verdicts": [_prev_verdict_dict(prev_results[c.id])
+                              for c in card.broken_conditions if c.id in prev_results],
     }, ensure_ascii=False, indent=2)
 
 
@@ -205,9 +265,10 @@ def fetch_recent_filings(ctx: RunContextWrapper[CheckCtx]) -> dict:
 @function_tool(strict_mode=False)  # verdicts: list[dict] 嵌套入参，strict schema 不稳；关掉保可靠（与 orchestrator.save_card 同款）
 def submit_verdicts(ctx: RunContextWrapper[CheckCtx], verdicts: list) -> dict:
     """提交逐条判决（结构化输出通道，替代 output_type）。verdicts 是数组，每条
-    {cond_id, status(triggered|watch|untriggered), evidence_url, evidence_excerpt, reasoning}。
+    {cond_id, status(triggered|watch|untriggered), evidence_url, evidence_excerpt, reasoning, change}。
     必须覆盖输入里每条 broken_condition。triggered/watch 的 evidence_url 只能来自
-    fetch_recent_filings 返回的 filings，不编造（R5）。"""
+    fetch_recent_filings 返回的 filings，不编造（R5）。change 见 CHECK_PROMPT「较上次变化」
+    一节（new/worsened/improved/unchanged/resolved/escalated；非 watch transition 留空）。"""
     ctx.context.verdicts_submitted = list(verdicts or [])
     return {"ok": True, "count": len(verdicts or [])}
 
@@ -229,6 +290,7 @@ def _verdict_from_dict(d: dict) -> CondVerdict:
         evidence_url=str(d.get("evidence_url", "") or ""),
         evidence_excerpt=str(d.get("evidence_excerpt", "") or ""),
         reasoning=str(d.get("reasoning", "") or ""),
+        change=str(d.get("change", "") or ""),
     )
 
 
@@ -256,12 +318,13 @@ def _sec_evidence_fetcher(url: str, timeout: float = 30.0, retries: int = 1):
 
 def _all_watch(store: ThesisStore, card: ThesisCard, conds, code: str, log: Callable,
                filings_count: int, errors: list[str] | None = None) -> dict:
-    """E1/E6/E7 兜底：全部降 watch + 拒判码落日志 + 存 CheckResult。"""
+    """E1/E6/E7 兜底：全部降 watch + 拒判码落日志 + 存 CheckResult。
+    changes={}（agent 未产出可信判决，无从判定较上次变化）。"""
     for c in conds:
         _save(store, card, c.id, CondStatus.WATCH, [], code, log)
     return {"card_id": card.card_id, "ticker": card.ticker, "n_triggered": 0,
             "n_watch": len(conds), "n_untriggered": 0, "filings_count": filings_count,
-            "errors": errors if errors is not None else [code]}
+            "errors": errors if errors is not None else [code], "changes": {}}
 
 
 def run_check(card: ThesisCard, cfg: dict, store: ThesisStore, *,
@@ -269,7 +332,9 @@ def run_check(card: ThesisCard, cfg: dict, store: ThesisStore, *,
               agent: Any = None, log: Callable = print) -> dict:
     """核对一张卡：agent loop（fetch_recent_filings → submit_verdicts）→ self_check → redline → 存 CheckResult。
 
-    返回 {card_id, ticker, n_triggered, n_watch, n_untriggered, filings_count, errors}。
+    返回 {card_id, ticker, n_triggered, n_watch, n_untriggered, filings_count, errors, changes}。
+    changes = {cond_id: {change, text}}，仅含发生 watch transition 的 cond（new/worsened/improved/
+    unchanged/resolved/escalated；空串=非 transition 或被 E3/E4/E8 降级，不列）。
     fetcher=None 用 _sec_evidence_fetcher（30s+重试，SEC 慢链路容忍；仅用于 evidence_self_check 回放，
     非 filings 抓取——filings 由 agent 调 fetch_recent_filings 工具自取）；传 mock 可离线测 evidence 回放。
     agent=None 懒构建（run_check 内 build_check_agent）；传预构建 agent 可复用 / eval 注入。
@@ -278,11 +343,14 @@ def run_check(card: ThesisCard, cfg: dict, store: ThesisStore, *,
     conds = card.broken_conditions
     ctx = CheckCtx(card=card, filer_type=card.filer_type, lookback_hours=lookback_hours)
 
+    # 上次结果（每 cond 最近一条；agent 据此输出「较上次」change；无新 filing 短路时保持上次状态）
+    prev_results = _get_prev_results(store, card.card_id)
+
     own_agent = agent is None
     if own_agent:
         agent, _, _ = build_check_agent(cfg)
     limits = get_llm_limits(cfg)
-    user_input = _build_input(card)
+    user_input = _build_input(card, prev_results)
     t0 = time.perf_counter()
     retries = 0
     while True:
@@ -308,12 +376,30 @@ def run_check(card: ThesisCard, cfg: dict, store: ThesisStore, *,
         log(f"[E7_SCHEMA] {card.ticker} agent 未调 fetch_recent_filings（无据判定）")
         return _all_watch(store, card, conds, "E7_SCHEMA", log, 0)
 
-    # 无 filings → 全 untriggered（已检查，0 触发 —— PRD「无事那行不许空」）
+    # 无 filings → 不跑 agent 判决：保持上次状态（无上次 → untriggered）。
+    # 「没有新 filing」≠「条件解除」：上次 watch 的 cond → change=unchanged（非 resolved）。
     if not ctx.fetched_filings:
+        changes: dict[str, dict] = {}
+        n_t = n_w = n_u = 0
         for c in conds:
-            _save(store, card, c.id, CondStatus.UNTRIGGERED, [], None, log)
-        return {"card_id": card.card_id, "ticker": card.ticker, "n_triggered": 0,
-                "n_watch": 0, "n_untriggered": len(conds), "filings_count": 0, "errors": []}
+            prev_r = prev_results.get(c.id)
+            if prev_r is not None:
+                prev_status = _map_status(getattr(prev_r, "status", ""))
+                _save(store, card, c.id, prev_status, [], None, log)  # 保持上次状态
+                if prev_status == CondStatus.WATCH:
+                    changes[c.id] = {"change": "unchanged", "text": c.text}
+            else:
+                prev_status = CondStatus.UNTRIGGERED
+                _save(store, card, c.id, CondStatus.UNTRIGGERED, [], None, log)
+            if prev_status == CondStatus.TRIGGERED:
+                n_t += 1
+            elif prev_status == CondStatus.WATCH:
+                n_w += 1
+            else:
+                n_u += 1
+        return {"card_id": card.card_id, "ticker": card.ticker, "n_triggered": n_t,
+                "n_watch": n_w, "n_untriggered": n_u, "filings_count": 0, "errors": [],
+                "changes": changes}
 
     # fetch 了但 agent 没调 submit_verdicts（结构化输出缺失）→ E7
     if not ctx.verdicts_submitted:
@@ -324,6 +410,7 @@ def run_check(card: ThesisCard, cfg: dict, store: ThesisStore, *,
     n_t = n_w = n_u = 0
     errors: list[str] = []
     triggered_details: list[dict] = []
+    changes: dict[str, dict] = {}
     for c in conds:
         v = verdicts.get(c.id)
         if v is None or not v.cond_id:
@@ -331,7 +418,7 @@ def run_check(card: ThesisCard, cfg: dict, store: ThesisStore, *,
             _save(store, card, c.id, CondStatus.WATCH, [], "E4_AMBIGUOUS", log)
             n_w += 1
             errors.append("E4_AMBIGUOUS")
-            continue
+            continue  # 缺判决 → 无从判 change
         # R1-R3 redline.guard：仅校验 LLM reasoning（系统输出），不校验 SEC 引用摘录
         try:
             redline.guard(v.reasoning)
@@ -340,9 +427,10 @@ def run_check(card: ThesisCard, cfg: dict, store: ThesisStore, *,
             _save(store, card, c.id, CondStatus.WATCH, [], "E8_RENDER_BLOCK", log)
             n_w += 1
             errors.append("E8_RENDER_BLOCK")
-            continue
+            continue  # reasoning 被否 → 不信其 change
         status = _map_status(v.status)
         evidence: list[Evidence] = []
+        downgraded = False
         if status != CondStatus.UNTRIGGERED and v.evidence_url:
             ev = Evidence(url=v.evidence_url, excerpt=v.evidence_excerpt, source_type="sec_filing")
             # R5 evidence_self_check 回放
@@ -353,12 +441,17 @@ def run_check(card: ThesisCard, cfg: dict, store: ThesisStore, *,
                 log(f"[{chk.reason}] {card.ticker} cond {c.id} evidence 回放不过: {chk.detail}")
                 errors.append(chk.reason or "E3_EVIDENCE_MISMATCH")
                 status = CondStatus.WATCH  # 降级
+                downgraded = True
             evidence.append(ev)
         refusal = None
         if status == CondStatus.WATCH and not v.evidence_url:
             refusal = "E2_NO_PRIMARY_SOURCE"
             errors.append("E2_NO_PRIMARY_SOURCE")
         _save(store, card, c.id, status, evidence, refusal, log)
+        # change 仅在判决完整接受（未被 E3 降级）且 agent 给了非空 change 时记录；
+        # E4/E8 continue、E3 downgraded → 不列（code 无法可靠判定 worsened/improved，留给下次 agent）
+        if not downgraded and v.change:
+            changes[c.id] = {"change": v.change, "text": c.text}
         if status == CondStatus.TRIGGERED:
             triggered_details.append({"cond": c.text, "urls": [e.url for e in evidence if e.url]})
             n_t += 1
@@ -369,7 +462,7 @@ def run_check(card: ThesisCard, cfg: dict, store: ThesisStore, *,
     return {"card_id": card.card_id, "ticker": card.ticker, "n_triggered": n_t,
             "n_watch": n_w, "n_untriggered": n_u, "filings_count": len(ctx.fetched_filings),
             "errors": errors, "dur_s": round(time.perf_counter() - t0, 2),
-            "triggered": triggered_details}
+            "triggered": triggered_details, "changes": changes}
 
 
 def run_all(user_id: str, cfg: dict, store: ThesisStore, *,

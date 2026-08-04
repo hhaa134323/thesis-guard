@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 import uuid
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -31,7 +32,21 @@ os.environ.setdefault("THESIS_DB_PATH", DB_PATH)  # 让 orchestrator._get_store(
 CONFIG_PATH = os.environ.get("THESIS_CONFIG", "config.yaml")
 STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "static"
 
-app = FastAPI(title="Thesis Watch 录入 Agent", version="0.1")
+async def _lifespan(app):
+    """FastAPI lifespan：THESIS_SCHEDULER=1 → 启动 APScheduler 挂每日 run_daily_check（Stage 2 任务 3）。"""
+    if os.environ.get("THESIS_SCHEDULER") == "1":
+        from . import scheduler
+        sched = scheduler.start_scheduler()
+        cfg = scheduler._scheduler_config()
+        if sched is None:
+            print(f"[scheduler] apscheduler 未装（pip install apscheduler）；"
+                  f"每日 {cfg['check_time']} ({cfg['tz']}) 跑 run_daily_check 未生效")
+        else:
+            print(f"[scheduler] 已启动：每日 {cfg['check_time']} ({cfg['tz']}) 跑 run_daily_check")
+    yield
+
+
+app = FastAPI(title="Thesis Watch 录入 Agent", version="0.1", lifespan=_lifespan)
 
 
 @app.middleware("http")
@@ -73,8 +88,9 @@ def api_start(payload: dict) -> JSONResponse:
         raise HTTPException(400, "text 必填（一句话说标的 + 理由）")
     if _store.get_user(user_id) is None:
         raise HTTPException(400, f"未知 user_id={user_id}（预置 beta1–beta5）")
+    model = (payload.get("model") or "").strip() or None  # Stage 2：按会话选模型；None 走 config 默认
     sid = uuid.uuid4().hex[:12]
-    sess = new_session(user_id, _cfg)  # ticker 由 start 从一句话抽取
+    sess = new_session(user_id, _cfg, model_name=model)  # ticker 由 start 从一句话抽取
     _sessions[sid] = sess
     try:
         view = sess.start(text)

@@ -20,6 +20,8 @@ from thesis_watch.check_agent import (
 from thesis_watch.fetchers.sec_edgar import FilingEvent
 from thesis_watch.models import (
     BrokenCondition,
+    CheckResult,
+    CondStatus,
     ConditionLayer,
     Confirmation,
     FilerType,
@@ -56,12 +58,13 @@ def test_map_status_untriggered_not_confused_with_triggered():
 def test_verdict_from_dict_fields():
     v = _verdict_from_dict({"cond_id": "c1", "status": "triggered",
                             "evidence_url": "http://x", "evidence_excerpt": "ex",
-                            "reasoning": "因为..."})
+                            "reasoning": "因为...", "change": "escalated"})
     assert isinstance(v, CondVerdict)
     assert v.cond_id == "c1"
     assert v.status == "triggered"
     assert v.evidence_url == "http://x"
     assert v.evidence_excerpt == "ex"
+    assert v.change == "escalated"
 
 
 def test_verdict_from_dict_missing_fields_safe():
@@ -69,6 +72,7 @@ def test_verdict_from_dict_missing_fields_safe():
     assert v.cond_id == ""
     assert v.status == ""
     assert v.evidence_url == ""
+    assert v.change == ""
 
 
 # --------------------------------------------------------------------------- #
@@ -107,10 +111,14 @@ def _fake_runner(*, fetch_called=True, fetched_filings=None, fetch_error=None,
     return types.SimpleNamespace(run_sync=run_sync)
 
 
-def _run(card, monkeypatch, *, fetcher=None, cfg=None, **fake_kwargs):
+def _run(card, monkeypatch, *, fetcher=None, cfg=None, prev=None, **fake_kwargs):
     monkeypatch.setattr(check_agent, "Runner", _fake_runner(**fake_kwargs))
     store = ThesisStore(":memory:")
     store.seed_preset_users()
+    if prev:  # 预置上次 CheckResult（每 cond 一条），测「较上次」change + 无新 filing 短路
+        for cid, st in prev.items():
+            store.save_check_result(CheckResult(card_id=card.card_id, cond_id=cid,
+                                                status=st, checked_at="2026-08-01T00:00:00Z"))
     # 传 dummy agent → run_check 不 build_check_agent（避 SystemExit / 不触网不调 LLM）
     return run_check(card, cfg or {}, store, lookback_hours=72, fetcher=fetcher,
                      agent=object(), log=lambda *_: None)
@@ -133,12 +141,14 @@ def test_e7_agent_skipped_fetch_all_watch(monkeypatch):
 
 
 def test_no_filings_all_untriggered(monkeypatch):
-    """fetch 调了但窗口内无 filings → 全 untriggered（PRD「无事那行不许空」）。"""
+    """首次（无上次结果）+ 窗口内无 filings → 全 untriggered（PRD「无事那行不许空」；
+    有上次结果时改保持上次状态，见 test_no_filings_with_prev_keeps_status_unchanged）。"""
     card = _card()
     r = _run(card, monkeypatch, fetch_called=True, fetched_filings=[], verdicts_submitted=[])
     assert r["n_untriggered"] == 3 and r["n_watch"] == 0
     assert r["errors"] == []
     assert r["filings_count"] == 0
+    assert r["changes"] == {}
 
 
 def test_e7_no_verdicts_submitted(monkeypatch):
@@ -220,3 +230,126 @@ def test_e6_429_no_retry_fast(monkeypatch):
              cfg={"llm": {"max_retries_429": 0}})
     assert r["errors"] == ["E6_RATE_LIMIT"]
     assert r["n_watch"] == 3
+
+
+# --------------------------------------------------------------------------- #
+# run_check 较上次 change（Stage 2 任务 5 agent 方案：agent 读 previous_verdicts
+# 自判 change，code 原样收集；非 watch transition / 降级 → 不列）
+# --------------------------------------------------------------------------- #
+
+def test_change_new_first_watch(monkeypatch):
+    """首次检查（无上次结果）+ watch + agent 标 new → change=new。"""
+    card = _card(("c1",))
+    verdicts = [{"cond_id": "c1", "status": "watch", "evidence_url": "http://sec.gov/x",
+                 "evidence_excerpt": "EXCERPT", "reasoning": "命中", "change": "new"}]
+    r = _run(card, monkeypatch, fetched_filings=[_filing()],
+             verdicts_submitted=verdicts, fetcher=lambda url: "body with EXCERPT")
+    assert r["changes"]["c1"]["change"] == "new"
+    assert r["changes"]["c1"]["text"] == "cond c1"
+
+
+def test_change_first_triggered_left_empty(monkeypatch):
+    """从头就 triggered（无 watch 前史）→ change 留空 → 不列（非 watch transition）。"""
+    card = _card(("c1",))
+    verdicts = [{"cond_id": "c1", "status": "triggered",
+                 "evidence_url": "http://sec.gov/x", "evidence_excerpt": "EXCERPT",
+                 "reasoning": "命中", "change": ""}]
+    r = _run(card, monkeypatch, fetched_filings=[_filing()],
+             verdicts_submitted=verdicts, fetcher=lambda url: "body with EXCERPT")
+    assert "c1" not in r["changes"]  # 空 change 不列
+
+
+def test_change_with_prev_worsened(monkeypatch):
+    """有上次结果（c1 watch）+ 这次仍 watch + agent 标 worsened → change=worsened。"""
+    card = _card(("c1", "c2"))
+    verdicts = [{"cond_id": "c1", "status": "watch", "evidence_url": "http://sec.gov/x",
+                 "evidence_excerpt": "EXCERPT", "reasoning": "恶化", "change": "worsened"},
+                {"cond_id": "c2", "status": "untriggered", "reasoning": "无", "change": ""}]
+    r = _run(card, monkeypatch, prev={"c1": CondStatus.WATCH, "c2": CondStatus.UNTRIGGERED},
+             fetched_filings=[_filing()], verdicts_submitted=verdicts,
+             fetcher=lambda url: "body with EXCERPT")
+    assert r["changes"]["c1"]["change"] == "worsened"
+    assert "c2" not in r["changes"]  # c2 change="" 不列
+
+
+def test_change_six_values_collected(monkeypatch):
+    """change 的 6 种值（new/worsened/improved/unchanged/resolved/escalated）原样收集。
+    纯 code 透传测试（prev 语义由 prompt 保证，code 不校验）——验证 code 把 agent 给的
+    非空 change 原样写入 changes，不因值不同改写。"""
+    card = _card(("c1", "c2", "c3", "c4", "c5", "c6"))
+    mapping = {"c1": "new", "c2": "worsened", "c3": "improved",
+               "c4": "unchanged", "c5": "resolved", "c6": "escalated"}
+    verdicts = []
+    for cid, ch in mapping.items():
+        st = "triggered" if ch == "escalated" else ("untriggered" if ch == "resolved" else "watch")
+        v = {"cond_id": cid, "status": st, "reasoning": "x", "change": ch}
+        if st != "untriggered":
+            v["evidence_url"] = "http://sec.gov/x"
+            v["evidence_excerpt"] = "EXCERPT"
+        verdicts.append(v)
+    r = _run(card, monkeypatch, fetched_filings=[_filing()],
+             verdicts_submitted=verdicts, fetcher=lambda url: "body with EXCERPT")
+    for cid, ch in mapping.items():
+        assert r["changes"][cid]["change"] == ch, f"{cid} expected {ch}"
+        assert r["changes"][cid]["text"] == f"cond {cid}"
+
+
+def test_change_empty_not_listed(monkeypatch):
+    """agent 给空 change（非 transition）→ 不列；非空才列。"""
+    card = _card(("c1", "c2"))
+    verdicts = [{"cond_id": "c1", "status": "watch", "evidence_url": "http://sec.gov/x",
+                 "evidence_excerpt": "EXCERPT", "reasoning": "命中", "change": "new"},
+                {"cond_id": "c2", "status": "untriggered", "reasoning": "无", "change": ""}]
+    r = _run(card, monkeypatch, fetched_filings=[_filing()],
+             verdicts_submitted=verdicts, fetcher=lambda url: "body with EXCERPT")
+    assert set(r["changes"].keys()) == {"c1"}
+
+
+def test_change_skipped_on_e3_downgrade(monkeypatch):
+    """triggered + change=escalated，但 evidence 回放不过（E3 降级 watch）→ change 不列
+    （code 无法可靠判定降级后的 transition，留给下次 agent）。"""
+    card = _card(("c1",))
+    verdicts = [{"cond_id": "c1", "status": "triggered",
+                 "evidence_url": "http://sec.gov/x", "evidence_excerpt": "MISSING",
+                 "reasoning": "命中", "change": "escalated"}]
+    r = _run(card, monkeypatch, fetched_filings=[_filing()],
+             verdicts_submitted=verdicts, fetcher=lambda url: "body without the excerpt")
+    assert r["n_watch"] == 1  # E3 降级
+    assert r["changes"] == {}  # 降级 → change 不列
+
+
+def test_no_filings_with_prev_keeps_status_unchanged(monkeypatch):
+    """无新 filing + 上次 watch → 保持 watch + change=unchanged（不跑 agent 判决；
+    「没有新 filing」≠「条件解除」）。上次 untriggered → 保持 untriggered，无 change。"""
+    card = _card(("c1", "c2"))
+    store = ThesisStore(":memory:")
+    store.seed_preset_users()
+    store.save_check_result(CheckResult(card_id=card.card_id, cond_id="c1",
+                                        status=CondStatus.WATCH, checked_at="2026-08-01T00:00:00Z"))
+    store.save_check_result(CheckResult(card_id=card.card_id, cond_id="c2",
+                                        status=CondStatus.UNTRIGGERED, checked_at="2026-08-01T00:00:00Z"))
+    monkeypatch.setattr(check_agent, "Runner", _fake_runner(fetch_called=True, fetched_filings=[]))
+    r = run_check(card, {}, store, lookback_hours=72, agent=object(), log=lambda *_: None)
+    assert r["changes"]["c1"]["change"] == "unchanged"
+    assert r["n_watch"] == 1
+    assert "c2" not in r["changes"]  # 上次 untriggered → 无 watch transition
+    assert r["n_untriggered"] == 1
+    # store 里 c1 仍 watch（保持上次状态，未被「无新 filing」降为 untriggered）
+    latest = {cr.cond_id: cr for cr in store.list_check_results(card.card_id)}
+    assert latest["c1"].status == CondStatus.WATCH
+    assert latest["c2"].status == CondStatus.UNTRIGGERED
+
+
+def test_no_filings_with_prev_triggered_kept(monkeypatch):
+    """无新 filing + 上次 triggered → 保持 triggered（待用户 S4 收尾），无 change。"""
+    card = _card(("c1",))
+    store = ThesisStore(":memory:")
+    store.seed_preset_users()
+    store.save_check_result(CheckResult(card_id=card.card_id, cond_id="c1",
+                                        status=CondStatus.TRIGGERED, checked_at="2026-08-01T00:00:00Z"))
+    monkeypatch.setattr(check_agent, "Runner", _fake_runner(fetch_called=True, fetched_filings=[]))
+    r = run_check(card, {}, store, lookback_hours=72, agent=object(), log=lambda *_: None)
+    assert r["n_triggered"] == 1
+    assert r["changes"] == {}  # triggered 保持，无 watch transition
+    latest = {cr.cond_id: cr for cr in store.list_check_results(card.card_id)}
+    assert latest["c1"].status == CondStatus.TRIGGERED

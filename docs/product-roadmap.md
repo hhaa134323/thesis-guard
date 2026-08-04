@@ -1,7 +1,7 @@
 # 产品路线图：从录入工具到投研助手
 
-> 创建时间：2026-08-04 | PM：caca + Notion AI
-> 状态：初稿，功能扩展方向待需求论证后定稿
+> 创建时间：2026-08-04 | 更新：2026-08-05 | PM：caca + Notion AI
+> 状态：Stage 2 已完成，Stage 3 待启动
 
 ## 背景
 
@@ -19,19 +19,23 @@
 
 ---
 
-### Stage 2：监控闭环（下一个要做）
+### Stage 2：监控闭环（✅ 已完成，2026-08-05）
 
-**上线什么**：
-- 通用行情 API（Yahoo Finance 免费）→ 价格数据
-- 邮件通知系统 → 命中当天单独发，未命中合并日报
-- 安全边际提醒 → 价格跌入安全边际 → 推送
-- mirror 自动监控 → 行情数据比对 mirror 阈值 → 触发推送
+**上线什么（6 项）**：
+1. YahooPriceFetcher — Yahoo Finance 免费行情 API，价格数据源
+2. 安全边际监控 — 价格跌入安全边际 → alert（price_monitor.py）
+3. 自动化调度 — APScheduler 每日定时跑检查（scheduler.py）
+4. 通知编排 — Alert（命中单独发）+ Digest（每日汇总）+ S4 收尾（notification.py）
+5. watch 记忆 — check_agent 读上次结果输出 change 六态（new/worsened/improved/unchanged/resolved/escalated）
+6. SEC filing history tool — agent 可查历史 filing 列表，不只看最近一份
 
 **用户拿到什么**：录入完 → 系统自动盯 → 到价/破局/红线 → 邮件推送。这就是"每天 1 分钟"的承诺——你不用主动查，系统告诉你什么时候该看。
 
 **判断标准**：录完不用主动查，系统推送
 
 **这是当前产品的最终形态**——录入 + 监控 + 通知，闭环了。
+
+**实现**：commit `741ceb1`，202 tests 全绿。详见 Notion「Thesis Guard · Stage 2 业务流程设计」+ `docs/stage2-extension.md`。
 
 ---
 
@@ -77,39 +81,21 @@
 
 ---
 
-## Stage 2 启动前的技术准备
+## Stage 2 技术准备（✅ 已完成）
 
-以下 3 项是"现在做最便宜的保险"——代码量小、不动现有功能、但 Stage 2-3 时省大量返工。建议在 Stage 2 启动前花 1 天完成。
+以下 3 项在 Stage 2 启动前已完成：
 
-### 1. 数据源抽象层（半天）
+### 1. 数据源抽象层（✅ 已完成）
 
-**问题**：fetchers/ 里每个数据源是独立模块，接口不统一。现在只有 sec_edgar + ticker_resolver 还管得住。
+`BaseFetcher` + `FetcherRegistry`（`fetchers/base.py`）— 新数据源 subclass + register 即可接入。Stage 2 已接入 YahooPriceFetcher。
 
-**如果不做**：Stage 2 接行情 API、Stage 3 接新闻 RSS + 行业数据，每个都是一次性定制集成。到 5-6 个数据源时就是一团乱麻。
+### 2. 模型配置参数化（✅ 已完成）
 
-**做对**：定一个统一接口——每个数据源实现同一个抽象（`fetch(ticker, params) → results`），注册成 agent 的 @function_tool。加新数据源 = 实现接口 + 注册，不动现有代码。
+`build_thesis_guard_agent(model_name=)` — 按会话选模型，runtime 可选。
 
-**代价**：半天重构 fetchers/ 接口。**不做的代价**：Stage 2-3 每加一个数据源多花 2-3 天适配。
+### 3. 通知接口抽象（✅ 已完成）
 
-### 2. 模型配置参数化（2-3 小时）
-
-**问题**：orchestrator 里模型配置从 config.yaml 读 `llm.agent_model`，但 extract_card 和 check_agent 的模型选择硬编码在代码里。
-
-**如果不做**：Stage 2 加模型选择器（§14 核心功能缺口）时要改后端代码。不同任务用不同模型也要硬编码。
-
-**做对**：模型配置做成 runtime 可选——session 创建时传入模型名，orchestrator / extract / check 各自读自己的模型配置。加模型选择器 = 前端传一个参数，后端零改动。
-
-**代价**：2-3 小时把模型名从硬编码改成 session 级参数。**不做的代价**：模型选择器功能要改后端代码，每次调模型策略都要改代码。
-
-### 3. 通知接口抽象（1-2 小时）
-
-**问题**：notify.py 直接写死了邮件发送。Stage 2 要加推送，以后可能要加站内通知、webhook。
-
-**如果不做**：Stage 2 加推送时要改 notify.py 核心逻辑，可能影响现有邮件功能。
-
-**做对**：notify 做成接口——`send(channel, message)`，邮件是一个 channel，推送是另一个。现在只实现邮件，但接口留着。加新 channel = 实现接口，不动现有。
-
-**代价**：1-2 小时把 notify.py 的邮件逻辑包一层接口。**不做的代价**：每次加通知渠道都要改核心文件。
+`Notifier` + `NotifierRegistry` + `EmailNotifier`（`notifiers/base.py`）— 新通知渠道 subclass + register。邮件已实现。
 
 ---
 
