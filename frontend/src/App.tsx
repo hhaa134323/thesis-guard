@@ -1,10 +1,12 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InfoTip, TooltipProvider } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Message, MessageScroller, SendButton } from "@/components/ai/chat";
 import { Loader2 } from "lucide-react";
+import { useStreamChat } from "@/hooks/useStreamChat";
+import { applyToolResult, type ViewPatch } from "@/lib/stream";
 
 // ──────────────────────────────── types ────────────────────────────────
 type Stage = "opening" | "ticker_clarify" | "extracted" | "menu" | "confirm_card" | "confirmed";
@@ -31,7 +33,7 @@ interface View {
   metrics?: { turns: number; clarification_rounds: number; converged: boolean };
   session_id?: string;
 }
-interface Msg { id: number; role: "user" | "assistant"; text: string; }
+interface Msg { id: number; role: "user" | "assistant"; text: string; streaming?: boolean; streamed?: boolean; }
 
 const UNDECIDED = ["无法确定", "说不清", "说不上", "不清楚", "不知道", "菜单", "候选", "给选项", "给候选", "不知道破什么", "想不出来"];
 const isUndecided = (t: string) => UNDECIDED.some((h) => (t || "").includes(h));
@@ -63,6 +65,14 @@ function Typewriter({ text, onDone }: { text: string; onDone?: () => void }) {
     return () => clearInterval(id);
   }, [text]);
   return <span>{text.slice(0, n)}{n < text.length ? <span className="opacity-40">▋</span> : null}</span>;
+}
+
+// ──────────────────────────── 流式文本（SSE token 逐 chunk 追加） ────────────────────────────
+// 与 Typewriter 区分：Typewriter 拿到整段后逐字动画（fetch 回退路径用）；
+// LiveText 直接渲染已收到的 token（流由后端驱动），streaming 时光标呼吸。
+// 用 streamed 标记避免流结束切回 Typewriter 时整段重播（streamed=true 永远走 LiveText）。
+function LiveText({ text, streaming }: { text: string; streaming?: boolean }) {
+  return <span>{text}{streaming ? <span className="opacity-40 animate-pulse">▋</span> : null}</span>;
 }
 
 // 三阶段进度行已删（F2：进度改由卡片字段逐格点亮表达，不再单独呈现）
@@ -125,6 +135,24 @@ function DrawerField({ label, hint, justFilled, state = "done", action, children
 }
 const inputCls = "w-full border border-border rounded-md px-2 py-1 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring";
 
+// SSE 启用方式（URL 参数；默认无参数 = 走现有 fetch JSON，行为不变）：
+//   ?sse=mock —— MockEventSource 本地模拟，验证丝滑感（后端 SSE 未就绪时用）；
+//   ?sse=real —— 真 EventSource 连 /api/stream，连不上自动回退 fetch。
+const SSE_MODE =
+  typeof URLSearchParams !== "undefined"
+    ? new URLSearchParams(location.search).get("sse")
+    : null;
+
+// 空 card 骨架：SSE resolve_ticker 先到、card 还没建时，给 drawer 一个可点亮的壳。
+function emptyCard(): CardT {
+  return {
+    card_id: "", ticker: "", filer_type: "other", holding_reason_raw: "",
+    key_assumptions: [], broken_conditions: [], manual_check_items: [],
+    entry_anchor: null, next_verdict: null, position_cap_tier: null,
+    holding_horizon: null, confirmation: { confirmed_by_user: false },
+  };
+}
+
 // ──────────────────────────── App ────────────────────────────
 export default function App() {
   const [sid, setSid] = useState<string | null>(null);
@@ -140,7 +168,22 @@ export default function App() {
   const [justFilled, setJustFilled] = useState<Set<string>>(new Set());
   const [picks, setPicks] = useState<{ a: number[]; b: number[] }>({ a: [], b: [] });
   const [edits, setEdits] = useState<Record<string, any>>({});
+  const { streaming, toolStatus, start: startStream } = useStreamChat();
+  const liveIdRef = useRef<number | null>(null);
   // 自动滚动由 MessageScroller 接管（stick-to-bottom + ResizeObserver，防流式跳动）
+
+  // SSE tool_result → view patch → 状态。port 后端 _apply_tool_output（仅显示字段）。
+  // 注意：generate_menu 的 tool_result 形状（candidate_assumptions/candidate_mirrors）与
+  // App MenuT（assumptions/mirrors）不同——mock 不触发它，真后端联调时在此映射。
+  function applyStreamPatch(p: ViewPatch) {
+    if (p.ticker !== undefined) setCard((c) => ({ ...(c ?? emptyCard()), ticker: p.ticker! }));
+    if (p.tickerTitle !== undefined) setTickerTitle(p.tickerTitle);
+    if (p.card) setCard((c) => ({ ...p.card!, ticker: p.card!.ticker || c?.ticker || "" } as CardT));
+    if (p.menu !== undefined) setMenu(p.menu as MenuT | null);
+    if (p.openQuestions !== undefined) setOpenQs(p.openQuestions as OpenQ[]);
+    if (p.sources !== undefined) setSources(p.sources as Source[]);
+    if (p.stage !== undefined) setStage(p.stage as Stage);
+  }
 
   function applyView(v: View, opts?: { newUserMsg?: Msg }) {
     setStage(v.stage);
@@ -176,8 +219,13 @@ export default function App() {
     if (!text) { setError("说一句标的 + 理由"); return; }
     const um: Msg = { id: nextMid(), role: "user", text };
     setConv((c) => [...c, um]);
-    setStatus("正在抽取…（5–45s）");
     setError("");
+    if (SSE_MODE) { startStreamed(text, "start"); return; }
+    await startFetch(text);
+  }
+
+  async function startFetch(text: string) {
+    setStatus("正在抽取…（5–45s）");
     try {
       const r = await fetch("/api/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: "beta1", text }) });
       const v: View = await r.json();
@@ -200,10 +248,12 @@ export default function App() {
   async function send() {
     const el = document.getElementById("f-msg") as HTMLTextAreaElement;
     const text = el.value.trim();
-    if (!text || !sid) return;
+    if (!text) return;
+    if (!SSE_MODE && !sid) return;
     el.value = "";
     const um: Msg = { id: nextMid(), role: "user", text };
     setConv((c) => [...c, um]);
+    if (SSE_MODE) { startStreamed(text, "send"); return; }
     const pre = isUndecided(text) ? "正在生成候选…（5–45s）" : "处理中…";
     await postTurn({ text }, pre);
   }
@@ -217,7 +267,12 @@ export default function App() {
   }
 
   async function confirm() {
-    if (!sid) return;
+    if (!SSE_MODE && !sid) return;
+    if (SSE_MODE) { startStreamed("", "confirm"); return; }
+    await confirmFetch();
+  }
+
+  async function confirmFetch() {
     setStatus("正在入库…"); setError("");
     try {
       const r = await fetch(`/api/session/${sid}/confirm`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ edits }) });
@@ -226,6 +281,34 @@ export default function App() {
       setEdits({});
       applyView(v);
     } catch (e) { setError(String(e)); }
+  }
+
+  // SSE 流式：推一个空 assistant 流式气泡，逐 token 追加；tool_result 重建 card/menu/ticker；
+  // done 收尾。连不上（无后端）→ onFallback 回退对应 fetch 路径（移除空气泡避免重复）。
+  function startStreamed(text: string, kind: "start" | "send" | "confirm") {
+    const aid = nextMid();
+    liveIdRef.current = aid;
+    setConv((c) => [...c, { id: aid, role: "assistant", text: "", streaming: true, streamed: true }]);
+    setStatus(kind === "start" ? "正在抽取…" : kind === "confirm" ? "正在入库…" : "处理中…");
+    startStream({
+      userText: text, sid, kind,
+      onToken: (t) => setConv((c) => c.map((m) => (m.id === aid ? { ...m, text: m.text + t } : m))),
+      onToolCall: () => { /* toolStatus 由 hook 管，状态行渲染 */ },
+      onToolResult: (tool, result) => applyStreamPatch(applyToolResult(tool, result)),
+      onDone: () => {
+        setConv((c) => c.map((m) => (m.id === aid ? { ...m, streaming: false } : m)));
+        setStatus("");
+        liveIdRef.current = null;
+        if (kind === "confirm") setEdits({});
+      },
+      onFallback: () => {
+        setConv((c) => c.filter((m) => m.id !== aid));
+        liveIdRef.current = null;
+        if (kind === "start") void startFetch(text);
+        else if (kind === "send") void postTurn({ text }, isUndecided(text) ? "正在生成候选…（5–45s）" : "处理中…");
+        else void confirmFetch();
+      },
+    });
   }
 
   function setEdit(path: string, val: any) { setEdits((e) => ({ ...e, [path]: val })); }
@@ -241,7 +324,8 @@ export default function App() {
   const showStart = stage === "opening";
 
   // F2：字段逐格点亮。working=fetch 进行中→全字段 in-progress；否则 populated→done、空→pending。
-  const working = !!status && (status.includes("正在") || status.includes("处理中"));
+  // SSE 流式时 working=false：字段随 tool_result 实时点亮（不再全格骨架），状态由 toolStatus 行表达。
+  const working = !streaming && !!status && (status.includes("正在") || status.includes("处理中"));
   const rejectedAssumptions = openQs.filter((q) => q.field === "key_assumptions");
   const populated = card ? {
     ticker: !!card.ticker,
@@ -313,9 +397,20 @@ export default function App() {
                 <MessageScroller dep={conv} className="flex-1">
                   {conv.map((m) => (
                     <Message key={m.id} role={m.role === "assistant" ? "system" : "user"} sender={m.role === "assistant" ? "Thesis Watch" : undefined}>
-                      {m.role === "assistant" ? <Typewriter text={m.text} /> : m.text}
+                      {m.role === "assistant"
+                        ? m.streamed
+                          ? <LiveText text={m.text} streaming={m.streaming} />
+                          : <Typewriter text={m.text} />
+                        : m.text}
                     </Message>
                   ))}
+                  {/* 流式状态：tool_call → "正在查询…"；token 流中 → "正在输入…" */}
+                  {(streaming || toolStatus) && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground pl-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      {toolStatus ?? "正在输入…"}
+                    </div>
+                  )}
                   {/* 拒判降级橙边卡（验收点 4） */}
                   {card?.manual_check_items?.length ? <RefusalCard items={card.manual_check_items} /> : null}
                   {/* 菜单 option 卡（验收点 1） */}
@@ -410,8 +505,13 @@ export default function App() {
                 </DrawerField>
 
                 <DrawerField label="关键假设" state={fst(populated.assumptions)} action={actionText}>
-                  <div className="text-sm space-y-1">
-                    {card.key_assumptions.map((a) => <div key={a.id} className={justFilled.has("assumption_" + a.id) ? "just-filled rounded px-1" : ""}>{a.text}</div>)}
+                  <div className="text-sm space-y-1.5">
+                    {card.key_assumptions.map((a) => (
+                      <textarea key={a.id} rows={2} placeholder="假设文本"
+                        className={`${inputCls} resize-none ${justFilled.has("assumption_" + a.id) ? "just-filled" : ""}`}
+                        defaultValue={a.text}
+                        onChange={(e) => setEdit("assumption." + a.id + ".text", e.target.value)} />
+                    ))}
                   </div>
                   {rejectedAssumptions.length ? (
                     <div className="mt-2 text-[11px] text-muted-foreground border-t border-border/40 pt-1.5 space-y-0.5">
@@ -427,22 +527,31 @@ export default function App() {
                   <div className="text-sm space-y-2">
                     {card.broken_conditions.map((c) => {
                       const thr = c.threshold || {};
-                      const thrLabel = c.layer === "redline" && thr.amount_usd != null
-                        ? `≥ ${Number(thr.amount_usd).toLocaleString()} 美元`
-                        : thr.metric ? `${thr.metric} ${thr.operator || ""} ${thr.value ?? ""}`.trim() : "";
-                      const srcLabel = c.source_type === "sec_filing_field" ? "SEC filing" : (c.source_type || "");
+                      const thrKeys = Object.keys(thr);
                       return (
                         <div key={c.id} className={justFilled.has("cond_" + c.id) ? "just-filled rounded px-1" : ""}>
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <Badge variant={c.layer === "mirror" ? "softblue" : "amber"} className="shrink-0">{c.layer === "mirror" ? "M" : "R"}</Badge>
-                            <span>{c.text}</span>
+                          <div className="flex items-start gap-1.5">
+                            <Badge variant={c.layer === "mirror" ? "softblue" : "amber"} className="shrink-0 mt-1">{c.layer === "mirror" ? "M" : "R"}</Badge>
+                            <textarea rows={2} className={`${inputCls} resize-none flex-1`} defaultValue={c.text}
+                              onChange={(e) => setEdit("cond." + c.id + ".text", e.target.value)} />
                           </div>
-                          {(thrLabel || srcLabel) ? (
-                            <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
-                              {thrLabel ? <span>阈值：{thrLabel}</span> : null}
-                              {srcLabel ? <span>· {srcLabel}</span> : null}
+                          {thrKeys.length ? (
+                            <div className="mt-1 flex items-center gap-1.5 flex-wrap pl-5">
+                              <span className="text-[11px] text-muted-foreground">阈值</span>
+                              {thrKeys.map((k) => (
+                                <label key={k} className="flex items-center gap-0.5">
+                                  <span className="text-[10px] text-muted-foreground/70">{k}</span>
+                                  <input className={`${inputCls} py-0.5 px-1 text-xs w-24`} defaultValue={String(thr[k] ?? "")}
+                                    onChange={(e) => setEdit("cond." + c.id + ".threshold." + k, e.target.value)} />
+                                </label>
+                              ))}
                             </div>
                           ) : null}
+                          <div className="mt-1 flex items-center gap-1.5 pl-5">
+                            <span className="text-[11px] text-muted-foreground shrink-0">数据源</span>
+                            <input className={`${inputCls} py-0.5 px-1 text-xs`} defaultValue={c.source_type || ""}
+                              onChange={(e) => setEdit("cond." + c.id + ".source_type", e.target.value)} />
+                          </div>
                         </div>
                       );
                     })}

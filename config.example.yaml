@@ -48,6 +48,11 @@ llm:
     base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
     model: "glm-5.2-fast-preview"   # B4 升级后默认（W1 胜率 96% + W2 接受率 85.45% ≥ 85%；2026-08-02）；qwen-turbo 仅冒烟/回归（--model 覆盖）
     api_key_env: "ANTHROPIC_AUTH_TOKEN"
+  agent_model:
+    provider: openai
+    base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    model: "deepseek-v4-flash"   # Phase 1 重构：agent loop 主模型（refactor-spec §3）；FC 已验（Phase 0 smoke 2026-08-03）
+    api_key_env: "ANTHROPIC_AUTH_TOKEN"
   max_tokens: 8192
   # 限流防护（eval 批跑用；429 与其它错误分开计数进 per-call 指标表）
   request_interval_sec: 0.5

@@ -2,6 +2,7 @@
 
 > 基线 tag: `pre-refactoring-arch` (ee7c5b2) | 重构分支: `refactor/agent-loop`
 > 创建时间: 2026-08-03 | PM: caca + Notion AI
+> 更新时间: 2026-08-03 (讨论式流程确认后)
 
 ## 1. 问题陈述
 
@@ -28,7 +29,7 @@ LLM 只在指定节点被调用，做指定的事（抽 ticker、抽 card、生�
 用户输入 → OpenAI Agents SDK Agent Loop（DeepSeek V4-Flash）
   LLM 决定调什么 tool、什么时候调、怎么组合
   Tools 提供事实锚定（SEC 查询、结构化抽取、存储）
-  Guardrails 在 tool 执行前后插入确定性校验（R1-R9 红线）
+  Guardrails 在 tool 执行前后插入确定性校验（R1-R9 红线 + G1-G4 流程检查）
 ```
 
 ### 为什么不是"全 LLM"或"全确定性"
@@ -62,7 +63,7 @@ LLM 只在指定节点被调用，做指定的事（抽 ticker、抽 card、生�
 | condition_classify.py | ~250 | InfoType 分类 + is_v1_auto |
 | schema.py | ~120 | EntryExtraction / MirrorSpec / OpenQuestion |
 | models.py | ~260 | ThesisCard 等模型 |
-| tier_map.py | ~50 | ticker → 仓位档查表 |
+| tier_map.py | ~50 | ticker → 仓位档查表（保留但不用于录入 agent） |
 | store.py | ~150 | SQLite 存储 |
 | notify.py | ~200 | 邮件发送 |
 | fetchers/sec_edgar.py | — | SEC filing 抓取 |
@@ -117,15 +118,20 @@ LLM 只在指定节点被调用，做指定的事（抽 ticker、抽 card、生�
 - 现有 83 测试全过（guardrail 层不动）
 - entry_loop 测试重写（状态机没了，改为 agent loop 行为测试）
 
-### New acceptance cases
-| 输入 | 期望行为 |
-|---|---|
-| "我持有MCO，看好信用评级壁垒" | resolve_ticker("MCO") → 命中 Moody's → extract_card → 呈现卡 |
-| "我持有汇丰，因为股价稳健" | resolve_ticker("HSBC")（世界知识桥接）→ 命中 → extract_card → 呈现卡 |
-| "我持有那个做GPU的" | resolve_ticker("NVDA")（世界知识桥接）→ 命中 → 问确认 |
-| "无法确定" | generate_menu → 呈现候选 |
-| "确认" | save_card → 落库 |
-| 空输入（只有 ticker 没理由）| 问理由 |
+### New acceptance cases（5 步讨论式流程）
+
+详见 `docs/eval-refactor.md`（10 个 case，分 3 层）。核心验收：
+
+| 输入 | 期望行为 | 验证点 |
+|---|---|---|
+| "我开始关注 MCO" | resolve_ticker → 确认 → 问"为什么关注" | 探针仓措辞 |
+| "我持有 MCO" | resolve_ticker → 确认 → 问"为什么持有" | 已建仓仍完整讨论 |
+| 用户只说 thesis | Agent 逐字段引导 5 步讨论 | 不一口气全问 |
+| "不知道怎么估值" | Agent 根据公司业务推荐 2-3 个方法 | 提供选项不问开放题 |
+| "无法确定"破局条件 | generate_menu → 呈现候选 | 菜单有效 |
+| 缺安全边际就保存 | Guardrail 拦截 | 5 字段全填才能存 |
+| "我持有汇丰" | 翻译 → resolve_ticker → 用户确认 | 世界知识桥 + 确认 |
+| Agent 编造估值数据 | Guardrail 拦截 | 不允许 LLM 编数据 |
 
 ### Performance
 - 单票 ≤5min
@@ -134,4 +140,24 @@ LLM 只在指定节点被调用，做指定的事（抽 ticker、抽 card、生�
 
 ## 7. 红线不变
 
-R1-R9 红线在重构中完全不变。执行方式从"状态机里硬编码"改为"OpenAI Agents SDK guardrails + system prompt 双保险"。详见 `docs/guardrail-mapping.md`（待写）。
+R1-R9 红线在重构中完全不变。执行方式从"状态机里硬编码"改为"OpenAI Agents SDK guardrails + system prompt 双保险"。新增 G1-G4 流程检查 guardrail（必填字段、幻觉检查、key_assumptions 质量、用户确认）。详见 `docs/guardrail-mapping.md`。
+
+## 8. 讨论式流程设计决策（2026-08-03 确认）
+
+### 角色定位
+- 从"录入助手"改为"thesis 讨论伙伴"
+- 从"一口气抽取"改为"逐字段讨论"
+
+### 5 步讨论流程
+1. Thesis（为什么买）→ 用户说理由
+2. Key Assumptions（关键假设）→ Agent 拆解呈现 → **用户确认**
+3. 破局条件（mirror + redline）→ Agent 从假设生成 → 用户确认
+4. 安全边际（估值）→ Agent 提供选项 → 用户选
+5. 持仓周期 → 用户选
+
+### 关键决策
+- **不允许部分保存**：5 字段全填才能存（安全边际是建仓触发线）
+- **估值方法不硬编码映射表**：Agent 根据公司业务用判断力推荐，不机械套用分类
+- **仓位档不放进录入 agent**：是 caca 个人系统，依赖 OpenD，不是通用产品功能
+- **key_assumptions 用户确认**：不跳过假设确认直接生成破局条件
+- **探针仓 vs 已建仓**：两种用户都完整讨论 5 字段，措辞不同

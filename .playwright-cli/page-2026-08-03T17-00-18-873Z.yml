@@ -1,0 +1,62 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - heading "Thesis Watch" [level=1] [ref=e6]
+      - generic [ref=e7]: 持仓条件核对 Agent · 录入（判断权永远归你）
+  - generic [ref=e8]:
+    - main [ref=e9]:
+      - generic [ref=e10]:
+        - generic [ref=e84]:
+          - generic [ref=e86]: 我持有 MCO，因为评级双寡头的 moat 被 AI 恐慌错杀
+          - generic [ref=e88]:
+            - generic [ref=e89]: Thesis Watch
+            - generic [ref=e91]: ▋
+          - generic [ref=e92]:
+            - img [ref=e93]
+            - text: 正在输入…
+        - generic [ref=e95]:
+          - generic [ref=e96]:
+            - textbox "回复（如「确认」或「无法确定」要候选菜单）" [ref=e97]
+            - button [ref=e98] [cursor=pointer]:
+              - img [ref=e99]
+          - generic [ref=e101]: Enter 发送 · Shift+Enter 换行
+    - complementary [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - heading "确认卡 （字段可点改）" [level=2] [ref=e50]
+          - generic [ref=e52]: 1 / 9 字段
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - generic [ref=e103]: ✓
+            - text: 标的（ticker）
+            - generic [ref=e104]: i
+          - generic [ref=e56]:
+            - textbox [ref=e105]: MCO
+            - generic [ref=e106]:
+              - generic [ref=e107]: Moody's Corporation
+              - generic [ref=e108]: ✓ 一手核对
+        - generic [ref=e57]:
+          - generic [ref=e58]: 买入逻辑（原话）
+          - generic [ref=e59]: 待生成
+        - generic [ref=e60]:
+          - generic [ref=e61]: 关键假设
+          - generic [ref=e62]: 待生成
+        - generic [ref=e63]:
+          - generic [ref=e64]: 破局条件（两层）
+          - generic [ref=e65]: 待生成
+        - generic [ref=e69]:
+          - generic [ref=e70]:
+            - text: 录入估值锚
+            - generic [ref=e109]: i
+          - generic [ref=e71]: 待生成
+        - generic [ref=e75]:
+          - generic [ref=e76]:
+            - text: 仓位上限档
+            - generic [ref=e110]: i
+          - generic [ref=e77]: 待生成
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - text: 持仓周期
+            - generic [ref=e111]: i
+          - generic [ref=e80]: 待生成
+        - button "确认入库" [ref=e112] [cursor=pointer]

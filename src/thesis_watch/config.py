@@ -47,6 +47,15 @@ def get_task_model(cfg: dict) -> dict:
     return _llm(cfg).get("task_model", {}) or {}
 
 
+def get_agent_model(cfg: dict) -> dict:
+    """Agent loop 主模型配置（Phase 1 重构：OpenAI Agents SDK + deepseek-v4-flash）。
+    形如 {provider, base_url, model, api_key_env}。与 task_model 独立——agent loop 的
+    对话/决策模型，不复用 task_model（录入抽取仍走 task_model=glm，extract_card 复用
+    entry_agent.extract，两模型分工见 docs/refactor-spec.md §4 依赖说明）。
+    """
+    return _llm(cfg).get("agent_model", {}) or {}
+
+
 def get_llm_limits(cfg: dict) -> dict:
     """限流 / token / 并发上限。429 与其它错误分开计数（见 eval-report per-call 表）。"""
     ll = _llm(cfg)

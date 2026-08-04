@@ -38,6 +38,27 @@
 - **P5 字段对齐 + holding_horizon**：`thesis-card-schema.md` §4 完整对照表（11 台账字段 + 7 card 新增，0 遗留）+ §1 状态改「已对齐」+ §3 改写已执行；`models.ThesisCard` 加 `holding_horizon`（long≥3y/mid/trade≤3m，录入问用户不模型猜→open_question）；前端 drawer 加持仓周期 select。
 - **收尾**：`changelog.md` v0.0.12；`BLOCKERS.md` B2 记 SK海力士真实运行为首条；`eval-report.md` §7.1 逐字段（mirrors 25/25·0% / holding_reason_raw 4/5·20% / key_assumptions 18/25·28%，合计 47/55=85.45%，95% CI≈[76%,95%]，过线 0.45pp < 一个字段 1.82pp）；R9 脱敏清单 + `.gitignore` 机械对齐（`data/*.db`、`data/company_tickers.json`、`shots/`、`screenshots/`）。
 
+## Phase 1 重构（refactor/agent-loop 分支，2026-08-03，已 push 61c7f97）
+state machine → OpenAI Agents SDK agent loop（docs/refactor-spec.md）。本窗口落地 Phase 1：
+- 新建 `src/thesis_watch/orchestrator.py`：ThesisGuard agent（deepseek-v4-flash via 百炼 chat_completions；FC 已验 Phase 0 smoke）+ 5 `@function_tool`（resolve_ticker/extract_card/generate_menu/save_card/check_filing，复用现有 fetchers/entry_agent/menu/store/conditions/condition_classify/redline，guardrail 层零改动）+ R1-R3 `OutputGuardrail`（redline.find_violions，非 guard()——后者抛异常不返列表）+ 注入 `InputGuardrail`（关键词，run_in_parallel=False）。system prompt 逐字照抄 docs/agent-prompt.md。extract/save 拆 `_impl` 纯函数供单测。
+- config 小改：加 `get_agent_model` + `llm.agent_model` 条目（config.yaml + config.example.yaml）。requirements.txt 加 `openai-agents==0.19.2`（pydantic-ai 暂留——extract_card 复用 entry_agent.extract，重构完成后再删）。
+- `scripts/demo_phase1.py`：Case 1-4。Case 1-2 clean（探针仓问「关注」/已建仓问「持有」✅）；Case 3-4 跑通但 **deepseek-v4-flash 倾向自拆假设而不调 extract_card** → G3 未在 live demo 触发。impl 隔离单测全过（extract_card G3 + save_card G1/G4/G2）。
+- 83 测试绿（guardrail 层零改动，无 regress）。
+- **待 caca 定**：(1) 是否收紧 agent-prompt.md 强制调 extract_card（改文档先于代码）；(2) `frontend/chatbot/` 未跟踪残留（ai-chatbot 迁移放弃后未清，删是红线，待示下）；(3) Notion 看板状态更新中（作者给链接，R7 例外授权本板）。
+- SEC company_tickers 缓存：首次 demo 冷缓存+SEC fetch 偶发失败 → resolve 空转；重取成功落盘 `data/company_tickers.json`（gitignored），二次 demo 正常。
+
+## Phase 2 重构（refactor/agent-loop 分支，2026-08-03，已 push d823162）
+state machine 砍完，agent loop 接管 web 端：
+- **entry_loop.py 重写**：800→~190 行，state machine 全删。EntrySession 委托 orchestrator.agent（Runner.run_sync）；_mine 从 tool 输出派生 view（stage/card/menu/ticker/sources/stored）；_build_card_draft 复用 build_card_from_extraction 落 ThesisCard 草稿。保留 new_session/EntrySession/start/turn/confirm/card_draft surface（serve.py + run_w2.py import 不挂）。
+- **ticker_resolver.py**：删 fuzzy 子串+公司名模糊（Bug #3 根因），只留整串精确 ticker。
+- **serve.py**：3 endpoint URL 不变→调新 EntrySession；THESIS_DB_PATH 让 save_card 落同一 DB；/confirm 不再 upsert。
+- **清理**：删 dialogue.py；agent.py 删 harness 骨架（留 build_card_from_extraction + render_summary）。**llm.py + entry_agent + menu + pydantic-ai 保留**（caca 定 Phase 5 清——extract_card/generate_menu 复用 entry_agent/menu→llm.py，删会断 orchestrator）。
+- **_mine bug 修**：SDK 把 tool 返回 dict 序列化成 Python repr 字符串（非 JSON）存进 ToolCallOutputItem.raw['output']；改 ast.literal_eval（json.loads fallback）修。
+- 75 pytest 绿（guardrail 零改动；net -8 = 删 dialogue classify + 重写 agent/view/key_assumptions 测试）。
+- server+curl 验：MCO resolve +「为什么关注」✅；汇丰→HSBC（LLM 翻译+resolve+确认）✅。
+- **完整 5-step save 未收敛（非 bug）**：G3 条件3 把「毛利率≥40%」判为 thesis 同义复述→转 open_questions，agent 拒存（G1）。G3 质量门按设计工作；save_card 工具 Phase 1 隔离单测验过。完整 save 需 G3-passing thesis。
+- Phase 1 已 push（61c7f97）。Phase 2 未 commit。待 caca 浏览器过完整录入 + 示下 commit。
+
 ## 目检结果（SK海力士真实运行，2026-08-03）
 | 项 | 结果 | 证据 |
 |---|---|---|

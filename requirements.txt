@@ -8,9 +8,9 @@ pydantic>=2.0
 pydantic-ai
 pydantic-evals
 anthropic
-# 重构预备（2026-08-03）：entry_loop 状态机 → OpenAI Agents SDK agent loop；模型 glm-5.2 → deepseek-v4-flash（百炼）。
-# pydantic-ai 暂留（重构时再删 + 删 llm.py）；ticker_resolver / dialogue 会被 agent loop 替换，Bug #3/#4 不修。
-openai-agents
+# Phase 1 重构（2026-08-03）：state machine → OpenAI Agents SDK agent loop（deepseek-v4-flash）。
+# 重构完成后再删 pydantic-ai；Phase 1 期间 extract_card 仍复用 PydanticAI 抽取逻辑（entry_agent.extract）。
+openai-agents==0.19.2
 # W2 录入 loop 承载层（localhost 单页）：FastAPI + uvicorn（作者 2026-08-02 定）
 fastapi
 uvicorn
