@@ -73,8 +73,9 @@ def api_start(payload: dict) -> JSONResponse:
         raise HTTPException(400, "text 必填（一句话说标的 + 理由）")
     if _store.get_user(user_id) is None:
         raise HTTPException(400, f"未知 user_id={user_id}（预置 beta1–beta5）")
+    model = (payload.get("model") or "").strip() or None  # Stage 2：按会话选模型；None 走 config 默认
     sid = uuid.uuid4().hex[:12]
-    sess = new_session(user_id, _cfg)  # ticker 由 start 从一句话抽取
+    sess = new_session(user_id, _cfg, model_name=model)  # ticker 由 start 从一句话抽取
     _sessions[sid] = sess
     try:
         view = sess.start(text)

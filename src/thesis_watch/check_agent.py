@@ -134,17 +134,25 @@ def _build_model(agent_model: dict) -> OpenAIChatCompletionsModel:
     return OpenAIChatCompletionsModel(model=model_name, openai_client=client)
 
 
-def build_check_agent(cfg: dict, *, model_override: str | None = None) -> tuple[Any, str, str]:
+def build_check_agent(
+    cfg: dict,
+    *,
+    model_name: str | None = None,
+    model_override: str | None = None,
+) -> tuple[Any, str, str]:
     """构造核对 Agent（OpenAI Agents SDK + DeepSeek V4-Flash）。
     走 submit_verdicts tool 提交结构化判决（不用 output_type——DeepSeek + chat_completions
     用 output_type 会短路成空 CheckVerdicts 不先调 fetch；改 tool call 与 orchestrator 同款稳定）。
     懒构建（不在模块 import 时 SystemExit，避免阻断 orchestrator/tests 导入）。
-    返回 (agent, model_name, provider)；model_override 覆盖模型名（eval --model 用）。"""
+    返回 (agent, model_name, provider)；model_name / model_override 覆盖模型名
+    （Stage 2 起用 model_name 统一命名；model_override 保留兼容 eval --model / entry_cli；
+    两者都给时 model_name 优先）。"""
     am = get_agent_model(cfg)
-    if model_override:
-        am = {**am, "model": model_override}
+    override = model_name or model_override
+    if override:
+        am = {**am, "model": override}
     provider = am.get("provider", "openai")
-    model_name = am.get("model", "")
+    used_model = am.get("model", "")
     model = _build_model(am)
     agent = Agent(
         name="ThesisCheck",
@@ -152,7 +160,7 @@ def build_check_agent(cfg: dict, *, model_override: str | None = None) -> tuple[
         model=model,
         tools=[fetch_recent_filings, submit_verdicts],
     )
-    return agent, model_name, provider
+    return agent, used_model, provider
 
 
 def _conditions_for_llm(card: ThesisCard) -> list[dict]:

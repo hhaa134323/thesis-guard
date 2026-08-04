@@ -956,12 +956,17 @@ agent = Agent(
 )
 
 
-def build_agent(cfg: dict | None = None) -> Agent:
-    """显式按 cfg 重建 agent（Phase 2 接 serve / 测试用）。cfg=None 走默认 config.yaml。"""
-    if cfg is None:
+def build_thesis_guard_agent(
+    cfg: dict | None = None, model_name: str | None = None
+) -> Agent:
+    """显式按 cfg 重建 agent（Phase 2 接 serve / 测试用）。cfg=None 走默认 config.yaml。
+    model_name 覆盖 config.yaml 的 llm.agent_model.model（Stage 2 前端按会话选模型用）；
+    None 走配置默认。cfg=None 且 model_name=None → 返回模块级单例 agent（行为不变）。"""
+    if cfg is None and not model_name:
         return agent
     from agents import Agent as _A
-    model = _build_model(cfg)
+    eff_cfg = cfg if cfg is not None else _CFG
+    model = _build_model(eff_cfg, model_override=model_name)
     return _A(
         name="ThesisGuard",
         instructions=SYSTEM_PROMPT,
@@ -972,9 +977,14 @@ def build_agent(cfg: dict | None = None) -> Agent:
     )
 
 
+# 向后兼容别名（历史导出名；Stage 2 起改用 build_thesis_guard_agent）
+build_agent = build_thesis_guard_agent
+
+
 __all__ = [
     "SYSTEM_PROMPT",
     "agent",
+    "build_thesis_guard_agent",
     "build_agent",
     "resolve_ticker",
     "extract_card",

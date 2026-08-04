@@ -53,6 +53,8 @@ llm:
     base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
     model: "deepseek-v4-flash"   # Phase 1 重构：agent loop 主模型（refactor-spec §3）；FC 已验（Phase 0 smoke 2026-08-03）
     api_key_env: "ANTHROPIC_AUTH_TOKEN"
+    # Stage 2 模型参数化：build_thesis_guard_agent(model_name=...) 覆盖上面的 model；
+    # POST /api/session body 传 "model": "xxx" 按会话选模型（None 走本默认，行为不变）。
   max_tokens: 8192
   # 限流防护（eval 批跑用；429 与其它错误分开计数进 per-call 指标表）
   request_interval_sec: 0.5
