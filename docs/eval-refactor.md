@@ -216,3 +216,14 @@ caca 选 (b)：`submit_extraction` 收紧 typed schema（`ExtractionInput` 镜�
 - **filer_type / entry_anchor 满分** ✓。
 
 **结论**：typed schema（434e1e1）达 next_verdict 目标（0.0→0.75，主目标）+ filer_type/entry_anchor 满分；manual_items 未达（5-case 不确定，需全 15-case 确认，但根因是识别非结构）。**caca 已接受 (a)（2026-08-04）**：typed schema 为最终状态——next_verdict 修好是大头 + filer_type/entry_anchor 满分；manual_items 留作后续 prompt 引导（识别问题，非结构，不阻塞产品）。deepseek vs glm 持平 + manual_items 15-case 率待全量跑确认（可选，caca 定时机）。不自作主张切回 pydantic-ai/glm。
+
+### W2 主观盲评结果（2026-08-04，caca 盲评 deepseek vs glm）
+
+caca 填 `evals/blind_verdicts.yaml`（15 case × holding_reason_raw/key_assumptions/mirrors，A/B 匿名 deepseek+glm 随机左右；OLD qwen+glm 裁决备份 `.bak`）→ `python -m evals.run_l1 collect`。
+
+- **用户接受率 = 93.33%（42/45）** —— vs 旧基线 85.45%，**上升 ~8pp** ✅（门槛 ≥0.85，§9.1）。
+- **deepseek 胜率 = 51.11%（23/45）** > **glm 17.78%（8/45）** —— caca 盲评 deepseek 明显胜 glm ✅。
+- 3 个不接受 = GDXU（W1 里 deepseek+glm 都 extraction failed "other"，盲评 both-wrong，一致）。
+- 11 个 both-acceptable-no-pick（两模型都可接受，无偏好）。
+
+**结论**：port + typed schema 不只「不退」——W2 主观上 **deepseek 质量高于 glm**（caca 偏好 deepseek 的 holding_reason_raw/key_assumptions/mirrors），接受率 85.45%→93.33%。W1 objective（deepseek ≈ glm，next_verdict 0.75 修好 + filer_type/entry_anchor 满分）+ W2 subjective（deepseek 胜）合起来：**切 deepseek 决策正确**，重构（Phase 0-5）质量达标。manual_items（W1 识别问题）留作后续 prompt 引导，不阻塞。

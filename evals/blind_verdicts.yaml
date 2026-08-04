@@ -1,211 +1,210 @@
 - case: FDS
   fields:
     holding_reason_raw:
-      pick: A
-      acceptable: 'no'
-      reason: 并没有考虑到今年claude code这些AI Agent的崛起，可能会对FDS的业务产生影响。以及即使在这样对SaaS的冲击中，我为什么依旧看好FactSer
+      pick: 'B'
+      acceptable: 'yes'
+      reason: '其实A、B差不多，表述基本100%相似，只是B更像一个完整的句子'
     key_assumptions:
-      pick: A
-      acceptable: 'no'
-      reason: hoding_reson_raw中已经提到，AI Agent的崛起可能会对SaaS产生冲击，FactSet作为SaaS公司也会受到影响。reason本身是错误的，assumptions也是错误的
+      pick: 'A'
+      acceptable: 'yes'
+      reason: '相比于B更详细'
     mirrors:
-      pick: B
-      acceptable: 'no'
-      reason: 同理，reason错了，assumptions的反面也错了
+      pick: 'B'
+      acceptable: 'yes'
+      reason: '更加详细，并且对应的每个点拆开来'
 - case: HSBC
   fields:
     holding_reason_raw:
-      pick: tie
+      pick: 'A/B'
       acceptable: 'yes'
-      reason: A/B的表述完全一致
+      reason: '两个一样的内容'
     key_assumptions:
-      pick: A
+      pick: 'A'
       acceptable: 'yes'
-      reason: B中提及几乎无安全边际，这本身不是assumptions
+      reason: 'B是英文的输出'
     mirrors:
-      pick: B
+      pick: 'B'
       acceptable: 'yes'
-      reason: 由于assumptions的选择，这里mirrors选对应的内容
+      reason: 'A是英文的输出'
 - case: BRK.B
   fields:
     holding_reason_raw:
-      pick: tie
+      pick: 'A/B'
       acceptable: 'yes'
-      reason: A/B的表述完全一致
+      reason: '两个内容基本一样'
     key_assumptions:
-      pick: A
+      pick: 'B'
       acceptable: 'yes'
-      reason: A考虑到了后巴菲特时代的现实情况
+      reason: '远比A详细'
     mirrors:
-      pick: A
+      pick: 'B'
       acceptable: 'yes'
-      reason: 由于assumptions的选择，这里mirrors选对应的内容
+      reason: '远比A详细'
 - case: MCO
   fields:
     holding_reason_raw:
-      pick: tie
+      pick: 'A/B'
       acceptable: 'yes'
-      reason: A/B的表述完全一致。however，这里如果提及现实情况更好。其实我当时买入还考虑到AI Agent对于软件行业的冲击，我认为MCO是被误杀的标的，因为它本身的业务是评级，跟AI
-        Agent的冲击关系不大
+      reason: '两个一样'
     key_assumptions:
-      pick: B
+      pick: A'
       acceptable: 'yes'
-      reason: 表述非常完整，A的过于简略
+      reason: '拆分更细'
     mirrors:
-      pick: B
+      pick: 'A'
       acceptable: 'yes'
-      reason: 由于assumptions的选择，这里mirrors选对应的内容
+      reason: '拆分更细'
 - case: GOOGL
   fields:
     holding_reason_raw:
-      pick: tie
+      pick: 'B'
       acceptable: 'yes'
-      reason: A/B的表述完全一致
+      reason: '非常完整的表述'
     key_assumptions:
-      pick: A
+      pick: 'B'
       acceptable: 'yes'
-      reason: 其实A/B差不多，但是B最后说“不用FCF当估值线...”，这跟asumptions没有关系
+      reason: '拆分更细'
     mirrors:
-      pick: A
+      pick: 'A'
       acceptable: 'yes'
-      reason: 这次就不是选了assumptions对应的mirrors了，因为对应的mirrors写的不够详细
+      reason: '拆分更细'
 - case: NOW
   fields:
     holding_reason_raw:
-      pick: tie
-      acceptable: 'no'
-      reason: A/B的表述完全一致，但是没有提及AI相关的现实情况，其实我当时是因为看好它的AI业务才加入标的中的
+      pick: 'A/B'
+      acceptable: 'yes'
+      reason: '内容差不多'
     key_assumptions:
-      pick: tie
-      acceptable: 'no'
-      reason: reason错了，asumptions跟着错
+      pick: 'A'
+      acceptable: 'yes'
+      reason: '更详细'
     mirrors:
-      pick: tie
-      acceptable: 'no'
-      reason: reason错了，mirrors也跟着错了
+      pick: 'B'
+      acceptable: 'yes'
+      reason: '更详细，且更能被验证'
 - case: NFLX
   fields:
     holding_reason_raw:
-      pick: tie
+      pick: 'A/B'
       acceptable: 'yes'
-      reason: 两个内容完全一致
+      reason: '内容一样'
     key_assumptions:
-      pick: B
+      pick: 'A'
       acceptable: 'yes'
-      reason: B的表述更详细，但是不知道为什么会说GAAP利润干净、口径之类的表述，这跟assumptions没有关系
+      reason: '更详细'
     mirrors:
-      pick: A
+      pick: 'B'
       acceptable: 'yes'
-      reason: A看起来靠谱可验证一点，但是B怎么从信息中验证呢？
+      reason: '拆解的更详细，更能被验证'
 - case: CRM
   fields:
     holding_reason_raw:
-      pick: tie
+      pick: 'B'
       acceptable: 'yes'
-      reason: 两个内容完全一致，提到了agentforce这个我看好的ai业务
+      reason: 'A输出为空'
     key_assumptions:
-      pick: A
+      pick: 'B'
       acceptable: 'yes'
-      reason: A的表述更详细，B的表述过于简略
+      reason: 'A输出为空'
     mirrors:
-      pick: A
+      pick: 'B'
       acceptable: 'yes'
-      reason: A看起来更可验证
+      reason: 'A输出为空'
 - case: FIS
   fields:
     holding_reason_raw:
-      pick: tie
+      pick: 'A/B'
       acceptable: 'yes'
-      reason: 都可以
+      reason: '内容基本一样'
     key_assumptions:
-      pick: A
+      pick: 'B'
       acceptable: 'yes'
-      reason: A的表述更详细，B的表述过于简略
+      reason: '更详细'
     mirrors:
-      pick: B
+      pick: 'A'
       acceptable: 'yes'
-      reason: B的表述更详细，更能验证
+      reason: '更详细'
 - case: CGNX
   fields:
     holding_reason_raw:
-      pick: tie
+      pick: 'A'
       acceptable: 'yes'
-      reason: 内容完全一致，提到了我看好的AI业务
+      reason: '更详细'
     key_assumptions:
-      pick: B
+      pick: 'A'
       acceptable: 'yes'
-      reason: B的表述更详细，A的表述过于简略，但是B最后提到的EPS之类的表述跟assumptions没有关系
+      reason: '更详细'
     mirrors:
-      pick: B
+      pick: 'A'
       acceptable: 'yes'
-      reason: B的表述更详细，更能验证
+      reason: '更详细'
 - case: NVDA
   fields:
     holding_reason_raw:
-      pick: tie
+      pick: 'A/B'
       acceptable: 'yes'
-      reason: 内容完全一致
+      reason: '内容一样'
     key_assumptions:
-      pick: A
+      pick: 'B'
       acceptable: 'yes'
-      reason: A的表述更详细，B的表述过于简略
+      reason: '表述更完整'
     mirrors:
-      pick: A
+      pick: 'B'
       acceptable: 'yes'
-      reason: A的表述更详细，更能验证
+      reason: '更能被验证'
 - case: VEEV
   fields:
     holding_reason_raw:
-      pick: tie
-      acceptable: 'no'
-      reason: 内容完全一致，其实我当时买入是人为它在AI agent对软件行业的冲击中被误杀了，ai基本不可能获得veeva积累的生命科学数据
+      pick: 'A/B'
+      acceptable: 'yes'
+      reason: '内容基本一样'
     key_assumptions:
-      pick: tie
-      acceptable: 'no'
-      reason: reason错了，assumptions跟着错
+      pick: 'A'
+      acceptable: 'yes'
+      reason: '更详细'
     mirrors:
-      pick: tie
-      acceptable: 'no'
-      reason: reason错了，mirrors也跟着错了
+      pick: 'B'
+      acceptable: 'yes'
+      reason: '更详细，更能被验证'
 - case: QQQ
   fields:
     holding_reason_raw:
-      pick: tie
+      pick: 'A/B'
       acceptable: 'yes'
-      reason: 内容完全一致
+      reason: '内容一样'
     key_assumptions:
-      pick: A
+      pick: 'B'
       acceptable: 'yes'
-      reason: A的表述更详细，B的表述过于简略
+      reason: 'A输出为空'
     mirrors:
-      pick: B
+      pick: 'A'
       acceptable: 'yes'
-      reason: B的表述更详细，更能验证
+      reason: 'B输出为空'
 - case: SPGI
   fields:
     holding_reason_raw:
-      pick: tie
+      pick: 'A/B'
       acceptable: 'yes'
-      reason: 内容完全一致，提到了被AI错杀的情况
+      reason: '内容一样'
     key_assumptions:
-      pick: B
+      pick: 'A'
       acceptable: 'yes'
-      reason: B的表述更详细，更能验证
+      reason: '更详细'
     mirrors:
-      pick: A
+      pick: 'B'
       acceptable: 'yes'
-      reason: A的表述更详细，更能验证
+      reason: '更能被验证'
 - case: GDXU
   fields:
     holding_reason_raw:
-      pick: tie
-      acceptable: 'yes'
-      reason: 台账无对应内容，两模型均未生成，属正确拒答
+      pick: ''
+      acceptable: ''
+      reason: ''
     key_assumptions:
-      pick: tie
-      acceptable: 'yes'
-      reason: 台账无对应内容，两模型均未生成，属正确拒答
+      pick: ''
+      acceptable: ''
+      reason: ''
     mirrors:
-      pick: tie
-      acceptable: 'yes'
-      reason: 台账无对应内容，两模型均未生成，属正确拒答
+      pick: ''
+      acceptable: ''
+      reason: ''

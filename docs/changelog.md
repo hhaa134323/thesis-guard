@@ -2,6 +2,20 @@
 
 > 规则：每次迭代写清楚——依据哪条用户反馈、砍了什么、为什么砍。KILL 判据体检结果也记这里。
 
+## v0.0.21 — 2026-08-04 — W2 盲评结果：deepseek 胜 glm（接受率 93.33% ↑ vs 85.45%）
+
+**做了什么**
+- caca 盲评 `evals/blind_verdicts.yaml`（15 case × holding_reason_raw/key_assumptions/mirrors，A/B 匿名 deepseek+glm 随机左右；OLD qwen+glm 裁决备份 `blind_verdicts_2026-08-03_qwen_glm.bak.yaml`）→ `python -m evals.run_l1 collect` 出 W2。
+
+**结果**：
+- **用户接受率 93.33%（42/45）** —— vs 旧基线 85.45%，**上升 ~8pp** ✅（门槛 ≥0.85）。
+- **deepseek 胜率 51.11%（23/45）** > **glm 17.78%（8/45）** —— caca 盲评 deepseek 明显胜 glm ✅。
+- 3 不接受 = GDXU（W1 两模型都 extraction failed "other"，盲评 both-wrong 一致）；11 both-acceptable-no-pick。
+
+**结论**：port + typed schema 不只「不退」——W2 主观 deepseek 质量高于 glm（caca 偏好 deepseek 的抽取），接受率 85.45%→93.33%。W1 objective（deepseek ≈ glm，next_verdict 0.75 修好 + filer_type/entry_anchor 满分）+ W2 subjective（deepseek 胜）合：**切 deepseek 决策正确**，Phase 0-5 质量达标。manual_items 留作后续 prompt 引导。
+
+**状态**：Phase 5 收尾 + W2 验证完成。重构（Phase 0-5）质量达标。
+
 ## v0.0.20 — 2026-08-04 — submit_extraction typed schema（next_verdict 强制 {event,date}）+ caca 接受
 
 **做了什么**
