@@ -2,6 +2,18 @@
 
 > 规则：每次迭代写清楚——依据哪条用户反馈、砍了什么、为什么砍。KILL 判据体检结果也记这里。
 
+## v0.0.19 — 2026-08-04 — W1 extract eval 重跑（deepseek 移植后）+ 修复 coercion bug
+
+**做了什么**
+- **修 extract coercion bug（a07ca68）**：移植后 `_run_extract` 用 `submit_extraction(extraction: dict)`（loose schema）→ 模型把 `next_verdict`/`entry_anchor` 当 string 传 → `EntryExtraction(**raw)` ValidationError → extract 返 "other"（真台账输入全挂）。加 `_coerce_extraction`：str→{event}/{anchor_type:other,note} + key_assumptions/manual_items list[str]→[{text}]。验 FDS extract ok=True。
+- **W1 eval 重跑完成**（`run_l1.py run --allow-stale-gt`，PYTHONUTF8=1）：15 case × 2 模型（deepseek + glm，都走新 orchestrator `submit_extraction` 路径）。结果记 `docs/eval-refactor.md` 末尾「W1 extract eval 重跑」。
+
+**结果**：
+- deepseek vs glm（都新路径）：deepseek **不明显低于** glm——n_pass 14>13、manual_items 0.43 vs 0.46、next_verdict 0.0 vs None、filer_type 都 1.0。per caca 规则，deepseek 持平 glm。
+- **新路径 vs 旧 pydantic_ai（移植成本）**：manual_items 0.8→0.43-0.46、next_verdict 1.0→0/None（两模型都退）；filer_type 0.93→1.0（升）。根因：loose dict schema 不强制结构 → next_verdict 当 string 传无 date → `_date_match` 失败；manual_items 识别不全。**待 caca 定**（接受 tradeoff / 改进 schema typed fields / 试 output_type 但 B4 风险）——不自作主张切回 pydantic_ai/glm。
+
+**自测**：107 pytest 绿；W1 eval 全 30 调用完成（coercion 修后无 "other"，仅 GDXU 两模型都 other + CRM glm other——边缘 case）。W2 主观 deferred（caca 填 blind_verdicts.yaml）。
+
 ## v0.0.18 — 2026-08-04 — Phase 5 完成：extract/menu 移植 deepseek + 删 pydantic-ai
 
 **做了什么**

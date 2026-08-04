@@ -178,3 +178,22 @@ Phase 3 完成后，caca 测"丝滑感"——SSE streaming 是否像 Notion AI �
 
 **Regression**：107 测试绿（基线 75 + Phase 5 新增 32：orchestrator impl 16 + check_agent 16）。
 旧 entry_loop 状态机测试 Phase 2 已砍（83→75 差异），Phase 5 新增 agent-loop 行为测试补回（75→107）。
+
+### W1 extract eval 重跑（2026-08-04，Phase 5 移植 deepseek 后）
+
+`run_l1.py run --allow-stale-gt`（PYTHONUTF8=1；snapshot_ref 不匹配是 merge commit 形式差异，assets/ 内容 0 diff，GT 未过期）。15 case × 2 模型（deepseek-v4-flash + glm-5.2-fast-preview，头对头，都走新 orchestrator `submit_extraction` 路径）。
+
+**客观一致率（逐字段，总体）**：
+
+| 模型（新 orchestrator 路径） | filer_type | manual_items | next_verdict | n_pass |
+|---|---|---|---|---|
+| deepseek-v4-flash | **1.0** | 0.4286 | 0.0 | 14/15 |
+| glm-5.2-fast-preview | **1.0** | 0.4615 | None（ambiguous） | 13/15 |
+| 旧 glm（pydantic_ai output_type，8/3 基线） | 0.933 | 0.8 | 1.0 | 15/15 |
+
+**对比结论**：
+- **deepseek vs glm（都新路径，苹果对苹果）**：deepseek **不明显低于** glm——n_pass 14 > 13（deepseek 略稳，CRM 抽出 glm 没抽出）；manual_items 0.43 vs 0.46（deepseek 低 ~3pp，都低）；next_verdict 0.0 vs None（都差）。filer_type 都 1.0（满分）。per caca 规则（明显低于才记差距等定），deepseek 持平 glm，可记通过。
+- **新路径 vs 旧 pydantic_ai 路径（移植成本）**：新 `submit_extraction`（loose dict）比旧 `output_type`（schema 强制）**退步**——manual_items 0.8→0.43-0.46、next_verdict 1.0→0/None（两模型都退）；filer_type 0.93→1.0（反而升）。**根因**：loose dict schema 不强制结构 → 模型把 next_verdict 当 string 传（无 date，coerce 后 date=None → `_date_match` 失败 → 0.0）+ manual_items 识别不全；旧 `output_type` 强制 NextVerdict{event,date} 结构 → date 在 → 1.0。
+- **W2 主观接受率**：deferred——需 caca 填 `evals/blind_verdicts.yaml`（A/B 盲评 deepseek vs glm 的 holding_reason_raw/key_assumptions/mirrors）后跑 `run_l1.py collect`。`blind_pairs.yaml` 已导出（隐藏来源随机左右）。
+
+**待 caca 定**（移植质量成本）：新路径 manual_items/next_verdict 退步是 `submit_extraction` loose schema 的代价（换 drop pydantic-ai）。选项：(a) 接受 tradeoff（deepseek+orchestrator 栈简、filer_type 满分，但 manual_items/next_verdict 弱）；(b) 改进 `submit_extraction` schema（typed fields 强制 next_verdict{event,date} 结构）；(c) 试 `output_type=EntryExtraction`（schema 强制，但 B4 deepseek thinking 拒 tool_choice=required 风险）。**不自作主张切回 pydantic_ai/glm**——等 caca 定。
