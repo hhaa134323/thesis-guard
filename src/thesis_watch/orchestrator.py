@@ -282,10 +282,12 @@ def _extract_card_impl(text: str, ticker: str) -> dict:
     不过 → 转 open_questions（与 entry_loop v0.0.13 一致）；R1-R3 命中即抛 RedlineViolation。"""
     ext = _run_extract(_EXTRACT_AGENT, text, _CFG)
     if not ext.get("ok") or ext.get("extraction") is None:
+        # 抽取失败（LLM 输出不符 schema 等）→ 返友好错误，让 agent 告诉用户换种说法，
+        # 不把 ValidationError 甩给用户。raw_text 供 agent 引用用户原话。
         return {
             "ok": False,
-            "status": ext.get("status"),
-            "error": ext.get("error") or "抽取失败",
+            "error": "extraction_failed",
+            "raw_text": text,
         }
     e = ext["extraction"]  # schema.EntryExtraction
     holding_reason_raw = e.holding_reason_raw or text

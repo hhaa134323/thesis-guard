@@ -21,7 +21,6 @@ from .models import (
     Assumption,
     EntryAnchorData,
     FilerType,
-    ManualCheckItem,
     ThesisCard,
     to_dict,
 )
@@ -50,6 +49,12 @@ def _parse_tool_output(s: str) -> Any:
         except Exception:
             continue
     return {"raw": s}
+
+
+def _sse(event: str, data: dict) -> str:
+    """格式化一个 SSE 事件字符串（event: <name> + data: <json> + 空行结束）。"""
+    nl = chr(10)
+    return f"event: {event}{nl}data: {json.dumps(data, ensure_ascii=False)}{nl}{nl}"
 
 
 @dataclass
@@ -118,6 +123,57 @@ class EntrySession:
         self._mine(result.new_items)
         reply = result.final_output if isinstance(result.final_output, str) else str(result.final_output or "")
         return self._view(assistant=reply)
+
+    async def stream_run(self, user_text: str):
+        """SSE 流式跑一轮：yield SSE 事件字符串（token/tool_call/tool_result/done/error）。
+        token = response.output_text.delta；tool_call/tool_result = RunItem tool_called/tool_output。
+        流完更新 history + _mine（与 _run 一致，供后续 /turn 或 view 用）。现有 JSON /turn 不动。"""
+        from agents import Runner
+
+        self.metrics["turns"] += 1
+        input_items = (user_text if not self.history
+                       else self.history + [{"role": "user", "content": user_text}])
+        try:
+            result = Runner.run_streamed(_thesis_agent, input_items, max_turns=_MAX_TURNS)
+        except Exception as e:  # noqa: BLE001
+            self.error = f"{type(e).__name__}: {str(e)[:200]}"
+            yield _sse("error", {"message": f"出错：{type(e).__name__}"})
+            yield _sse("done", {})
+            return
+        last_tool: str | None = None
+        async for ev in result.stream_events():
+            tname = type(ev).__name__
+            if tname == "RawResponsesStreamEvent":
+                d = ev.data
+                if getattr(d, "type", None) == "response.output_text.delta":
+                    delta = getattr(d, "delta", "")
+                    if delta:
+                        yield _sse("token", {"text": delta})
+            elif tname == "RunItemStreamEvent":
+                if ev.name == "tool_called":
+                    raw = getattr(ev.item, "raw_item", None)
+                    name = (getattr(raw, "name", None)
+                            or (raw.get("name") if isinstance(raw, dict) else None))
+                    args = getattr(raw, "arguments", None)
+                    if isinstance(args, str):
+                        try:
+                            args = json.loads(args)
+                        except Exception:
+                            pass
+                    if name:
+                        last_tool = name
+                        yield _sse("tool_call", {"tool": name, "args": args})
+                elif ev.name == "tool_output":
+                    raw = getattr(ev.item, "raw_item", None)
+                    out = (raw.get("output") if isinstance(raw, dict)
+                           else getattr(raw, "output", None))
+                    parsed = _parse_tool_output(out) if isinstance(out, str) else out
+                    yield _sse("tool_result", {"tool": last_tool, "result": parsed})
+                    last_tool = None
+        # 流完：更新 history + mine（保持与 _run 一致的 view 状态）
+        self.history = result.to_input_list()
+        self._mine(result.new_items)
+        yield _sse("done", {})
 
     def _mine(self, items) -> None:
         """从本轮 tool 调用结果派生 view 字段（stage/card/menu/ticker/sources）。
@@ -207,10 +263,12 @@ class EntrySession:
                                 threshold=m.get("threshold"),
                                 source_type=m.get("source_type", ""))
                      for m in (ext_out.get("mirrors") or [])],
-            manual_items=[ManualCheckItem(text=mi.get("text", ""),
-                                          reason=mi.get("reason", "价格图形型"),
-                                          cadence=mi.get("cadence", "monthly"))
-                          for mi in (ext_out.get("manual_items") or [])],
+            # dict（非 models.ManualCheckItem dataclass 实例）——Pydantic 才能把它 coerce
+            # 成 schema.ManualCheckItem；传 dataclass 实例会 ValidationError（Bug 修 2026-08-04）
+            manual_items=[{"text": mi.get("text", ""),
+                            "reason": mi.get("reason", "价格图形型"),
+                            "cadence": mi.get("cadence", "monthly")}
+                           for mi in (ext_out.get("manual_items") or [])],
         )
         card, _rejected = build_card_from_extraction(
             ext, user_id=self.user_id, ticker=(self.ticker or ""),

@@ -17,7 +17,7 @@ import uuid
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import load_config
@@ -109,6 +109,29 @@ def api_confirm(sid: str, payload: dict) -> JSONResponse:
     view["session_id"] = sid
     # save_card 已在 agent loop 内落库（orchestrator._get_store = 本 DB）；view 自带 stored/card_id
     return JSONResponse(view)
+
+
+@app.post("/api/session/{sid}/stream")
+async def api_stream(sid: str, payload: dict):
+    """SSE 流式 turn：逐 token 推 agent 回复 + tool_call/tool_result 事件（Phase 3）。
+    现有 JSON /turn 不动；前端切到本端点即可逐字显示（打字机效果）。事件：
+      event: token       data: {"text": "..."}
+      event: tool_call   data: {"tool": "resolve_ticker", "args": {...}}
+      event: tool_result data: {"tool": "resolve_ticker", "result": {...}}
+      event: done        data: {}
+    """
+    sess = _sessions.get(sid)
+    if sess is None:
+        raise HTTPException(404, "session 不存在（服务可能已重启）")
+    text = (payload.get("text") or "").strip()
+    if not text:
+        raise HTTPException(400, "text 必填")
+
+    async def gen():
+        async for sse in sess.stream_run(text):
+            yield sse
+    return StreamingResponse(gen(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 # 根挂载（必须在所有 /api/* 路由之后注册，否则会吞掉 /api）：
