@@ -2,6 +2,25 @@
 
 > 规则：每次迭代写清楚——依据哪条用户反馈、砍了什么、为什么砍。KILL 判据体检结果也记这里。
 
+## v0.0.17 — 2026-08-04 — Phase 5（部分）：agent-loop 行为测试 + 10 case 验收 + 文档；清理旧代码 blocked
+
+**做了什么**
+- **新增 32 个 agent-loop 行为测试**（替代 Phase 2 砍掉的 entry_loop 状态机测试，补回 83→75 的缺口并超）：
+  - `tests/test_orchestrator_impl.py`（16）：`_extract_card_impl` G3（条件3 is_paraphrase / 条件4 is_v1_auto / P3 make_mirror 缺阈值 / 对应假设被拒 / R1-R3 红线 / 抽取失败友好错误）+ `_save_card_impl`（G1 必填 / G4 用户确认 / G2 安全边际完整 / horizon 合法 / R1-R3 / happy path 落库）。`_run_extract` + `_get_store` monkeypatch，不触网不调 LLM。
+  - `tests/test_check_agent.py`（16）：`_map_status`（triggered/watch/untriggered/未知兜底）+ `_verdict_from_dict` + `run_check` E1-E8 全分支（mock `Runner.run_sync` 注入 ctx 状态：E1 fetch 失败 / E7 跳过 fetch / 无 filings 全 untriggered / E7 未提交判决 / 正常三态 / E8 redline / E3 evidence 回放不过 / E4 缺 cond / E6 429）。
+- **10 case 验收**：`docs/eval-refactor.md` 末尾加「验收结果」表。pytest 离线覆盖 Case 4/6/7/10 + 1/2/8/9 确定性部分；纯 live/浏览器 UX（Case 3/5 + 各 case UX/翻译）列给 caca 验收。性能：check_agent 84.6s（≤5min ✓）。
+- **文档**：README 加「架构」节（agent loop + DeepSeek + 5 tools + check_agent 三态 + 仍走 PydanticAI 待清理）+ 项目状态更新到 Phase 5；refactor-spec §5 Phase 表加状态列 + Phase 5 进度说明，§6 regression 83→107；BLOCKERS 加 B6（清理旧代码 blocked）。
+- **未做（blocked）**：删 `llm.py` / `entry_agent.py` / `menu.py` / `pydantic-ai`。任务前提「extract_card/generate_menu 已不依赖，orchestrator 内置」不成立——orchestrator 仍 import entry_agent/menu（工具内部委托 PydanticAI + glm-5.2-fast-preview）。删除需先移植到 OpenAI Agents SDK，含「提取模型选 glm（W1/W2 eval 验过 96%）还是切 deepseek」的产品决策 + live 验证（网络当时不通）。**不擅自做**——core extract_card 是 live-verified 流程，移植需 caca 定模型 + 网络通时 live 验。
+
+**依据**
+- Phase 5 任务（10 case 验收 + 测试重做 + 清理旧代码 + 文档）。10 case 验收 + 测试重做 + 文档可离线做（无网络依赖），已落地；清理旧代码 blocked（见 BLOCKERS B6）。
+- 测试覆盖缺口：`_extract_card_impl` / `_save_card_impl` / `check_agent` 三态+E1-E8 此前无专属单测（Phase 1 impl 隔离测试未 commit），Phase 5 补齐。
+
+**自测**
+- 107 pytest 绿（75 基线 + 32 新增，2.5s）。新测试全离线（mock LLM/Runner/store/SEC），无网络无 flaky。
+
+**状态**：Phase 5 部分——eval + 测试 + 文档 ✅；清理旧代码 ⛔ blocked（B6），待 caca 定提取模型 + 网络通。Phase 5 不算全部完成。
+
 ## v0.0.16 — 2026-08-04 — Phase 4：check_agent agent loop 重构（pydantic_ai → OpenAI Agents SDK + DeepSeek）
 
 **做了什么**

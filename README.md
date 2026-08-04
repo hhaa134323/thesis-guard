@@ -4,10 +4,22 @@
 
 ## 项目状态
 
-- 阶段：**W2 启动**（录入对话 loop P0，承载 = localhost 单页；→ 核对 agent loop → W2 eval，带断点 ①②，见 `docs/PRD.md` §14）
-- 当前版本：v0.0.9（2026-08-02 W2 §2.3+§2.4+§2.5：核对 agent + 输出层 + W2 eval harness）
-- 日期：2026-08-02
-- 状态详情见 `docs/changelog.md`，阻塞项见 `docs/BLOCKERS.md`
+- 阶段：**重构 Phase 5**（录入 + 核对 agent loop 已落地；Phase 0-4 完成，Phase 5 验收 + 测试重做 + 清理进行中）
+- 当前版本：v0.0.17（2026-08-04 Phase 5：agent-loop 行为测试 + 10 case 验收 + 文档）
+- 日期：2026-08-04
+- 分支：`refactor/agent-loop`（Phase 0-4 已 push；Phase 5 进行中）
+- 状态详情见 `docs/changelog.md`，验收见 `docs/eval-refactor.md`，重构规格见 `docs/refactor-spec.md`，阻塞项见 `docs/BLOCKERS.md`
+
+## 架构（2026-08-04 重构后）
+
+录入 + 核对都从「状态机驱动」改为「LLM 指挥 + 确定性校验」agent loop（`docs/refactor-spec.md`）：
+
+- **框架**：OpenAI Agents SDK 0.19.2（`set_default_openai_api("chat_completions")` + `OpenAIChatCompletionsModel`）
+- **模型**：DeepSeek V4-Flash（百炼兼容端点 `https://dashscope.aliyuncs.com/compatible-mode/v1`）
+- **录入 agent**（`orchestrator.py`）：5 个 `@function_tool`——`resolve_ticker`（SEC 精确匹配，fuzzy 已删）/ `extract_card`（抽 key_assumptions + mirrors，G3 质量校验）/ `generate_menu`（破条件候选）/ `save_card`（G1 必填 + G4 用户确认 + G2 安全边际 + R1-R3）/ `check_filing`。双 guardrail：OutputGuardrail（R1-R3 redline）+ InputGuardrail（防用户诱导）。承载层 `entry_loop.py`（session + view 序列化）+ `serve.py`（FastAPI + SSE streaming）。
+- **核对 agent**（`check_agent.py`，Phase 4）：2 个 `@function_tool`——`fetch_recent_filings`（复用 `sec_edgar`）/ `submit_verdicts`（结构化输出，替代 output_type——DeepSeek 用 output_type 会短路成空 CheckVerdicts 不先调 fetch）。输出三态 triggered/watch/untriggered + 证据；per-verdict `redline.guard` R1-R3；E1-E8 + `fetch_called` 诚实区分。**不是 HOLD/ADD/CUT/PASS**（那是作者个人 Notion 复查 skill v4，不是产品模块；HOLD/ADD/CUT/PASS 踩 R1/R2/R6 红线）。
+- **guardrail 层零改动**：`redline.py` / `conditions.py` / `condition_classify.py` / `schema.py` / `models.py` / `store.py` / `fetchers/`。
+- **仍走 PydanticAI（Phase 5 清理中）**：`entry_agent.py` / `menu.py` / `llm.py`——`extract_card` / `generate_menu` 工具内部仍委托 PydanticAI + glm-5.2-fast-preview（task_model）。删除需先移植到 OpenAI Agents SDK，含「提取模型选 glm（eval 验过 96%）还是切 deepseek」的产品决策——未做，见 `docs/BLOCKERS.md`。
 
 ## 产品定位（一句话）
 
