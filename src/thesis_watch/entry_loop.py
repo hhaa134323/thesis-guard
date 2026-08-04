@@ -141,35 +141,41 @@ class EntrySession:
             yield _sse("done", {})
             return
         last_tool: str | None = None
-        async for ev in result.stream_events():
-            tname = type(ev).__name__
-            if tname == "RawResponsesStreamEvent":
-                d = ev.data
-                if getattr(d, "type", None) == "response.output_text.delta":
-                    delta = getattr(d, "delta", "")
-                    if delta:
-                        yield _sse("token", {"text": delta})
-            elif tname == "RunItemStreamEvent":
-                if ev.name == "tool_called":
-                    raw = getattr(ev.item, "raw_item", None)
-                    name = (getattr(raw, "name", None)
-                            or (raw.get("name") if isinstance(raw, dict) else None))
-                    args = getattr(raw, "arguments", None)
-                    if isinstance(args, str):
-                        try:
-                            args = json.loads(args)
-                        except Exception:
-                            pass
-                    if name:
-                        last_tool = name
-                        yield _sse("tool_call", {"tool": name, "args": args})
-                elif ev.name == "tool_output":
-                    raw = getattr(ev.item, "raw_item", None)
-                    out = (raw.get("output") if isinstance(raw, dict)
-                           else getattr(raw, "output", None))
-                    parsed = _parse_tool_output(out) if isinstance(out, str) else out
-                    yield _sse("tool_result", {"tool": last_tool, "result": parsed})
-                    last_tool = None
+        try:
+            async for ev in result.stream_events():
+                tname = type(ev).__name__
+                if tname == "RawResponsesStreamEvent":
+                    d = ev.data
+                    if getattr(d, "type", None) == "response.output_text.delta":
+                        delta = getattr(d, "delta", "")
+                        if delta:
+                            yield _sse("token", {"text": delta})
+                elif tname == "RunItemStreamEvent":
+                    if ev.name == "tool_called":
+                        raw = getattr(ev.item, "raw_item", None)
+                        name = (getattr(raw, "name", None)
+                                or (raw.get("name") if isinstance(raw, dict) else None))
+                        args = getattr(raw, "arguments", None)
+                        if isinstance(args, str):
+                            try:
+                                args = json.loads(args)
+                            except Exception:
+                                pass
+                        if name:
+                            last_tool = name
+                            yield _sse("tool_call", {"tool": name, "args": args})
+                    elif ev.name == "tool_output":
+                        raw = getattr(ev.item, "raw_item", None)
+                        out = (raw.get("output") if isinstance(raw, dict)
+                               else getattr(raw, "output", None))
+                        parsed = _parse_tool_output(out) if isinstance(out, str) else out
+                        yield _sse("tool_result", {"tool": last_tool, "result": parsed})
+                        last_tool = None
+        except Exception as e:  # noqa: BLE001 — 流式中途出错（网络/guardrail/SDK）兜底，发 error+done 不断连
+            self.error = f"{type(e).__name__}: {str(e)[:200]}"
+            yield _sse("error", {"message": f"出错：{type(e).__name__}"})
+            yield _sse("done", {})
+            return
         # 流完：更新 history + mine（保持与 _run 一致的 view 状态）
         self.history = result.to_input_list()
         self._mine(result.new_items)

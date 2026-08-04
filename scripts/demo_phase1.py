@@ -6,7 +6,7 @@
 
 终端看 agent 每轮回复 + tool 调用 trace（验证 agent 真调 extract_card / G3 触发）。
 依赖：openai-agents + DeepSeek V4-Flash（DashScope）+ SEC EDGAR 网络。
-extract_card 内部仍走 PydanticAI + glm（复用 entry_agent，重构完成后再切）。
+extract_card 走 OpenAI Agents SDK + deepseek（Phase 5 移植自 entry_agent，pydantic-ai 已删）。
 """
 from __future__ import annotations
 

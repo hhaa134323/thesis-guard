@@ -48,10 +48,10 @@ def get_task_model(cfg: dict) -> dict:
 
 
 def get_agent_model(cfg: dict) -> dict:
-    """Agent loop 主模型配置（Phase 1 重构：OpenAI Agents SDK + deepseek-v4-flash）。
-    形如 {provider, base_url, model, api_key_env}。与 task_model 独立——agent loop 的
-    对话/决策模型，不复用 task_model（录入抽取仍走 task_model=glm，extract_card 复用
-    entry_agent.extract，两模型分工见 docs/refactor-spec.md §4 依赖说明）。
+    """Agent loop 主模型配置（OpenAI Agents SDK + deepseek-v4-flash）。
+    形如 {provider, base_url, model, api_key_env}。Phase 5 后 extract / generate_menu 也走
+    agent_model（移植自 entry_agent/menu，pydantic-ai 已删）。run_l1 eval 用 model_override
+    在同一端点跑多模型对比（deepseek vs glm）。
     """
     return _llm(cfg).get("agent_model", {}) or {}
 

@@ -115,7 +115,7 @@ LLM 只在指定节点被调用，做指定的事（抽 ticker、抽 card、生�
 **Phase 5 进度（2026-08-04）**：
 - ✅ 测试重做：新增 32 个 agent-loop 行为测试（`tests/test_orchestrator_impl.py` 16 + `tests/test_check_agent.py` 16），覆盖 extract_card G3 / save_card G1·G4·G2 / check_agent 三态 + E1-E8。75 → 107 全绿。
 - ✅ 10 case 验收：pytest 离线覆盖 Case 4/6/7/10 + 1/2/8/9 的确定性部分（resolve_ticker / G4）；纯 live/浏览器 UX（Case 3/5 + 各 case 的 UX/翻译）列给 caca 验收。结果见 `docs/eval-refactor.md` 末尾「验收结果」。
-- ⛔ 清理旧代码（删 llm.py / entry_agent.py / menu.py / pydantic-ai）：**未做，blocked**。前提不成立——orchestrator 仍 import entry_agent/menu（extract_card/generate_menu 工具内部委托 PydanticAI + glm-5.2-fast-preview）。删除需先移植到 OpenAI Agents SDK，含「提取模型选 glm（W1/W2 eval 验过 96%）还是切 deepseek」的产品决策 + live 验证（网络当时不通，见 BLOCKERS B6）。
+- ✅ 清理旧代码（删 llm.py / entry_agent.py / menu.py / pydantic-ai）：**已做**。caca 定切 deepseek；移植 extract+menu 到 OpenAI Agents SDK（`submit_extraction` / `submit_menu` tool call，不用 output_type——避 B4 thinking 冲突 + 短路空结构）；prompts + `MenuMirror`/`MenuCandidates` + `filter_executable_mirrors` 移入 `orchestrator.py`；删 `pydantic-ai`/`pydantic-evals`/`anthropic` 依赖；更新 5 consumer（`entry_cli` / `tests/test_menu_filter` / `scripts/day1_fds_validation` / `evals/run_l1` / `orchestrator`）；107 测试绿；live 验 deepseek extract + G3 双层 ok；W1 eval 重跑 deepseek vs glm 头对头确认不退（见 BLOCKERS B6 已解除）。
 
 ## 6. 验收标准
 

@@ -17,12 +17,16 @@ from __future__ import annotations
 
 import datetime
 import os
+import time
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from agents import (
     Agent,
     GuardrailFunctionOutput,
+    Runner,
+    RunContextWrapper,
     function_tool,
     input_guardrail,
     output_guardrail,
@@ -30,6 +34,7 @@ from agents import (
 )
 from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
 from openai import AsyncOpenAI
+from pydantic import BaseModel, Field
 
 from . import redline
 from .conditions import default_redline_pack, is_paraphrase, make_mirror
@@ -37,14 +42,11 @@ from .condition_classify import classify_condition, is_v1_auto, v1_gap_reasons
 from .config import (
     get_agent_model,
     get_forbidden_extra,
+    get_llm_limits,
     get_redline_thresholds,
     load_config,
 )
-from .entry_agent import build_agent as _build_extract_agent
-from .entry_agent import extract as _run_extract
 from .fetchers import sec_edgar, ticker_resolver
-from .menu import build_menu_agent as _build_menu_agent
-from .menu import filter_executable_mirrors, generate_menu as _run_generate_menu
 from .models import (
     Assumption,
     Confirmation,
@@ -55,6 +57,7 @@ from .models import (
     ThesisCard,
     to_dict,
 )
+from .schema import EntryExtraction
 
 # 百炼兼容端点用 chat_completions API（不支持 Responses API），SDK 须切默认。
 set_default_openai_api("chat_completions")
@@ -72,9 +75,11 @@ def _now_iso() -> str:
     return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
 
 
-# --- 模型构建（agent loop 主模型；与 task_model=glm 分工，见 config.get_agent_model） ---
-def _build_model(cfg: dict) -> OpenAIChatCompletionsModel:
+# --- 模型构建（agent loop 主模型 + extract/menu 移植后共用，Phase 5 drop glm） ---
+def _build_model(cfg: dict, *, model_override: str | None = None) -> OpenAIChatCompletionsModel:
     am = get_agent_model(cfg)
+    if model_override:
+        am = {**am, "model": model_override}
     base_url = am.get("base_url")
     model_name = am.get("model")
     api_key = os.environ.get(am.get("api_key_env", ""), "")
@@ -86,9 +91,249 @@ def _build_model(cfg: dict) -> OpenAIChatCompletionsModel:
     return OpenAIChatCompletionsModel(model=model_name, openai_client=client)
 
 
+# =========================================================================== #
+# extract / menu —— Phase 5 移植：pydantic_ai + glm → OpenAI Agents SDK + deepseek
+# （drop pydantic-ai/glm/entry_agent/menu/llm）。走 submit_extraction / submit_menu tool
+# call 提交结构化输出（不用 output_type——DeepSeek thinking 模式拒 tool_choice=required，
+# 见 BLOCKERS B4；且 output_type 会让模型短路成空结构不调工具，见 check_agent submit_verdicts 同款）。
+# prompts 移自 entry_agent.SYSTEM_PROMPT / menu.MENU_PROMPT（删原文件后此处为唯一副本，
+# 末行微调点名 submit_*_tool）。G3 / filter_executable_mirrors 确定性逻辑不变。
+# =========================================================================== #
+
+EXTRACT_PROMPT = """你是持仓条件录入助手。从用户给的 thesis 描述抽取结构化信息，输出 EntryExtraction 对象。
+
+红线（不可违反）：
+- 不给买卖/仓位建议、不预测涨跌、不出现「看涨/看跌/建议关注」。
+- 每条事实须有源；文本里没有的不要编造，宁可留空或 None。
+- 只整理条件，不下投资结论。
+
+字段：
+- ticker：用户持有的股票代码（如 MCO/HSBC/NVDA/NFLX）。从用户一句话里识别标的；说不清返 null。
+- holding_reason_raw：用户原话买它的理由。**只放买入理由，不混策略表述**（如「策略：逆势、越跌越买」是操作策略不是买入理由，弃）。
+- key_assumptions：关键假设——**只放 moat + 不被颠覆的理由**（结构性主题）：AI 替代 / 监管 / 利率与久期 / 竞争格局 / 客户集中度。**估值机械（EPS / FCF / DCF / SBC / 倍数口径 / reverse DCF）不进这里**——属于 entry_anchor.note，进不了 anchor 的弃置。
+  **四条合格判定（每条候选假设逐条过，任一不过 → 不写 key_assumptions，改写进 open_questions 向用户追问，宁缺勿凑）**：
+    1. 是关于**这门生意**的判断——不是估值口径、不是计算方法、不是价格形态
+    2. **可能为假**——存在一个可想象的世界状态，使它不成立
+    3. **比用户原话多出信息**——同义复述、拆分扩写、换词重写，一律不合格
+    4. **能对应至少一条带可判定阈值的镜像**——对应不上说明它不可证伪，不合格
+  正例（合格）：「切换成本锁定客户，竞品难蚕食份额」「监管收紧会压缩核心业务利润率」
+  反例（不合格→open_question）：「估值用 P/E 25 倍」（估值口径，违反 1）/「看好服务收入持续高增」（同义复述原话，违反 3）
+  **输入隔离**：抽 key_assumptions 时不得把「加仓价 / 安全边际」类内容当输入——该段只流向 entry_anchor。
+- open_questions：四关拒掉的候选假设改写于此（field=key_assumptions，reason=哪条不过，text=原候选）；条件 3（同义复述）另由 harness 确定性兜底（is_paraphrase）。
+- mirrors：每条假设对应的镜像破局条件。每条须含 assumption_text（关联对应假设原文）+ mirror_text（破局事件）+ **threshold（可判定数值/布尔事件，如 {"metric":"service_rev_yoy","operator":"<","value":0} 或 {"event":"ceo_departed","occurred":false}）+ source_type（sec_filing_field / news_headline / press_release_text / manual）**——P3 任一缺失则该镜像不可判定，harness make_mirror 不生成（转 open_questions），不要给残缺镜像。
+- manual_items：价格图形型等不可自动核对项。
+- filer_type：申报方类型（美国本土 10-K → domestic_10k；20-F/6-K 外国发行人 → foreign_issuer_20f_6k；ETF/ETN/基金/信托 → etf_fund）。
+- ETF/基金类（etf_fund）：无公司层面 10-K/20-F，破条件依赖指数成分/基金公告/价格规模数据，v1 数据源不覆盖 → 所有破条件记为 manual_items（人工自查），不进自动核对。
+- next_verdict：下一个能证伪 thesis 的事件+日期（财报日等）；不等于下次复盘日。
+- entry_anchor：录入估值锚。从文本「加仓价 / 安全边际」相关段落中识别估值口径。
+  - anchor_type 从以下闭集九项中选（选不出口径时返回 other，不要留 null；文本中确实没有加仓价/安全边际信息时才返回 null）：
+    ttm_gaap_pe              TTM GAAP P/E（最近四季 GAAP 摄薄 EPS × 倍数）
+    forward_non_gaap_pe      Forward non-GAAP P/E
+    normalized_pe            归一化 P/E（如穿越周期归一化）
+    normalized_operating_pe  归一化营业利润 P/E
+    normalized_fwd_gaap_pe   归一化 Forward GAAP P/E
+    p_fcf                    P/FCF（自由现金流倍数）
+    p_tbv                    P/TBV（有形净资产倍数，银行股用）
+    operating_multiple_2col  巴菲特两栏法（运营倍数）
+    other                    其余（识别不出口径时用此值）
+  - anchor_value 填倍数（如 25），不是价格（如 $394）；价格写进 note。
+  - note 填补充说明 + 估值机械（如「25x ≈ $394」「16x ≈ $251」、EPS / FCF / DCF / SBC / 倍数口径——这些**不进 key_assumptions**）。
+  - 文本中同时存在多个时点读数时，取日期最新的一条（如 MCO 取 7/24 重算的 $394 非 6/06 的 $349）。
+
+注意：position_cap_tier 不在输出里——仓位档位由系统按 ticker 查表填（tier_map），你不用输出。
+**必须调 submit_extraction(extraction={...}) 提交**，extraction 是含上述字段的 JSON 对象；不要在回复里复述字段说明、不要展开解释。
+"""
+
+
+MENU_PROMPT = """你是持仓条件录入助手。用户持有某只美股，说清了买入理由但说不清什么会让理由破产。
+你生成候选清单帮用户挑（选一次填两槽）：
+
+A. 候选关键假设（**必须 3 条、最多 4 条**，从这只票的基本面出发——moat / 财务 / 竞争 / 管理层 / 监管 / 行业地位等不同角度；即使用户理由里没明说，也给出他**可能**信的根据，帮他想清楚信的到底是什么）。**少于 3 条不合格**。
+B. 候选镜像破条件（**必须 3 条、最多 4 条**，每条对应一个 A 假设）：出现什么**具体事件** = 该假设破产。
+   必须能被一手公开披露击中（财报 / 公告 / 监管 / 新闻），不要价格图形型（均线 / 形态 / 突破）。
+   **P3：每条 B 必须给 threshold（可判定数值/布尔事件，如 {"metric":"service_rev_yoy","operator":"<","value":0}
+   或 {"event":"ceo_departed","occurred":false}）+ source_type（sec_filing_field / news_headline /
+   press_release_text / manual）——缺则该镜像不可判定，不要给**。
+
+红线（不可违反）：不给买卖 / 仓位建议、不预测涨跌、不出现「看涨 / 看跌 / 建议关注」；
+不编造，依据不足就少给（宁可 2 条也不凑数）。
+**必须调 submit_menu(candidates={...}) 提交**，candidates 是含 candidate_assumptions[list[str]] +
+candidate_mirrors[{assumption,mirror_text,threshold,source_type}] 的 JSON 对象；不展开解释、不复述字段说明。
+"""
+
+
+class MenuMirror(BaseModel):
+    assumption: str = Field(description="对应 A 假设原文")
+    mirror_text: str = Field(description="镜像破局条件（具体事件）")
+    threshold: dict | None = Field(default=None, description="可判定阈值（数值/布尔事件）")
+    source_type: str = Field(default="", description="阈值判定数据源类型")
+
+
+class MenuCandidates(BaseModel):
+    candidate_assumptions: list[str] = Field(default_factory=list)
+    candidate_mirrors: list[MenuMirror] = Field(default_factory=list)
+
+
+def _is_429(e: Exception) -> bool:
+    s = (str(e) + " " + type(e).__name__).lower()
+    return "429" in s or "rate" in s or "ratelimit" in s
+
+
+@dataclass
+class ExtractCtx:
+    """submit_extraction 工具写回；_run_extract 读它建 EntryExtraction。"""
+    extraction_submitted: dict | None = None
+
+
+@dataclass
+class MenuCtx:
+    """submit_menu 工具写回；_run_generate_menu 读它建 MenuCandidates。"""
+    menu_submitted: dict | None = None
+
+
+@function_tool(strict_mode=False)  # extraction: dict 嵌套入参，strict schema 不稳；关掉保可靠（与 save_card/submit_verdicts 同款）
+def submit_extraction(ctx: RunContextWrapper[ExtractCtx], extraction: dict) -> dict:
+    """提交抽取的 EntryExtraction（结构化输出通道，替代 output_type）。extraction 须含
+    holding_reason_raw / key_assumptions[{text}] / mirrors[{assumption_text,mirror_text,threshold,source_type}]
+    / open_questions / manual_items / filer_type / next_verdict / entry_anchor。必须调，不要在回复里复述。"""
+    ctx.context.extraction_submitted = extraction or {}
+    return {"ok": True}
+
+
+@function_tool(strict_mode=False)
+def submit_menu(ctx: RunContextWrapper[MenuCtx], candidates: dict) -> dict:
+    """提交候选菜单 MenuCandidates（结构化输出通道）。candidates 须含
+    candidate_assumptions[list[str]] + candidate_mirrors[{assumption,mirror_text,threshold,source_type}]。必须调。"""
+    ctx.context.menu_submitted = candidates or {}
+    return {"ok": True}
+
+
+def _build_extract_agent(cfg: dict, *, model_override: str | None = None) -> tuple[Agent, str, str]:
+    """构造抽取 Agent（OpenAI Agents SDK + deepseek；tools=[submit_extraction]，无 output_type）。
+    model_override 覆盖模型名（eval 跑多模型对比用，走同一百炼端点）。返回 (agent, model_name, provider)。"""
+    am = get_agent_model(cfg)
+    if model_override:
+        am = {**am, "model": model_override}
+    model = _build_model(cfg, model_override=model_override)
+    agent = Agent(name="ThesisExtract", instructions=EXTRACT_PROMPT, model=model,
+                  tools=[submit_extraction])
+    return agent, am.get("model", ""), am.get("provider", "openai")
+
+
+def _build_menu_agent(cfg: dict, *, model_override: str | None = None) -> tuple[Agent, str, str]:
+    """构造菜单 Agent（OpenAI Agents SDK + deepseek；tools=[submit_menu]，无 output_type）。"""
+    am = get_agent_model(cfg)
+    if model_override:
+        am = {**am, "model": model_override}
+    model = _build_model(cfg, model_override=model_override)
+    agent = Agent(name="ThesisMenu", instructions=MENU_PROMPT, model=model,
+                  tools=[submit_menu])
+    return agent, am.get("model", ""), am.get("provider", "openai")
+
+
+def _usage_tokens(result) -> tuple[int | None, int | None]:
+    """best-effort 取 input/output tokens（SDK result.usage，字段名跨版本不一）。"""
+    try:
+        u = result.usage
+    except Exception:  # noqa: BLE001
+        return None, None
+    it = getattr(u, "input_tokens", None) or getattr(u, "request_tokens", None)
+    ot = getattr(u, "output_tokens", None) or getattr(u, "response_tokens", None)
+    return it, ot
+
+
+def _run_extract(agent: Agent, text: str, cfg: dict, *, mode: str = "A") -> dict:
+    """单次抽取（OpenAI Agents SDK + deepseek）。返回 {ok, extraction, status, error, dur_s,
+    retries_429, in_tok, out_tok}。mode B=自澄清 prefix（A/B 对照，与旧 entry_agent.extract 一致）。
+    公共别名 extract = _run_extract（entry_cli / evals/run_l1 用）。"""
+    limits = get_llm_limits(cfg)
+    user_input = ("先在内心做一步澄清：列出这条 thesis 的关键 moat 与「什么具体事件出现 = thesis 破了」，"
+                  "再据此提交 extraction。\n\n" + text) if mode == "B" else text
+    t0 = time.perf_counter()
+    retries = 0
+    while True:
+        try:
+            ctx = ExtractCtx()
+            result = Runner.run_sync(agent, user_input, context=ctx, max_turns=4)
+            raw = ctx.extraction_submitted
+            if not isinstance(raw, dict) or not raw:
+                return {"ok": False, "extraction": None, "status": "validation",
+                        "error": "agent 未调 submit_extraction / 空 extraction",
+                        "dur_s": round(time.perf_counter() - t0, 2), "retries_429": retries,
+                        "in_tok": None, "out_tok": None}
+            ext = EntryExtraction(**raw)  # pydantic 校验 + coerce 嵌套 dict → EntryExtraction
+            it, ot = _usage_tokens(result)
+            return {"ok": True, "extraction": ext, "status": "pass", "error": None,
+                    "dur_s": round(time.perf_counter() - t0, 2), "retries_429": retries,
+                    "in_tok": it, "out_tok": ot}
+        except Exception as e:  # noqa: BLE001
+            if _is_429(e) and retries < limits["max_retries_429"]:
+                retries += 1
+                time.sleep(min(limits["backoff_base_sec"] * (2 ** (retries - 1)), limits["backoff_cap_sec"]))
+                continue
+            return {"ok": False, "extraction": None, "status": "other",
+                    "error": f"{type(e).__name__}: {str(e)[:300]}",
+                    "dur_s": round(time.perf_counter() - t0, 2), "retries_429": retries,
+                    "in_tok": None, "out_tok": None}
+
+
+def _run_generate_menu(agent: Agent, ticker: str, reason: str, cfg: dict) -> dict:
+    """单次菜单生成（OpenAI Agents SDK + deepseek）。返回 {ok, menu, status, error, dur_s, retries_429}。"""
+    limits = get_llm_limits(cfg)
+    user_input = f"持仓：{ticker}\n买入理由：{reason}\n请生成候选 A（假设）与 B（镜像破条件）清单。"
+    t0 = time.perf_counter()
+    retries = 0
+    while True:
+        try:
+            ctx = MenuCtx()
+            result = Runner.run_sync(agent, user_input, context=ctx, max_turns=4)
+            raw = ctx.menu_submitted
+            if not isinstance(raw, dict) or not raw:
+                return {"ok": False, "menu": None, "status": "validation",
+                        "error": "agent 未调 submit_menu / 空 menu",
+                        "dur_s": round(time.perf_counter() - t0, 2), "retries_429": retries}
+            menu = MenuCandidates(**raw)
+            return {"ok": True, "menu": menu, "status": "pass", "error": None,
+                    "dur_s": round(time.perf_counter() - t0, 2), "retries_429": retries}
+        except Exception as e:  # noqa: BLE001
+            if _is_429(e) and retries < limits["max_retries_429"]:
+                retries += 1
+                time.sleep(min(limits["backoff_base_sec"] * (2 ** (retries - 1)), limits["backoff_cap_sec"]))
+                continue
+            return {"ok": False, "menu": None, "status": "other",
+                    "error": f"{type(e).__name__}: {str(e)[:300]}",
+                    "dur_s": round(time.perf_counter() - t0, 2), "retries_429": retries}
+
+
+# 公共别名（entry_cli / evals/run_l1 / tests import build_extract_agent, extract）
+extract = _run_extract
+build_extract_agent = _build_extract_agent
+
+
+def filter_executable_mirrors(mirrors: list[MenuMirror]) -> tuple[list[MenuMirror], list[dict]]:
+    """P4：可执行性过滤——每个 B 候选必须映射到已实现 fetcher（v1-auto：xbrl_structured /
+    press_release_text），否则不呈现给用户。
+
+    跨主体取数（NVDA/GOOGL/META 的 capex → cross_entity_filing）、第三方付费数据
+    （TrendForce → third_party_data）等 v1 不支持的方向，过滤掉不呈现。
+    返回 (kept, excluded)；**覆盖率须显式呈现**（PRD §4-A 不静默跳过）——调用方须把
+    excluded 的数量 + 缺口原因告诉用户（「原本 N 个方向，M 个当前无法自动核对，已排除」）。
+    """
+    kept: list[MenuMirror] = []
+    excluded: list[dict] = []
+    for b in mirrors:
+        labels = classify_condition(b.mirror_text)
+        if is_v1_auto(labels):
+            kept.append(b)
+        else:
+            excluded.append({"mirror_text": b.mirror_text,
+                             "reasons": v1_gap_reasons(labels) or ["v1 不可自动核对"]})
+    return kept, excluded
+
+
 _MODEL = _build_model(_CFG)
 
-# extract / menu 仍走 PydanticAI + task_model=glm（复用现有抽取逻辑，重构完成后再删）。
+# extract / menu 走 OpenAI Agents SDK + deepseek（Phase 5 移植，drop pydantic-ai/glm）。
 _EXTRACT_AGENT, _EXTRACT_MODEL_NAME, _ = _build_extract_agent(_CFG)
 _MENU_AGENT, _MENU_MODEL_NAME, _ = _build_menu_agent(_CFG)
 
@@ -640,4 +885,12 @@ __all__ = [
     "check_filing",
     "redline_guard",
     "injection_guard",
+    # extract / menu（Phase 5 移植自 entry_agent/menu，公共 API for entry_cli / evals / tests）
+    "EXTRACT_PROMPT",
+    "MENU_PROMPT",
+    "MenuMirror",
+    "MenuCandidates",
+    "build_extract_agent",
+    "extract",
+    "filter_executable_mirrors",
 ]

@@ -82,4 +82,4 @@
   - (a) caca 定提取模型：glm 保留（保守，不退质量）vs 切 deepseek（unify，需重跑 eval）；
   - (b) 保守方案（不需模型决策）：保留 glm + 移植到直接 OpenAI chat_completions（function-calling tool schema 强制结构化输出），drop pydantic-ai + llm.py——但仍需网络通时 live 验 extract 质量不退；
   - (c) 网络通时移植 + 重跑 W1/W2 extract eval 确认 + 更新 5 个 consumer（`entry_cli.py` / `tests/test_menu_filter.py` / `scripts/day1_fds_validation.py` / `evals/run_l1.py` / `orchestrator.py`）。
-- **状态**：blocked，待 caca 定提取模型 + 网络通。不阻塞 Phase 5 其余（eval + 测试 + 文档已 done）。
+- **状态**：✅ 已解除（2026-08-04）。caca 定切 deepseek；移植 extract+menu 到 OpenAI Agents SDK（`submit_extraction` / `submit_menu` tool call 提交结构化输出，不用 `output_type`——避 B4 thinking 冲突 + 短路空结构）；删 `entry_agent.py` / `menu.py` / `llm.py` + `pydantic-ai`/`pydantic-evals`/`anthropic` 依赖；prompts + `MenuMirror`/`MenuCandidates` + `filter_executable_mirrors` 移入 `orchestrator.py`；更新 5 个 consumer（`entry_cli` / `tests/test_menu_filter` / `scripts/day1_fds_validation` / `evals/run_l1` / `orchestrator`）；107 测试绿；live 验 deepseek extract + G3 双层 ok；W1 eval 重跑 deepseek vs glm 头对头（`evals/_l1_result.json`，`run_l1.py run --allow-stale-gt`，PYTHONUTF8=1 避 Windows gkb 崩 ⚠️ print）。

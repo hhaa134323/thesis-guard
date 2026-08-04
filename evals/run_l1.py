@@ -33,7 +33,7 @@ from thesis_watch.condition_classify import (  # noqa: E402
     classify_condition,
     is_v1_auto,
 )
-from thesis_watch.entry_agent import build_agent, extract  # noqa: E402
+from thesis_watch.orchestrator import build_extract_agent, extract  # noqa: E402
 from thesis_watch.tier_map import lookup_tier  # noqa: E402
 
 GT_PATH = ROOT / "evals" / "ground_truth.yaml"
@@ -43,7 +43,7 @@ SOURCE_MAP = ROOT / "evals" / "_blind_source_map.yaml"       # harness 内部（
 VERDICTS = ROOT / "evals" / "blind_verdicts.yaml"            # 作者填裁决
 EXTRACTIONS = ROOT / "evals" / "_extractions.json"           # raw 输出
 L1_RESULT = ROOT / "evals" / "_l1_result.json"
-MODELS = ["qwen-turbo", "glm-5.2-fast-preview"]              # 两模型分工（§9.3/§9.4）
+MODELS = ["deepseek-v4-flash", "glm-5.2-fast-preview"]   # Phase 5：deepseek vs glm 头对头，确认 deepseek 抽取不退（原 qwen-turbo 换成 deepseek）
 OBJECTIVE_REQUIRED = []                                         # 无 required 客观字段（filer_type 从 lookup 自动，entry_anchor/next_verdict optional 手标）
 OBJECTIVE_OPTIONAL = ["entry_anchor", "next_verdict"]         # 手标 optional（null 不强制 open_questions）
 OBJECTIVE_DERIVED = ["manual_items", "filer_type"]            # 规则/脚本推导（manual_items=classify_condition; filer_type=filer_type_lookup.yaml）
@@ -329,7 +329,7 @@ def cmd_run(args) -> int:
 
     agents = {}
     for m in MODELS:
-        agents[m], _, _ = build_agent(cfg, model_override=m)
+        agents[m], _, _ = build_extract_agent(cfg, model_override=m)
 
     extractions: dict = {}   # {ticker: {model: {extraction dict, metrics}}}
     obj_rows: list = []

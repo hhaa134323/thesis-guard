@@ -1,18 +1,14 @@
-# v0.2 依赖（从简）。
-# Agent loop 选型确认（2026-08-01）：PydanticAI 单次结构化调用（非 Claude Agent SDK）。
-# 模型走百炼兼容端点（Anthropic 协议）；端点+模型名从 config.yaml 读，API key 从 env。
+# v0.2 依赖（从简）。Phase 5（2026-08-04）：pydantic-ai 已删，全栈 OpenAI Agents SDK。
+# 模型走百炼兼容端点（OpenAI chat_completions 协议，deepseek-v4-flash）；端点+模型名从 config.yaml 读，API key 从 env。
 
 PyYAML>=6.0
 pytest>=7.0
 pydantic>=2.0
-pydantic-ai
-pydantic-evals
-anthropic
-# Phase 1 重构（2026-08-03）：state machine → OpenAI Agents SDK agent loop（deepseek-v4-flash）。
-# 重构完成后再删 pydantic-ai；Phase 1 期间 extract_card 仍复用 PydanticAI 抽取逻辑（entry_agent.extract）。
+# OpenAI Agents SDK agent loop（录入 orchestrator + 核对 check_agent，Phase 0-5）。
 openai-agents==0.19.2
-# W2 录入 loop 承载层（localhost 单页）：FastAPI + uvicorn（作者 2026-08-02 定）
+openai              # AsyncOpenAI client（orchestrator/check_agent 直接 import；openai-agents 传递依赖，显式列）
+# 录入 loop 承载层（localhost 单页）：FastAPI + uvicorn（作者 2026-08-02 定）
 fastapi
 uvicorn
-# W2 §2.3 核对 agent：SEC EDGAR fetcher（从 pre-market-briefing 搬，用 requests）
+# 核对 agent：SEC EDGAR fetcher（从 pre-market-briefing 搬，用 requests）
 requests

@@ -2,6 +2,27 @@
 
 > 规则：每次迭代写清楚——依据哪条用户反馈、砍了什么、为什么砍。KILL 判据体检结果也记这里。
 
+## v0.0.18 — 2026-08-04 — Phase 5 完成：extract/menu 移植 deepseek + 删 pydantic-ai
+
+**做了什么**
+- **orchestrator.py 移植**：`extract_card` / `generate_menu` 工具内部 LLM 调用从 PydanticAI+glm 移植到 OpenAI Agents SDK+deepseek。走 `submit_extraction` / `submit_menu` tool call 提交结构化输出（**不用 `output_type`**——DeepSeek thinking 模式拒 `tool_choice=required` 即 B4；且 output_type 会让模型短路成空结构不调工具，见 check_agent `submit_verdicts` 同款）。移入 `EXTRACT_PROMPT` / `MENU_PROMPT` / `MenuMirror` / `MenuCandidates` / `filter_executable_mirrors`。`build_extract_agent` / `extract` / `_run_generate_menu` 公共 API for entry_cli / evals。
+- **删 3 文件 + 3 依赖**：`entry_agent.py` / `menu.py` / `llm.py` + `pydantic-ai` / `pydantic-evals` / `anthropic`（加 `openai` 显式）。drop glm task_model——extract 改走 `agent_model`=deepseek。
+- **更新 5 consumer**：`entry_cli`（build_extract_agent+extract from orchestrator）/ `tests/test_menu_filter`（MenuMirror+filter from orchestrator）/ `scripts/day1_fds_validation`（重写用 orchestrator.extract，5-run gate deepseek）/ `evals/run_l1`（build_extract_agent+extract；MODELS deepseek vs glm 头对头）/ `orchestrator`（自给自足）。`config.py` docstring + `demo_phase1.py` 注释同步。
+- **entry_loop.stream_run**：`async for` 包 try/except（流式中途出错发 error+done 不断连，不再裸抛断连）——前端 flag #1。
+- #2（fetch 路径 setMenu normalizeMenu）是前端窗口域，未动（其 SSE 集成 commit 待签字应含 normalizeMenu，per parallel-windows 不碰 frontend/）。
+
+**依据**
+- caca 定切 deepseek（Phase 5 决策）。任务前提「extract_card/generate_menu 已不依赖，orchestrator 内置」本不成立（orchestrator 仍 import entry_agent/menu），故先移植再删——不能直接删。
+- 不用 `output_type` 避 B4（DeepSeek thinking 拒 `tool_choice=required`）+ 避短路（check_agent 实测 output_type 产空结构不调 fetch）。
+
+**自测**
+- 107 pytest 绿（port 后 test_menu_filter import 改 orchestrator；test_orchestrator_impl mock `_run_extract` 仍过）。
+- **live 验 deepseek extract + G3 双层（step 6）**：`_extract_card_impl(sample MCO thesis)` → ok=True，deepseek 调 `submit_extraction` 产 valid EntryExtraction，G3（`is_paraphrase`）正确把同义复述假设转 open_questions。pipeline 通，未短路、未踩 B4。
+- **W1 eval 重跑（step 5）⚠️ deferred**：`run_l1.py run --allow-stale-gt`（PYTHONUTF8=1 避 Windows gbk 崩 ⚠️ print；snapshot_ref 不匹配是 merge commit 形式差异，assets/ 内容 0 diff，GT 未过期）。跑了 28/30 后 deepseek 端点限流（429 backoff）卡住，`_l1_result.json` 未刷新。**eval 未完成**——deepseek+submit_extraction ~37s/extract（agent loop 开销，比 pydantic_ai 慢），30 调用触发限流。port 功能已验（step 6），全量 eval 量化 deferred（限流清后 caca 重跑，或减 case 数）。
+- perf 观察：deepseek extract ~37s/extract（vs pydantic_ai ~5-10s）。单次 extract_card 调用可接受（≤5min/case），但 eval 批跑慢 + 易触发限流。caca 知悉。
+
+**状态**：Phase 5 完成——清理旧代码 ✅（B6 已解除）；extract/menu 走 deepseek ✅；107 测试 ✅；live G3 ✅；全量 W1 eval ⚠️ deferred（限流）。重构（Phase 0-5）主体完成。
+
 ## v0.0.17 — 2026-08-04 — Phase 5（部分）：agent-loop 行为测试 + 10 case 验收 + 文档；清理旧代码 blocked
 
 **做了什么**

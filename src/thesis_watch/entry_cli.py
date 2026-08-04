@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 from .config import load_config
-from .entry_agent import build_agent, extract
+from .orchestrator import build_extract_agent, extract
 from .tier_map import lookup_tier
 
 
@@ -40,7 +40,7 @@ def main() -> int:
         return 1
 
     cfg = load_config(args.config)
-    agent, model_name, provider = build_agent(cfg, model_override=args.model)
+    agent, model_name, provider = build_extract_agent(cfg, model_override=args.model)
     res = extract(agent, text, cfg, mode=args.mode)
     ext = res["extraction"]
 
