@@ -27,6 +27,8 @@ export interface StreamCallbacks {
   onToolCall: (tool: string, args: Record<string, unknown>) => void;
   onToolResult: (tool: string, result: Record<string, unknown>) => void;
   onDone: () => void;
+  /** 后端 stream_run 异常（event: error）→ 透出消息，App 亮错误条；后端紧接 done。 */
+  onError?: (message: string) => void;
   /** 连接从未建起来（404 / 无后端）→ 调用方可回退 fetch。mid-stream 中断不触发。 */
   onFallback: (reason: string) => void;
 }
@@ -48,7 +50,7 @@ function parseData(raw: string | null): Record<string, any> {
   }
 }
 
-const KNOWN = ["token", "tool_call", "tool_result", "done"];
+const KNOWN = ["token", "tool_call", "tool_result", "done", "error"];
 
 /**
  * 把一个已连接的 source 接到 callbacks。返回 close()。
@@ -84,6 +86,9 @@ export function connectStream(source: StreamSource, cb: StreamCallbacks): () => 
           String(data?.tool ?? ""),
           (data?.result as Record<string, unknown>) || {},
         );
+        break;
+      case "error":
+        cb.onError?.(String(data?.message ?? "后端出错"));
         break;
       case "done":
         cb.onDone();
@@ -164,6 +169,101 @@ export class MockEventSource implements StreamSource {
     this.closed = true;
     for (const id of this.timers) clearTimeout(id);
     this.timers = [];
+  }
+}
+
+// ──────────────────────────── FetchStreamSource ────────────────────────────
+// 真 SSE 消费：后端 /api/session/{sid}/stream 是 POST（EventSource 只能 GET），
+// 故用 fetch + ReadableStream 读 SSE 帧，按 event: 名派发到 listener（与 EventSource 等价）。
+// 首帧前 fetch 失败（404 / 网络错 / 无后端）→ onerror → connectStream 走 onFallback 回退 fetch；
+// mid-stream 中断也 onerror，但 received 已 true → 不回退，仅 close（与 EventSource 一致）。
+export class FetchStreamSource implements StreamSource {
+  private listeners: Record<string, MockListener[]> = {};
+  private controller: AbortController | null = null;
+  private closed = false;
+  private doneSeen = false; // 后端是否发过 event: done
+  private anyFrame = false; // 是否收过任一帧（区分「连不上」vs「mid-stream 断」）
+  public onerror: ((ev: Event) => void) | null = null;
+
+  constructor(url: string, init: RequestInit) {
+    // 异步起跑：构造同步返回，确保 connectStream 挂好 listener 后才发首帧。
+    void this._start(url, init);
+  }
+
+  private async _start(url: string, init: RequestInit): Promise<void> {
+    this.controller = new AbortController();
+    try {
+      const res = await fetch(url, { ...init, signal: this.controller.signal });
+      if (!res.ok || !res.body) {
+        if (!this.closed) this.onerror?.(new Event("error"));
+        return;
+      }
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let idx: number;
+        while ((idx = buf.indexOf("\n\n")) >= 0) {
+          const frame = buf.slice(0, idx);
+          buf = buf.slice(idx + 2);
+          this._dispatch(frame);
+        }
+      }
+      if (buf.trim()) this._dispatch(buf);
+      this._finish();
+    } catch {
+      this._finish();
+    }
+  }
+
+  /** 解析一帧 SSE：event: <name> + data: <json>（多行 data 拼接），按名派发到 listener。 */
+  private _dispatch(frame: string): void {
+    let event = "message";
+    const dataLines: string[] = [];
+    for (const raw of frame.split("\n")) {
+      const line = raw.replace(/^﻿/, "");
+      if (line.startsWith("event:")) event = line.slice(6).trim();
+      else if (line.startsWith("data:")) dataLines.push(line.slice(5).replace(/^ /, ""));
+    }
+    const data = dataLines.join("\n");
+    if (event === "done") this.doneSeen = true;
+    this.anyFrame = true;
+    for (const cb of this.listeners[event] || []) cb({ data });
+  }
+
+  addEventListener(type: string, cb: MockListener): void {
+    (this.listeners[type] ||= []).push(cb);
+  }
+
+  removeEventListener(type: string, cb: MockListener): void {
+    this.listeners[type] = (this.listeners[type] || []).filter((f) => f !== cb);
+  }
+
+  /** 流结束/中断但没收到 done 帧（后端 mid-stream 崩溃 / 连接断）→ 透 error+done 给
+   * connectStream 清 streaming + 亮错误条。一帧没收的失败（fetch 错 / !res.ok）→ 走
+   * onerror，由 connectStream 触发 onFallback 回退 fetch（task item 1「不稳定」处理）。 */
+  private _finish(): void {
+    if (this.closed || this.doneSeen) return;
+    if (!this.anyFrame) {
+      if (!this.closed) this.onerror?.(new Event("error"));
+      return;
+    }
+    this.doneSeen = true;
+    for (const cb of this.listeners["error"] || [])
+      cb({ data: JSON.stringify({ message: "流式中断（后端未正常结束）" }) });
+    for (const cb of this.listeners["done"] || []) cb({ data: "{}" });
+  }
+
+  close(): void {
+    this.closed = true;
+    try {
+      this.controller?.abort();
+    } catch {
+      /* noop */
+    }
   }
 }
 

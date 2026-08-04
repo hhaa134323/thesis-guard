@@ -14,6 +14,7 @@ import { useCallback, useRef, useState } from "react";
 import {
   buildMockScript,
   connectStream,
+  FetchStreamSource,
   MockEventSource,
   type StreamSource,
 } from "@/lib/stream";
@@ -26,6 +27,8 @@ export interface StreamStartOpts {
   onToolCall: (tool: string, args: Record<string, unknown>) => void;
   onToolResult: (tool: string, result: Record<string, unknown>) => void;
   onDone: () => void;
+  /** 后端 stream 异常（event: error）→ App 亮错误条。 */
+  onError?: (message: string) => void;
   /** SSE 连不上（无后端）→ App 回退 fetch。 */
   onFallback: () => void;
 }
@@ -38,24 +41,35 @@ export function useStreamChat() {
   const start = useCallback((opts: StreamStartOpts) => {
     // 关掉上一次（切话题 / 重复点发送）
     closeRef.current?.();
-    setStreaming(true);
-    setToolStatus(null);
 
     const mode =
       typeof URLSearchParams !== "undefined"
         ? new URLSearchParams(location.search).get("sse")
         : null;
 
+    // real 模式无 sid：session 尚未建（App 的 start 走 fetch 建 session），stream 无的放矢
+    // → 直接回退，让 App 走对应 fetch 路径。send 时 sid 已就位、不会进这里。
+    if (mode !== "mock" && !opts.sid) {
+      opts.onFallback();
+      return;
+    }
+
+    setStreaming(true);
+    setToolStatus(null);
+
     let source: StreamSource;
     if (mode === "mock") {
       source = new MockEventSource(buildMockScript(opts.userText, opts.sid, opts.kind));
     } else {
-      // ?sse=real：真 EventSource。后端 SSE endpoint 联调前会 404 → onerror → onFallback。
-      // 联调时若后端改了 connect 契约（如先 POST 拿 stream_id 再 GET），改这里。
-      const url =
-        `/api/stream?sid=${encodeURIComponent(opts.sid ?? "")}` +
-        `&text=${encodeURIComponent(opts.userText)}&kind=${opts.kind}`;
-      source = new EventSource(url);
+      // ?sse=real：POST /api/session/{sid}/stream（后端 endpoint 是 POST；EventSource 只能
+      // GET，故走 FetchStreamSource = fetch + ReadableStream 读 SSE 帧再按 event 名派发）。
+      // 后端 stream_run 只吃 {text}（非 edits），故 real 模式 confirm 不走这里（App 走 /confirm）。
+      const url = `/api/session/${encodeURIComponent(opts.sid!)}/stream`;
+      source = new FetchStreamSource(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: opts.userText }),
+      });
     }
 
     const close = connectStream(source, {
@@ -68,6 +82,7 @@ export function useStreamChat() {
         setToolStatus(null);
         opts.onToolResult(tool, result);
       },
+      onError: (msg) => opts.onError?.(msg),
       onDone: () => {
         setStreaming(false);
         setToolStatus(null);

@@ -153,6 +153,40 @@ function emptyCard(): CardT {
   };
 }
 
+// generate_menu tool_result（{ok, candidate_assumptions: string[], candidate_mirrors:
+// [{assumption, mirror_text, threshold, source_type}], excluded_mirrors: [{mirror_text,
+// reasons}], coverage: <string>}）→ 前端 MenuT（{assumptions, mirrors, coverage: structured}）。
+// task item 2：形状映射。后端 coverage 是文案串 + excluded_mirrors 列表，前端要结构化
+// {total, excluded, reasons, excluded_items}——从 excluded_mirrors 重建（total=kept+excluded）。
+function normalizeMenu(raw: any): MenuT | null {
+  if (!raw || raw.ok === false) return null;
+  const candA: any[] = Array.isArray(raw.candidate_assumptions) ? raw.candidate_assumptions : [];
+  const candB: any[] = Array.isArray(raw.candidate_mirrors) ? raw.candidate_mirrors : [];
+  const excl: any[] = Array.isArray(raw.excluded_mirrors) ? raw.excluded_mirrors : [];
+  const reasons = Array.from(
+    new Set(excl.flatMap((e: any) => (Array.isArray(e?.reasons) ? e.reasons : []))),
+  );
+  const coverage: Coverage | undefined = candB.length || excl.length
+    ? {
+        total: candB.length + excl.length,
+        excluded: excl.length,
+        reasons,
+        excluded_items: excl.map((e: any) => ({
+          mirror_text: String(e?.mirror_text ?? ""),
+          reasons: Array.isArray(e?.reasons) ? e.reasons : [],
+        })),
+      }
+    : undefined;
+  return {
+    assumptions: candA.map((a) => String(a ?? "")),
+    mirrors: candB.map((b) => ({
+      assumption: String(b?.assumption ?? ""),
+      mirror_text: String(b?.mirror_text ?? ""),
+    })),
+    coverage,
+  };
+}
+
 // ──────────────────────────── App ────────────────────────────
 export default function App() {
   const [sid, setSid] = useState<string | null>(null);
@@ -173,13 +207,14 @@ export default function App() {
   // 自动滚动由 MessageScroller 接管（stick-to-bottom + ResizeObserver，防流式跳动）
 
   // SSE tool_result → view patch → 状态。port 后端 _apply_tool_output（仅显示字段）。
-  // 注意：generate_menu 的 tool_result 形状（candidate_assumptions/candidate_mirrors）与
-  // App MenuT（assumptions/mirrors）不同——mock 不触发它，真后端联调时在此映射。
+  // generate_menu 的 tool_result 形状（candidate_assumptions / candidate_mirrors /
+  // excluded_mirrors / coverage:string）≠ 前端 MenuT——经 normalizeMenu 映射（task item 2）。
+  // fetch 路径 applyView 暂走 setMenu(v.menu) 原样，同源形状不匹配（本轮只动 SSE 路径，fetch 留待确认）。
   function applyStreamPatch(p: ViewPatch) {
     if (p.ticker !== undefined) setCard((c) => ({ ...(c ?? emptyCard()), ticker: p.ticker! }));
     if (p.tickerTitle !== undefined) setTickerTitle(p.tickerTitle);
     if (p.card) setCard((c) => ({ ...p.card!, ticker: p.card!.ticker || c?.ticker || "" } as CardT));
-    if (p.menu !== undefined) setMenu(p.menu as MenuT | null);
+    if (p.menu !== undefined) setMenu(p.menu ? normalizeMenu(p.menu) : null);
     if (p.openQuestions !== undefined) setOpenQs(p.openQuestions as OpenQ[]);
     if (p.sources !== undefined) setSources(p.sources as Source[]);
     if (p.stage !== undefined) setStage(p.stage as Stage);
@@ -220,7 +255,8 @@ export default function App() {
     const um: Msg = { id: nextMid(), role: "user", text };
     setConv((c) => [...c, um]);
     setError("");
-    if (SSE_MODE) { startStreamed(text, "start"); return; }
+    if (SSE_MODE === "mock") { startStreamed(text, "start"); return; }
+    // real / 无参数：fetch 建 session（后端首轮同步执行 resolve+extract，非流式；后续 send 才走 SSE）。
     await startFetch(text);
   }
 
@@ -267,8 +303,9 @@ export default function App() {
   }
 
   async function confirm() {
-    if (!SSE_MODE && !sid) return;
-    if (SSE_MODE) { startStreamed("", "confirm"); return; }
+    if (SSE_MODE === "mock") { startStreamed("", "confirm"); return; }
+    // real / 无参数：POST /confirm {edits}（后端同步应用编辑 + save_card 落库，非流式）。
+    if (!sid) return;
     await confirmFetch();
   }
 
@@ -295,6 +332,7 @@ export default function App() {
       onToken: (t) => setConv((c) => c.map((m) => (m.id === aid ? { ...m, text: m.text + t } : m))),
       onToolCall: () => { /* toolStatus 由 hook 管，状态行渲染 */ },
       onToolResult: (tool, result) => applyStreamPatch(applyToolResult(tool, result)),
+      onError: (msg) => setError("⚠️ " + msg),
       onDone: () => {
         setConv((c) => c.map((m) => (m.id === aid ? { ...m, streaming: false } : m)));
         setStatus("");
