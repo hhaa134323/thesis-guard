@@ -2,6 +2,30 @@
 
 > 规则：每次迭代写清楚——依据哪条用户反馈、砍了什么、为什么砍。KILL 判据体检结果也记这里。
 
+## v0.0.16 — 2026-08-04 — Phase 4：check_agent agent loop 重构（pydantic_ai → OpenAI Agents SDK + DeepSeek）
+
+**做了什么**
+- **架构转换**：`check_agent.py` 从 `pydantic_ai.Agent(output_type=CheckVerdicts)` + run_check 预取 filings 灌进 prompt → OpenAI Agents SDK `Agent` + DeepSeek V4-Flash（百炼 chat_completions，与 orchestrator 同款 `OpenAIChatCompletionsModel` + `set_default_openai_api`）。agent 自己调工具取 filings 再提交判决，不再预取灌进 prompt。
+- **2 个 @function_tool（context-injected via `RunContextWrapper[CheckCtx]`，确定性，不让 LLM 传参）**：
+  - `fetch_recent_filings()` — 复用 `sec_edgar.forms_for_filer` + `fetch_filings`，按 filer_type 路由表单；写回 `ctx.fetched_filings` / `fetch_error` / `fetch_called`。
+  - `submit_verdicts(verdicts)` — `strict_mode=False`（list[dict] 嵌套入参，与 `orchestrator.save_card` 同款），替代 `output_type` 做结构化输出通道；写回 `ctx.verdicts_submitted`。
+- **为什么不用 `output_type=CheckVerdicts`**：实测 DeepSeek V4-Flash + chat_completions 用 output_type 会短路成空 `{"verdicts":[]}` 而不先调 fetch（trace 实测：ReasoningItem 说「该调 fetch」→ 直接产空 CheckVerdicts 结束 loop）。改 `submit_verdicts` tool call 后稳定（与 orchestrator `extract_card`/`save_card` 同款；prompt 收紧「先调 fetch_recent_filings，再调 submit_verdicts，不复述」）。
+- **redline R1-R3 复用不变**：per-verdict `redline.guard(v.reasoning)`（粒度 E8，仅校验 LLM reasoning 系统输出，不校验 SEC 引用摘录）。
+- **E1-E8 + fetch_called 诚实区分**：`fetch_error` → E1（fetch 失败）；`not fetch_called` → E7（agent 跳过 fetch 无据判定）；`not fetched_filings` → 全 untriggered（PRD「无事那行不许空」）；`not verdicts_submitted` → E7（未提交判决）；缺 cond → E4。
+- **输出格式不变**：`CondVerdict(cond_id/status/evidence_url/evidence_excerpt/reasoning)`，status ∈ triggered|watch|untriggered（**三态**）。`run_all`/`run_check` 签名 + 返回 shape 不变（`notify.py` 依赖）。懒构建 `build_check_agent`（不在模块 import 时 SystemExit，避免阻断 orchestrator/tests 导入）。
+- 不动 `orchestrator.py` / `serve.py` / 前端 / `entry_agent.py` / `menu.py`（仍走 pydantic_ai task_model=glm，Phase 5 再统一）。
+
+**依据**
+- refactor-spec §5 Phase 4 = 「check_agent agent loop」（纯架构转换）。任务原文写「判 HOLD/ADD/CUT/PASS、保持四判决格式不变」——核对后确认矛盾：HOLD/ADD/CUT/PASS 是**作者个人 Notion 复查 skill v4**（建仓后每日跑），不是本产品模块；产品 `check_agent` 一直是三态（`models.py` 明写「不存结论/建议」，旧 CHECK_PROMPT 明写「不给买卖/仓位建议、不替用户结论」），HOLD/ADD/CUT/PASS 本质是仓位/买卖建议，直接踩 R1/R2/R6 红线。经作者确认（AskUserQuestion）：**保持三态，纯架构转换，HOLD/ADD/CUT/PASS 不混入**。Notion 写入经作者确认 R7 仅限台账/简报，PM 看板可更新。
+- 本地 `config.yaml` 加 `llm.agent_model` 段（gitignored，仅本机；`config.example.yaml` 已有）——否则 `orchestrator._build_model` import 时 SystemExit，75 测试全跑不起来。
+
+**自测**
+- 75 pytest 绿（无 regress；check_agent 无专属单测，公共 API 不变）。
+- live MCO smoke（合成卡 + `:memory:` store + lookback 8760h=1y → 105 filings）：agent 先调 `fetch_recent_filings`（105 filings）再调 `submit_verdicts`（4 verdicts 全 untriggered）→ `run_check` 全链路（self_check/redline/save）→ `errors=[]` 无红线违反、4 CheckResults 落库、三态输出、`filings_count=105`。dur 84.6s（≤5min/case 内）。
+- SEC fetch 直测：`fetch_filings(["MCO"], 8760)` → 105 filings（10-Q 2026-07-23 / 8-K 2026-07-22 / Form 4…），网络通。
+
+**状态**：Phase 4 完成，待作者验收 + Phase 5（全量 10 case 验收 + 测试重整）。
+
 ## v0.0.15 — 2026-08-03 — F3 后端 view 字段（ticker_title / sources / menu.coverage）——给前端不猜字段名
 
 **做了什么**
