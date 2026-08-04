@@ -2,6 +2,31 @@
 
 > 规则：每次迭代写清楚——依据哪条用户反馈、砍了什么、为什么砍。KILL 判据体检结果也记这里。
 
+## v0.0.23 — 2026-08-05 — watch 记忆：弃代码方案（C-2 watch_state），改 agent 自判 change
+
+**做了什么**
+- **undo C-2**（commit `732e1a8` watch_state 代码方案）：删 `src/thesis_watch/watch_state.py` + `tests/test_watch_state.py`，`store.py` 恢复到 `019479d`（去 watch_states 表 + 4 方法）。走 `git revert --no-commit` 折进单次提交。
+- **改 agent 方案**（`check_agent.py`）：`CondVerdict` 加 `change` 字段（new/worsened/improved/unchanged/resolved/escalated）；`run_check` 开头读上次 `CheckResult`（`_get_prev_results`，每 cond 最近一条）→ `_build_input` 注入 `previous_verdicts`（status + evidence_excerpt + refusal_code + date）→ `CHECK_PROMPT` 加「较上次变化」指令，agent 自判 change；`submit_verdicts` 工具描述补 change。
+- **无新 filing 短路改写**：旧 = 全 untriggered（→ 假解除）；新 = 保持上次状态，上次 watch → `change=unchanged`（「没有新 filing」≠「条件解除」）。上次 triggered/untriggered 亦保持，无 change。
+- **返回 shape 增 `changes`**：`{cond_id:{change,text}}`，仅含发生 watch transition 的 cond（空串/被 E3·E4·E8 降级 → 不列，留给下次 agent）。
+- **`scheduler.py`**：删 watch_state try-import + `update_watch_states`/`check_quarterly_review` 调用；`send_digest` 去掉 watch_states 形参；季频复盘改 `_quarterly_review_items`（stateless：卡 `next_verdict.date` 到期 + 该 cond 最近 N 次核对全 watch → 提醒，N=`_QUARTERLY_WATCH_N` 默认 3）。
+- **`notification.py`**：`send_digest`/`_render_digest` 去 watch_states 形参；「观察项」占位（「待 Task 5 实现」）改为读 `check_results` 每条的 `changes`，6 值文案映射（new→新增 watch / worsened→恶化 / improved→改善 / unchanged→仍在 watch（无变化）/ resolved→已解除 / escalated→升级 triggered）；无变化 →「今日无 watch 变化」。
+
+**依据**（PM 分析：代码方案两个不可解死结）
+1. **假解除**：check_agent 无新 filing → 标 untriggered → 代码标「resolved」，但条件没解除。
+2. **无恶化/改善**：check_agent 不产数值 → 代码无法判「仍在 watch 但恶化了」。
+→ 改 agent 自判：agent 读上次结果自己输出「较上次」change，无需 watch_state.py / SQLite 表 / 状态机。
+
+**砍了什么**
+- `watch_state.py`（299 行）+ `watch_states` SQLite 表 + `test_watch_state.py`（372 行 / 22 测试）——整个代码状态机层。
+- `notification.send_digest` 的 `watch_states` 形参（digest 不再依赖独立 watch state 列表，直接读 check_results）。
+
+**自测**：202 pytest 绿（185 undo 基线 + 17 新测试：check_agent 8 / scheduler 7 / notification 2）。guardrail 层零改动（`redline`/`conditions`/`condition_classify`/`schema`/`models` 未碰）。
+
+**待 caca 定**
+- 季频复盘保留 `next_verdict.date` 作 cadence 门控（避免无门控每日刷屏）——任务描述只说「查最近 N 次 watch」，未提 date；我保留以保「季频」语义，是否改纯 N-次驱动请定。
+- `changes` 结构为 `{cond_id:{change,text}}`（嵌套，非任务字面的 `cond_id→change`），因 digest 需 condition_text 而 `send_digest` 不持卡——故把 text 折进 change 项。
+
 ## v0.0.22 — 2026-08-04 — manual_check_items prompt 引导扩展（SYSTEM_PROMPT + EXTRACT_PROMPT）+ caca 接受
 
 **做了什么**

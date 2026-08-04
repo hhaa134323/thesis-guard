@@ -1,8 +1,11 @@
 """自动化调度（Stage 2 窗口 C / 任务 3）：胶水层。
 
-把 price_monitor + check_agent + watch_state + notification 粘成每日自动闭环。
-run_daily_check() 流程：price alerts → check_agent（遍历预置用户）→ watch_state 更新 →
-通知编排（alert / digest / S4）→ watch_state 季频复盘提醒。
+把 price_monitor + check_agent + notification 粘成每日自动闭环。watch 记忆由 check_agent
+自身输出（较上次 change，读 previous_verdicts），不再走独立 watch_state 模块/SQLite 表
+（旧 C-2 代码方案两个死结：无新 filing 假解除 / 无数值无法判恶化——改 agent 自判）。
+run_daily_check() 流程：price alerts → check_agent（遍历预置用户，结果含 changes）→
+通知编排（alert / digest / S4；digest 读 check_results 的 changes）→ 季频复盘（查
+check_results 最近 N 次 watch → 提醒，stateless，无 watch_states 表）。
 
 调度：APScheduler AsyncIOScheduler，每日定时（默认美东 16:00 收盘后）。时间走 env
 （THESIS_CHECK_TIME=HH:MM / THESIS_TZ，PRD §9 部署中立）。THESIS_SCHEDULER=1 时 serve.py
@@ -12,17 +15,20 @@ run_daily_check() 流程：price alerts → check_agent（遍历预置用户）�
 任一步最终失败 → 记 errors，末尾 NotifierRegistry.get('email').send 发错误汇总邮件（不崩）。
 
 R1-R9 不变；不替用户结论（R6：错误/复盘邮件也只述事实，不下结论）。不碰
-price_monitor/notification/watch_state/orchestrator/fetchers（只读调用）。apscheduler + watch_state
-为可选依赖（顶层 try-import，未装时模块仍加载、调度不启动但 run_daily_check 可跑/可测）。
+price_monitor/notification/orchestrator/fetchers（只读调用）。apscheduler 为可选依赖
+（顶层 try-import，未装时模块仍加载、调度不启动但 run_daily_check 可跑/可测）。
 """
 from __future__ import annotations
 
 import asyncio
+import datetime
 import os
+import re
 import time
 from typing import Callable
 
 from .config import load_config
+from .models import CondStatus
 from .notifiers import NotifierRegistry  # 导入即注册 EmailNotifier 到 "email"
 from . import check_agent, notification, price_monitor
 from .store import PRESET_USERS, ThesisStore
@@ -34,17 +40,14 @@ except ImportError:
     AsyncIOScheduler = None  # type: ignore
     _HAS_APSCHEDULER = False
 
-try:  # watch_state 窗口 C-2 并行开发，未交付时 None（run_daily_check 跳过 watch 步骤）
-    from . import watch_state  # type: ignore
-except ImportError:
-    watch_state = None  # type: ignore
-
 
 # --- 配置（env，部署中立；THESIS_CHECK_TIME/THESIS_TZ 在 _scheduler_config 里读）---
 DB_PATH = os.environ.get("THESIS_DB", "data/thesis.db")
 CONFIG_PATH = os.environ.get("THESIS_CONFIG", "config.yaml")
 LOOKBACK_HOURS = int(os.environ.get("THESIS_CHECK_LOOKBACK_HOURS", "72"))
 NOTIFY_TO = os.environ.get("THESIS_NOTIFY_TO", "")
+# 季频复盘：某 cond 最近 N 次核对全 watch 才提醒（默认 3 ≈ 持续 watch 已确立；env 可调）
+_QUARTERLY_WATCH_N = int(os.environ.get("THESIS_QUARTERLY_WATCH_N", "3"))
 
 
 def _get_store() -> ThesisStore:
@@ -100,9 +103,10 @@ async def run_daily_check(*, store: ThesisStore | None = None,
                           log: Callable = print) -> dict:
     """每日检查流程（调度器自动调用 / CLI 手动）。返 daily 摘要 dict。
 
-    顺序：price_monitor → check_agent（遍历预置用户）→ watch_state.update →
-    notification（alert / digest / S4）→ watch_state.check_quarterly_review。
-    每步包 try/except（失败不崩，记 errors → 末尾发错误通知邮件）。watch_state 未装则跳过。
+    顺序：price_monitor → check_agent（遍历预置用户，结果含 changes）→
+    notification（alert / digest / S4；digest 读 check_results 的 changes）→
+    季频复盘（check_results 最近 N 次 watch → 提醒，stateless）。
+    每步包 try/except（失败不崩，记 errors → 末尾发错误通知邮件）。
     """
     store = store or _get_store()
     cfg = cfg or _get_cfg()
@@ -116,7 +120,8 @@ async def run_daily_check(*, store: ThesisStore | None = None,
         errors.append(f"price_monitor: {type(e).__name__}: {e}")
         price_alerts = []
 
-    # 2. check_agent（遍历预置用户，逐用户重试；空卡用户 run_all 短路返 []）
+    # 2. check_agent（遍历预置用户，逐用户重试；空卡用户 run_all 短路返 []；
+    #    结果含 changes = {cond_id:{change,text}}，watch 较上次变化由 agent 自判）
     check_results: list[dict] = []
     for u in PRESET_USERS:
         uid = u["user_id"]
@@ -127,23 +132,15 @@ async def run_daily_check(*, store: ThesisStore | None = None,
         except Exception as e:  # noqa: BLE001
             errors.append(f"check_agent:{uid}: {type(e).__name__}: {e}")
 
-    # 3. watch_state.update_watch_states（未装跳过）
-    watch_changes: list[dict] = []
-    if watch_state is not None:
-        try:
-            watch_changes = watch_state.update_watch_states(check_results)
-        except Exception as e:  # noqa: BLE001
-            errors.append(f"watch_state.update: {type(e).__name__}: {e}")
-
-    # 4. notification
-    # 4a. price alerts → send_alert
+    # 3. notification
+    # 3a. price alerts → send_alert
     for pa in price_alerts:
         try:
             notification.send_alert(pa.get("ticker", ""), pa, NOTIFY_TO)
         except Exception as e:  # noqa: BLE001
             errors.append(f"send_alert(price {pa.get('ticker', '')}): {type(e).__name__}: {e}")
 
-    # 4b. triggered check results → send_alert + request_s4_action
+    # 3b. triggered check results → send_alert + request_s4_action
     for cr in check_results:
         if cr.get("n_triggered"):
             for trig in cr.get("triggered") or []:
@@ -153,22 +150,22 @@ async def run_daily_check(*, store: ThesisStore | None = None,
                 except Exception as e:  # noqa: BLE001
                     errors.append(f"send_alert/S4({cr.get('ticker', '')}): {type(e).__name__}: {e}")
 
-    # 4c. digest（所有结果汇总；S3 无事行不空在 notification.send_digest 里）
+    # 3c. digest（所有结果汇总；watch 变化读 check_results 的 changes；S3 无事行不空在 send_digest 里）
     manual_items = _collect_manual_items(store)
     try:
-        notification.send_digest(check_results, price_alerts, watch_changes,
-                                  manual_items, NOTIFY_TO)
+        notification.send_digest(check_results, price_alerts, manual_items, NOTIFY_TO)
     except Exception as e:  # noqa: BLE001
         errors.append(f"send_digest: {type(e).__name__}: {e}")
 
-    # 5. watch_state.check_quarterly_review → 复盘提醒（未装跳过）
-    if watch_state is not None:
-        try:
-            review_items = watch_state.check_quarterly_review()
-            if review_items:
-                _send_quarterly_reminder(review_items)
-        except Exception as e:  # noqa: BLE001
-            errors.append(f"watch_state.review: {type(e).__name__}: {e}")
+    # 4. 季频复盘：查 check_results 最近 N 次 watch → 提醒（stateless，无 watch_states 表）
+    n_review = 0
+    try:
+        review_items = _quarterly_review_items(store)
+        n_review = len(review_items)
+        if review_items:
+            _send_quarterly_reminder(review_items)
+    except Exception as e:  # noqa: BLE001
+        errors.append(f"quarterly_review: {type(e).__name__}: {e}")
 
     # 错误通知邮件（任一步失败 → 发错误汇总；发不出去也不崩）
     if errors:
@@ -179,10 +176,69 @@ async def run_daily_check(*, store: ThesisStore | None = None,
             pass
 
     log(f"[scheduler] daily check done: {len(price_alerts)} price alerts, "
-        f"{len(check_results)} check results, {len(watch_changes)} watch changes, "
+        f"{len(check_results)} check results, {n_review} quarterly reviews, "
         f"{len(errors)} errors")
     return {"price_alerts": len(price_alerts), "check_results": len(check_results),
-            "watch_changes": len(watch_changes), "errors": errors}
+            "quarterly_reviews": n_review, "errors": errors}
+
+
+def _is_review_due(date_str: str, today: datetime.date) -> bool:
+    """下次复盘日是否到期（<= today）。支持 YYYY-MM-DD / YYYY-MM / YYYY-Qn / YYYY；
+    无日期 / 非法 → False（不催）。与旧 watch_state._is_due 同款——季频 cadence 仍由
+    card.next_verdict.date 驱动，避免无门控每日刷屏。"""
+    s = (date_str or "").strip()
+    if not s:
+        return False
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})", s)
+    if m:
+        try:
+            return datetime.date(int(m.group(1)), int(m.group(2)), int(m.group(3))) <= today
+        except ValueError:
+            return False
+    m = re.match(r"(\d{4})-Q(\d)", s, re.I)
+    if m:
+        q = int(m.group(2))
+        if not 1 <= q <= 4:
+            return False
+        month = q * 3 - 1  # Q1→Feb(2) Q2→May(5) Q3→Aug(8) Q4→Nov(11)，与 notification._parse_ymd 同款
+        return (int(m.group(1)), month) <= (today.year, today.month)
+    m = re.match(r"(\d{4})-(\d{2})", s)
+    if m:
+        return (int(m.group(1)), int(m.group(2))) <= (today.year, today.month)
+    m = re.match(r"(\d{4})", s)
+    if m:
+        return int(m.group(1)) <= today.year
+    return False
+
+
+def _quarterly_review_items(store: ThesisStore, *, n_recent: int = _QUARTERLY_WATCH_N) -> list[dict]:
+    """季频复盘（stateless，无 watch_states 表）：卡 next_verdict.date 到期 + 该卡某 cond
+    最近 n_recent 次核对全 watch → 返需复查项。替代旧 watch_state.check_quarterly_review
+    （旧用 active watch state 单点判定，新用 check_results 最近 N 次持续 watch，更稳）。
+    不自动过期（从不删 check_results）。Returns: [{ticker, condition_text, n_watch}]。"""
+    today = datetime.date.today()
+    out: list[dict] = []
+    for card in price_monitor.load_all_cards(store):
+        if not getattr(card.confirmation, "confirmed_by_user", False):
+            continue
+        nv = getattr(card, "next_verdict", None)
+        date = getattr(nv, "date", None) if nv is not None else None
+        if not date or not _is_review_due(date, today):
+            continue
+        # 按 cond 收集最近 n_recent 次（list_check_results 已按 checked_at DESC，[0] 最新）
+        by_cond: dict[str, list] = {}
+        for r in store.list_check_results(card.card_id):
+            cid = getattr(r, "cond_id", "")
+            if cid:
+                by_cond.setdefault(cid, []).append(r)
+        for cond in card.broken_conditions:
+            recent = by_cond.get(cond.id, [])[:n_recent]
+            if len(recent) >= n_recent and all(
+                getattr(r, "status", None) == CondStatus.WATCH for r in recent
+            ):
+                out.append({"ticker": card.ticker, "condition_text": cond.text,
+                            "n_watch": len(recent)})
+    return out
 
 
 def _send_quarterly_reminder(review_items: list[dict]) -> None:

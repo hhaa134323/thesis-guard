@@ -74,7 +74,7 @@ def test_send_digest_multiple_statuses(monkeypatch):
         {"ticker": "NVDA", "n_triggered": 0, "n_watch": 1, "n_untriggered": 1},
         {"ticker": "HSBC", "n_triggered": 0, "n_watch": 0, "n_untriggered": 2},
     ]
-    send_digest(crs, [], [], [], "a@b.com")
+    send_digest(crs, [], [], "a@b.com")
     assert len(fake.sent) == 1
     to, subject, body = fake.sent[0]
     assert to == "a@b.com"
@@ -91,10 +91,10 @@ def test_send_digest_zero_triggered_s3_line(monkeypatch):
         {"ticker": "MCO", "n_triggered": 0, "n_watch": 0, "n_untriggered": 2},
         {"ticker": "NVDA", "n_triggered": 0, "n_watch": 0, "n_untriggered": 1},
     ]
-    send_digest(crs, [], [], [], "a@b.com")
+    send_digest(crs, [], [], "a@b.com")
     to, subject, body = fake.sent[0]
     assert "已检查 2 只 / 0 触发" in body   # S3 无事那行不许空
-    assert "观察项：待 Task 5 实现" in body  # watch 占位
+    assert "观察项：今日无 watch 变化" in body  # watch 占位已落地，无变化时如实说
 
 
 # --- send_digest: 含 price_alerts → digest 列价格到价 ---
@@ -104,7 +104,7 @@ def test_send_digest_with_price_alerts(monkeypatch):
     pa = {"ticker": "MCO", "alert_type": "safety_margin", "current_price": 394.50,
           "threshold": 380.00, "triggered": True, "condition_text": "加仓价 380",
           "position_type": "长线", "timestamp": "2026-08-04T16:00:00Z"}
-    send_digest(crs, [pa], [], [], "a@b.com")
+    send_digest(crs, [pa], [], "a@b.com")
     _to, _subject, body = fake.sent[0]
     assert "价格到价" in body
     assert "394.5" in body and "380" in body
@@ -116,10 +116,49 @@ def test_send_digest_manual_items(monkeypatch):
     fake = _patch_email(monkeypatch)
     crs = [{"ticker": "MCO", "n_triggered": 0, "n_watch": 0, "n_untriggered": 1}]
     mis = [{"text": "月线收盘价是否跌破 200 日均线", "reason": "价格图形型", "cadence": "monthly"}]
-    send_digest(crs, [], [], mis, "a@b.com")
+    send_digest(crs, [], mis, "a@b.com")
     _to, _subject, body = fake.sent[0]
     assert "需你自查" in body
     assert "200 日均线" in body
+
+
+# --- send_digest: watch 较上次变化（读 check_results 的 changes，6 值映射）---
+def test_send_digest_renders_watch_changes(monkeypatch):
+    fake = _patch_email(monkeypatch)
+    crs = [
+        {"ticker": "MCO", "n_triggered": 0, "n_watch": 1, "n_untriggered": 0,
+         "changes": {"c1": {"change": "new", "text": "营收增速跌破 5%"}}},
+        {"ticker": "NVDA", "n_triggered": 0, "n_watch": 1, "n_untriggered": 0,
+         "changes": {"c2": {"change": "worsened", "text": "CEO 离职风险"}}},
+    ]
+    send_digest(crs, [], [], "a@b.com")
+    _to, _subject, body = fake.sent[0]
+    assert "MCO 新增 watch：营收增速跌破 5%" in body
+    assert "NVDA 恶化：CEO 离职风险" in body
+
+
+def test_send_digest_watch_change_six_values(monkeypatch):
+    """6 种 change 值的文案映射 + 空串（非 transition）不列。"""
+    fake = _patch_email(monkeypatch)
+    crs = [{"ticker": "MCO", "n_triggered": 0, "n_watch": 1, "n_untriggered": 0,
+            "changes": {
+                "c1": {"change": "new", "text": "T1"},
+                "c2": {"change": "worsened", "text": "T2"},
+                "c3": {"change": "improved", "text": "T3"},
+                "c4": {"change": "unchanged", "text": "T4"},
+                "c5": {"change": "resolved", "text": "T5"},
+                "c6": {"change": "escalated", "text": "T6"},
+                "c7": {"change": "", "text": "T7"},  # 非 transition → 不列
+            }}]
+    send_digest(crs, [], [], "a@b.com")
+    _to, _subject, body = fake.sent[0]
+    assert "MCO 新增 watch：T1" in body
+    assert "MCO 恶化：T2" in body
+    assert "MCO 改善：T3" in body
+    assert "MCO 仍在 watch：T4（无变化）" in body
+    assert "MCO 已解除：T5" in body
+    assert "MCO 升级 triggered：T6" in body
+    assert "T7" not in body  # 空串不列
 
 
 # --- request_s4_action: 三选项 + 误报数据落 JSONL ---

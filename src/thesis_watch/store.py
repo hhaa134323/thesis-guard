@@ -22,21 +22,6 @@ PRESET_USERS: list[dict[str, str]] = [
     {"user_id": "beta5", "email": "", "display_name": "Beta Five"},
 ]
 
-
-def _watch_state_row_to_dict(row: sqlite3.Row) -> dict:
-    """watch_states 行 → dict（history JSON 解析；watch_state 模块用）。"""
-    return {
-        "ticker": row["ticker"],
-        "condition_id": row["condition_id"],
-        "condition_text": row["condition_text"],
-        "graduation_line": row["graduation_line"],
-        "first_seen_date": row["first_seen_date"],
-        "last_checked_date": row["last_checked_date"],
-        "status": row["status"],
-        "history": json.loads(row["history"] or "[]"),
-    }
-
-
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
   user_id      TEXT PRIMARY KEY,
@@ -67,19 +52,6 @@ CREATE TABLE IF NOT EXISTS check_results (
   FOREIGN KEY(card_id) REFERENCES thesis_cards(card_id)
 );
 CREATE INDEX IF NOT EXISTS idx_results_card ON check_results(card_id);
-
-CREATE TABLE IF NOT EXISTS watch_states (
-  ticker           TEXT NOT NULL,
-  condition_id     TEXT NOT NULL,
-  condition_text   TEXT NOT NULL DEFAULT '',
-  graduation_line  TEXT NOT NULL DEFAULT '',
-  first_seen_date  TEXT NOT NULL,
-  last_checked_date TEXT NOT NULL,
-  status           TEXT NOT NULL,
-  history          TEXT NOT NULL DEFAULT '[]',
-  PRIMARY KEY (ticker, condition_id)
-);
-CREATE INDEX IF NOT EXISTS idx_watch_states_status ON watch_states(status);
 """
 
 
@@ -165,42 +137,6 @@ class ThesisStore:
             (card_id,),
         ).fetchall()
         return [from_dict(CheckResult, json.loads(r["result_json"])) for r in rows]
-
-    # --- watch states（Stage 2 任务 5）---
-    def upsert_watch_state(self, state: dict) -> None:
-        """Insert/update a watch state（keyed by ticker+condition_id）。
-        state: {ticker, condition_id, condition_text, graduation_line, first_seen_date,
-                last_checked_date, status(active|resolved|escalated), history:list}。
-        history 为 list → JSON 存。"""
-        self.conn.execute(
-            """INSERT INTO watch_states(ticker, condition_id, condition_text, graduation_line,
-                   first_seen_date, last_checked_date, status, history)
-               VALUES (?,?,?,?,?,?,?,?)
-               ON CONFLICT(ticker, condition_id) DO UPDATE SET
-                 condition_text=excluded.condition_text, graduation_line=excluded.graduation_line,
-                 first_seen_date=excluded.first_seen_date, last_checked_date=excluded.last_checked_date,
-                 status=excluded.status, history=excluded.history""",
-            (state.get("ticker", ""), state.get("condition_id", ""),
-             state.get("condition_text", ""), state.get("graduation_line", ""),
-             state.get("first_seen_date", ""), state.get("last_checked_date", ""),
-             state.get("status", "active"),
-             json.dumps(state.get("history", []), ensure_ascii=False)),
-        )
-        self.conn.commit()
-
-    def get_watch_state(self, ticker: str, condition_id: str) -> dict | None:
-        row = self.conn.execute(
-            "SELECT * FROM watch_states WHERE ticker=? AND condition_id=?",
-            (ticker, condition_id),
-        ).fetchone()
-        return _watch_state_row_to_dict(row) if row else None
-
-    def list_active_watch_states(self) -> list[dict]:
-        """所有 status='active' 的 watch states（digest / quarterly review 用）。"""
-        rows = self.conn.execute(
-            "SELECT * FROM watch_states WHERE status='active' ORDER BY first_seen_date ASC"
-        ).fetchall()
-        return [_watch_state_row_to_dict(r) for r in rows]
 
     def close(self) -> None:
         self.conn.close()

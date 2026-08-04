@@ -3,7 +3,8 @@
 三层通知（PRD §S3 触达 / §S4 收尾 / §S5 人工自查）：
 - send_alert：triggered（check_agent 命中破局条件）或 safety_margin_hit（price_monitor 到价）
   → 当天**单独邮件**（附证据 + 一手链接 / 当前价 + 阈值）。经 NotifierRegistry.get("email").send。
-- send_digest：每日汇总（所有持仓覆盖率 + watch 占位 + manual_items + S3 无事行不空）。
+- send_digest：每日汇总（所有持仓覆盖率 + watch 较上次变化 + manual_items + S3 无事行不空）。
+  watch 变化读 check_results 每条的 changes（agent 自判 new/worsened/improved/unchanged/resolved/escalated）。
 - request_s4_action：triggered 需用户收尾 → 邮件附三选项（确认破了 / 误报 / 忽略），
   误报数据沉淀 eval 标注（v1 记 JSONL 文件，THESIS_S4_LOG 配置，后续接 eval pipeline）。
 
@@ -13,7 +14,7 @@
 
 入参形状（防御式 .get，与上游解耦）：
 - check_results（check_agent.run_check 输出）：
-  {ticker, n_triggered, n_watch, n_untriggered, triggered:[{cond, urls}], ?next_verdict:{event,date}, ...}
+  {ticker, n_triggered, n_watch, n_untriggered, triggered:[{cond, urls}], ?changes:{cond_id:{change,text}}, ?next_verdict:{event,date}, ...}
 - price_alerts（price_monitor.run_price_check 输出，8 键）：
   {ticker, alert_type, current_price, threshold, triggered, condition_text, position_type, timestamp}
 - alert_data（send_alert 单条）：price_alert 8 键 / 或 {cond, urls, ?value, ?evidence_excerpt}
@@ -139,8 +140,18 @@ def _status_label(r: dict) -> str:
     return "untriggered"
 
 
+# watch 较上次变化的文案映射（unchanged 单独处理：label 含后缀「（无变化）」）
+_CHANGE_LABELS = {
+    "new": "新增 watch",
+    "worsened": "恶化",
+    "improved": "改善",
+    "resolved": "已解除",
+    "escalated": "升级 triggered",
+}
+
+
 def _render_digest(check_results: list[dict], price_alerts: list[dict],
-                   watch_states: list[dict], manual_items: list[dict]) -> tuple[str, str]:
+                   manual_items: list[dict]) -> tuple[str, str]:
     n_tickers = len(check_results)
     n_triggered_cards = sum(1 for r in check_results if r.get("n_triggered"))
     total_triggers = n_triggered_cards + len(price_alerts)
@@ -171,14 +182,28 @@ def _render_digest(check_results: list[dict], price_alerts: list[dict],
                          f"{pa.get('threshold')}（{pa.get('condition_text', '')}）")
         lines.append("")
 
-    # watch 记忆 Task 5 未做 → 占位（PRD §4-A 不静默跳过，明说待实现）；有数据则先列着
-    if watch_states:
+    # 观察项：watch 较上次变化（读 check_results 每条的 changes；agent 自判，Task 5 已落地）
+    watch_lines: list[str] = []
+    for cr in check_results:
+        ticker = cr.get("ticker", "")
+        for cid, info in (cr.get("changes") or {}).items():
+            if isinstance(info, dict):
+                ch = info.get("change", "") or ""
+                text = info.get("text", "") or ""
+            else:
+                ch, text = str(info), ""
+            if not ch:
+                continue  # 非 watch transition（空串）→ 不列
+            if ch == "unchanged":
+                watch_lines.append(f"  · {ticker} 仍在 watch：{text}（无变化）")
+            else:
+                label = _CHANGE_LABELS.get(ch, ch)
+                watch_lines.append(f"  · {ticker} {label}：{text}")
+    if watch_lines:
         lines.append("观察项：")
-        for ws in watch_states:
-            lines.append(f"  · {ws.get('ticker', '')} {ws.get('status', '')} "
-                         f"{ws.get('change', '')}".rstrip())
+        lines.extend(watch_lines)
     else:
-        lines.append("观察项：待 Task 5 实现")
+        lines.append("观察项：今日无 watch 变化")
     lines.append("")
 
     if manual_items:
@@ -198,11 +223,11 @@ def _render_digest(check_results: list[dict], price_alerts: list[dict],
 
 
 def send_digest(check_results: list[dict], price_alerts: list[dict],
-                watch_states: list[dict], manual_items: list[dict],
-                to_email: str) -> bool:
-    """每日 Digest：所有持仓汇总（覆盖率 + watch 占位 + manual_items + S3 无事行不空）。
-    返 True=已发，False=dry-run。"""
-    subject, body = _render_digest(check_results, price_alerts, watch_states, manual_items)
+                manual_items: list[dict], to_email: str) -> bool:
+    """每日 Digest：所有持仓汇总（覆盖率 + watch 较上次变化 + manual_items + S3 无事行不空）。
+    watch 变化读 check_results 每条的 changes（{cond_id:{change,text}}，agent 自判
+    new/worsened/improved/unchanged/resolved/escalated；空串不列）。返 True=已发，False=dry-run。"""
+    subject, body = _render_digest(check_results, price_alerts, manual_items)
     return _send_email(to_email, subject, body)
 
 

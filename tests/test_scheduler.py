@@ -1,16 +1,27 @@
 """scheduler 单测（Stage 2 窗口 C / 任务 3）：daily check 胶水层。
 
-mock price_monitor / check_agent / watch_state / notification，验证 daily flow 顺序 +
-alert/S4/digest 调用 + 重试 + env 配置。不触网不落盘（time.sleep mock 掉；store :memory:）。
+mock price_monitor / check_agent / notification，验证 daily flow 顺序 +
+alert/S4/digest 调用 + 重试 + env 配置 + 季频复盘（stateless 查 check_results）。不触网不落盘
+（time.sleep mock 掉；store :memory:）。
 """
 from __future__ import annotations
 
 import asyncio
-import types
+import datetime
 
 import pytest
 
 from thesis_watch import scheduler
+from thesis_watch.models import (
+    BrokenCondition,
+    CheckResult,
+    CondStatus,
+    ConditionLayer,
+    Confirmation,
+    FilerType,
+    NextVerdictData,
+    ThesisCard,
+)
 from thesis_watch.store import ThesisStore
 
 
@@ -20,8 +31,6 @@ class _Fake:
         self.calls: list[tuple[str, tuple]] = []
         self.price_alerts: list[dict] = []
         self.check_results: list[dict] = []
-        self.watch_changes: list[dict] = []
-        self.review_items: list[dict] = []
         self.price_error: Exception | None = None
         self.check_error: Exception | None = None
 
@@ -48,23 +57,11 @@ def _patch(monkeypatch, fake: _Fake):
         return fake.check_results if uid == "beta1" else []
     monkeypatch.setattr(scheduler.check_agent, "run_all", _run_all)
 
-    # watch_state → fake module（patch scheduler.watch_state）
-    def _update_ws(crs):
-        fake.rec("watch_state.update_watch_states", crs)
-        return fake.watch_changes
-    def _review():
-        fake.rec("watch_state.check_quarterly_review")
-        return fake.review_items
-    monkeypatch.setattr(scheduler, "watch_state", types.SimpleNamespace(
-        update_watch_states=_update_ws,
-        check_quarterly_review=_review,
-    ))
-
     # notification
     monkeypatch.setattr(scheduler.notification, "send_alert",
                         lambda ticker, alert_data, to_email: (fake.rec("notification.send_alert", ticker, alert_data, to_email) or True))
     monkeypatch.setattr(scheduler.notification, "send_digest",
-                        lambda crs, pas, wcs, mis, to_email: (fake.rec("notification.send_digest", crs, pas, wcs, mis, to_email) or True))
+                        lambda crs, pas, mis, to_email: (fake.rec("notification.send_digest", crs, pas, mis, to_email) or True))
     monkeypatch.setattr(scheduler.notification, "request_s4_action",
                         lambda ticker, td, to_email: (fake.rec("notification.request_s4_action", ticker, td, to_email) or True))
 
@@ -99,14 +96,11 @@ def test_flow_order(monkeypatch):
     fake = _Fake()
     fake.price_alerts = [_PRICE_ALERT]
     fake.check_results = [_TRIGGERED_CR]
-    fake.watch_changes = [{"ticker": "MCO", "change": "unchanged"}]
     _patch(monkeypatch, fake)
     _run(fake)
     names = _names(fake)
     assert names.index("price_monitor.run_price_check") < names.index("check_agent.run_all")
-    assert names.index("check_agent.run_all") < names.index("watch_state.update_watch_states")
-    assert names.index("watch_state.update_watch_states") < names.index("notification.send_digest")
-    assert names.index("notification.send_digest") < names.index("watch_state.check_quarterly_review")
+    assert names.index("check_agent.run_all") < names.index("notification.send_digest")
 
 
 # --- price alert → send_alert ---
@@ -139,7 +133,7 @@ def test_no_trigger_sends_digest(monkeypatch):
     result = _run(fake)
     digest_calls = [c for c in fake.calls if c[0] == "notification.send_digest"]
     assert len(digest_calls) == 1
-    crs, pas, wcs, mis, to = digest_calls[0][1]
+    crs, pas, mis, to = digest_calls[0][1]
     assert len(crs) == 1
     assert pas == []
     assert result["price_alerts"] == 0
@@ -236,3 +230,109 @@ def test_build_scheduler_no_apscheduler_returns_none(monkeypatch):
     monkeypatch.setattr(scheduler, "_HAS_APSCHEDULER", False)
     monkeypatch.setattr(scheduler, "AsyncIOScheduler", None)
     assert scheduler.build_scheduler() is None
+
+
+# --------------------------------------------------------------------------- #
+# 季频复盘：stateless，查 check_results 最近 N 次 watch（替代 watch_state.check_quarterly_review）
+# --------------------------------------------------------------------------- #
+
+def _nv_card(ticker="MCO", cond_ids=("c1",), next_verdict_date=None,
+             confirmed=True) -> ThesisCard:
+    broken = [BrokenCondition(id=c, layer=ConditionLayer.MIRROR, text=f"cond {c}")
+              for c in cond_ids]
+    nv = NextVerdictData(event="Q3 财报", date=next_verdict_date) if next_verdict_date else None
+    return ThesisCard(user_id="beta1", ticker=ticker, filer_type=FilerType.DOMESTIC_10K,
+                      holding_reason_raw="x", broken_conditions=broken, next_verdict=nv,
+                      confirmation=Confirmation(confirmed_by_user=confirmed))
+
+
+def _save_n(store, card, cid, status, n, checked_at="2026-08-01T00:00:00Z"):
+    for _ in range(n):
+        store.save_check_result(CheckResult(card_id=card.card_id, cond_id=cid,
+                                            status=status, checked_at=checked_at))
+
+
+def test_quarterly_review_due_recent_watch_returns_items():
+    """卡 next_verdict.date 到期 + cond 最近 N 次全 watch → 返复查项（stateless）。"""
+    store = ThesisStore(":memory:")
+    store.seed_preset_users()
+    today = datetime.date.today().isoformat()
+    card = _nv_card("MCO", ("c1",), next_verdict_date=today)
+    store.upsert_card(card)
+    _save_n(store, card, "c1", CondStatus.WATCH, scheduler._QUARTERLY_WATCH_N)
+    out = scheduler._quarterly_review_items(store)
+    assert len(out) == 1
+    assert out[0]["ticker"] == "MCO"
+    assert out[0]["condition_text"] == "cond c1"
+    assert out[0]["n_watch"] == scheduler._QUARTERLY_WATCH_N
+
+
+def test_quarterly_review_not_due_returns_empty():
+    """卡 next_verdict.date 未来 → 未到期 → []。"""
+    store = ThesisStore(":memory:")
+    store.seed_preset_users()
+    future = (datetime.date.today() + datetime.timedelta(days=60)).isoformat()
+    card = _nv_card("MCO", ("c1",), next_verdict_date=future)
+    store.upsert_card(card)
+    _save_n(store, card, "c1", CondStatus.WATCH, scheduler._QUARTERLY_WATCH_N)
+    assert scheduler._quarterly_review_items(store) == []
+
+
+def test_quarterly_review_no_next_verdict_returns_empty():
+    """卡无 next_verdict（date=None）→ []（无复盘日，不催）。"""
+    store = ThesisStore(":memory:")
+    store.seed_preset_users()
+    card = _nv_card("MCO", ("c1",), next_verdict_date=None)
+    store.upsert_card(card)
+    _save_n(store, card, "c1", CondStatus.WATCH, scheduler._QUARTERLY_WATCH_N)
+    assert scheduler._quarterly_review_items(store) == []
+
+
+def test_quarterly_review_insufficient_history_returns_empty():
+    """cond 最近核对次数 < N → 不算持续 watch → []。"""
+    store = ThesisStore(":memory:")
+    store.seed_preset_users()
+    today = datetime.date.today().isoformat()
+    card = _nv_card("MCO", ("c1",), next_verdict_date=today)
+    store.upsert_card(card)
+    _save_n(store, card, "c1", CondStatus.WATCH, scheduler._QUARTERLY_WATCH_N - 1)
+    assert scheduler._quarterly_review_items(store) == []
+
+
+def test_quarterly_review_recent_has_untriggered_returns_empty():
+    """最近 N 次含 untriggered（非全 watch）→ []。"""
+    store = ThesisStore(":memory:")
+    store.seed_preset_users()
+    today = datetime.date.today().isoformat()
+    card = _nv_card("MCO", ("c1",), next_verdict_date=today)
+    store.upsert_card(card)
+    _save_n(store, card, "c1", CondStatus.WATCH, scheduler._QUARTERLY_WATCH_N - 1,
+            checked_at="2026-08-01T00:00:00Z")
+    # 最新一次为 untriggered → 最近 N 次非全 watch
+    store.save_check_result(CheckResult(card_id=card.card_id, cond_id="c1",
+                                        status=CondStatus.UNTRIGGERED,
+                                        checked_at="2026-08-02T00:00:00Z"))
+    assert scheduler._quarterly_review_items(store) == []
+
+
+def test_quarterly_review_unconfirmed_card_skipped():
+    """未确认卡（confirmed_by_user=False）→ 跳过（不进复查）。"""
+    store = ThesisStore(":memory:")
+    store.seed_preset_users()
+    today = datetime.date.today().isoformat()
+    card = _nv_card("MCO", ("c1",), next_verdict_date=today, confirmed=False)
+    store.upsert_card(card)
+    _save_n(store, card, "c1", CondStatus.WATCH, scheduler._QUARTERLY_WATCH_N)
+    assert scheduler._quarterly_review_items(store) == []
+
+
+def test_quarterly_review_past_date_due():
+    """复盘日已过（past）→ 仍 due（逾期复查），返项。"""
+    store = ThesisStore(":memory:")
+    store.seed_preset_users()
+    past = (datetime.date.today() - datetime.timedelta(days=10)).isoformat()
+    card = _nv_card("MCO", ("c1",), next_verdict_date=past)
+    store.upsert_card(card)
+    _save_n(store, card, "c1", CondStatus.WATCH, scheduler._QUARTERLY_WATCH_N)
+    out = scheduler._quarterly_review_items(store)
+    assert len(out) == 1 and out[0]["ticker"] == "MCO"
