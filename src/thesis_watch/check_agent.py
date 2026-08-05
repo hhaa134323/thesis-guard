@@ -37,6 +37,7 @@ from agents import (
     RunContextWrapper,
     function_tool,
     set_default_openai_api,
+    set_tracing_disabled,
 )
 from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
 from openai import AsyncOpenAI
@@ -51,6 +52,7 @@ from .store import ThesisStore
 
 # 百炼兼容端点用 chat_completions API（不支持 Responses API），SDK 须切默认（与 orchestrator 同）。
 set_default_openai_api("chat_completions")
+set_tracing_disabled(True)  # 百炼不用 OpenAI trace
 
 # agent loop 上限：fetch_recent_filings（1）+ submit_verdicts（1）+ DeepSeek 偶发多轮余量。
 _MAX_TURNS = 6

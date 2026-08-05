@@ -35,7 +35,7 @@
 
 **这是当前产品的最终形态**——录入 + 监控 + 通知，闭环了。
 
-**实现**：commit `741ceb1`，202 tests 全绿。详见 Notion「Thesis Guard · Stage 2 业务流程设计」+ `docs/stage2-extension.md`。
+**实现**：commit `8c65773`，212 tests 全绿，端到端验收通过（B1+B2）。价格监控 env-blocked（已接受）。详见 Notion「Thesis Guard · Stage 2 业务流程设计」+ `docs/stage2-extension.md`。
 
 ---
 
