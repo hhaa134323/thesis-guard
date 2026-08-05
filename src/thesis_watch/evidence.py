@@ -52,14 +52,11 @@ def self_check(url: str, excerpt: str,
     return EvidenceCheckResult(True, None, "ok")
 
 
-def default_fetcher(url: str, timeout: float = 15.0) -> "str | None":
-    """urllib 抓取（网络依赖，B1 解除后可用）。SEC 要求 User-Agent。"""
-    import urllib.request
-    req = urllib.request.Request(
-        url, headers={"User-Agent": "ThesisWatch/0.0 research@example.com"}
-    )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 — 公开接口
-        data = resp.read()
-    if isinstance(data, bytes):
-        return data.decode("utf-8", errors="replace")
-    return data
+def default_fetcher(url: str, timeout: float = 30.0) -> "str | None":
+    """requests 抓取（SSL 栈比 urllib 稳：certifi+urllib3，GFW 下少撞握手超时）。SEC 要求 User-Agent。"""
+    import os
+    import requests
+    ua = os.environ.get("THESIS_SEC_USER_AGENT", "ThesisWatch/0.0 2248789162@qq.com")
+    resp = requests.get(url, headers={"User-Agent": ua}, timeout=timeout)
+    resp.raise_for_status()
+    return resp.text

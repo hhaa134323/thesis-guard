@@ -440,10 +440,16 @@ def run_check(card: ThesisCard, cfg: dict, store: ThesisStore, *,
             ev.checked_ok = chk.ok
             ev.checked_at = _now_iso()
             if not chk.ok:
-                log(f"[{chk.reason}] {card.ticker} cond {c.id} evidence 回放不过: {chk.detail}")
-                errors.append(chk.reason or "E3_EVIDENCE_MISMATCH")
-                status = CondStatus.WATCH  # 降级
-                downgraded = True
+                if chk.reason == "E1_FETCH_FAIL":
+                    # 网络失败（fetch 超时/SSL/URLError/ConnectionError）≠ 内容不符 → 不降级 agent 判断
+                    # GFW 下 SEC 回放常超时；保留 triggered verdict + log warning（R5: 无法回放，非 agent 编造）
+                    log(f"[E1_FETCH_FAIL_NETWORK] {card.ticker} cond {c.id} evidence 回放网络失败（不降级）: {chk.detail}")
+                    errors.append("E1_FETCH_FAIL_NETWORK")
+                else:
+                    log(f"[{chk.reason}] {card.ticker} cond {c.id} evidence 回放不过: {chk.detail}")
+                    errors.append(chk.reason or "E3_EVIDENCE_MISMATCH")
+                    status = CondStatus.WATCH  # 降级
+                    downgraded = True
             evidence.append(ev)
         refusal = None
         if status == CondStatus.WATCH and not v.evidence_url:
