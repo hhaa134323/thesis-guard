@@ -120,14 +120,21 @@ async def run_daily_check(*, store: ThesisStore | None = None,
         errors.append(f"price_monitor: {type(e).__name__}: {e}")
         price_alerts = []
 
+    # Bug 2 fix: 过滤 skip（price_monitor 返 alert + skip 混合列表）
+    price_alerts = [pa for pa in price_alerts if not pa.get("skipped")]
+
     # 2. check_agent（遍历预置用户，逐用户重试；空卡用户 run_all 短路返 []；
     #    结果含 changes = {cond_id:{change,text}}，watch 较上次变化由 agent 自判）
     check_results: list[dict] = []
     for u in PRESET_USERS:
         uid = u["user_id"]
         try:
-            rs = _retry(lambda uid=uid: check_agent.run_all(
-                uid, cfg, store, lookback_hours=LOOKBACK_HOURS, log=log))
+            rs = await asyncio.to_thread(
+                _retry,
+                lambda uid=uid: check_agent.run_all(
+                    uid, cfg, store, lookback_hours=LOOKBACK_HOURS, log=log),
+                label="check_agent",
+            )
             check_results.extend(rs)
         except Exception as e:  # noqa: BLE001
             errors.append(f"check_agent:{uid}: {type(e).__name__}: {e}")

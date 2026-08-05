@@ -152,9 +152,10 @@ _CHANGE_LABELS = {
 
 def _render_digest(check_results: list[dict], price_alerts: list[dict],
                    manual_items: list[dict]) -> tuple[str, str]:
+    real_alerts = [pa for pa in price_alerts if not pa.get("skipped")]
     n_tickers = len(check_results)
     n_triggered_cards = sum(1 for r in check_results if r.get("n_triggered"))
-    total_triggers = n_triggered_cards + len(price_alerts)
+    total_triggers = n_triggered_cards + len(real_alerts)
     nearest = _nearest_verdict_day(check_results)
 
     lines = ["Thesis Watch · 每日简报", ""]
@@ -175,9 +176,9 @@ def _render_digest(check_results: list[dict], price_alerts: list[dict],
             lines.append(f"  · 未核对：{unch.get('cond', '')}（{unch.get('reason', '')}）")
         lines.append("")
 
-    if price_alerts:
+    if real_alerts:
         lines.append("价格到价：")
-        for pa in price_alerts:
+        for pa in real_alerts:
             lines.append(f"  · {pa.get('ticker', '')} 当前 {pa.get('current_price')} ≤ 阈值 "
                          f"{pa.get('threshold')}（{pa.get('condition_text', '')}）")
         lines.append("")
