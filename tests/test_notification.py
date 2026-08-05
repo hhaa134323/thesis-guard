@@ -45,7 +45,7 @@ def test_send_alert_triggered_has_ticker_cond_value_urls(monkeypatch):
     assert "CEO 离职" in body           # 条件
     assert "8-K item 5.02" in body      # 值
     assert "https://www.sec.gov/x" in body  # 一手链接
-    assert "判断权归你" in body          # R6
+    assert "收尾邮件已发" in body          # R6
 
 
 # --- send_alert: price alert（safety_margin 到价）---

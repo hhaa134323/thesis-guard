@@ -61,9 +61,9 @@ _ticker_to_cik_cache: dict[str, str] | None = None
 def _load_ticker_map(user_agent: str) -> dict[str, str]:
     """ticker → CIK（零填充 10 位）。
 
-    CIK 复用 filer_type_lookup.yaml（`scripts/fetch_filer_type.py` 已从 SEC 拉取缓存，
-    含每 ticker 的 cik）——**运行时不拉 5MB company_tickers.json**（慢链路易超时）。
-    新 ticker 不在 lookup → 无 CIK → 该 ticker 跳过（需先跑 fetch_filer_type 入表）。
+    CIK 主源 filer_type_lookup.yaml（`scripts/fetch_filer_type.py` 已从 SEC 拉取缓存，
+    含每 ticker 的 cik）；YAML 缺失的 ticker 用 SEC 全量 company_tickers.json 补齐
+    （一次 fetch，进程内缓存；fetch 失败 → 只用 YAML，需先跑 fetch_filer_type 入表）。
     路径 env THESIS_FILER_LOOKUP 覆盖（与 entry_loop 同一变量）。
     """
     global _ticker_to_cik_cache
@@ -84,6 +84,20 @@ def _load_ticker_map(user_agent: str) -> dict[str, str]:
                     mapping[str(t).upper()] = str(cik).zfill(10)
         except Exception:
             pass  # lookup 损坏 → 空映射（所有 ticker 跳过）
+
+    # Fallback: SEC 官方全量 ticker→CIK（company_tickers.json）
+    # YAML 缺某 ticker 时用全量表补齐（一次 fetch，进程内缓存；fetch 失败 → 只用 YAML，当前行为）
+    try:
+        time.sleep(REQUEST_DELAY_SEC)
+        resp = requests.get(COMPANY_TICKERS_URL, headers={"User-Agent": user_agent}, timeout=15)
+        resp.raise_for_status()
+        for _, info in (resp.json() or {}).items():
+            t = (info.get("ticker") or "").upper()
+            c = str(info.get("cik_str", "")).zfill(10)
+            if t and c and t not in mapping:
+                mapping[t] = c
+    except Exception:
+        pass  # fallback fetch 失败 → 只用 YAML（当前行为）
     _ticker_to_cik_cache = mapping
     return mapping
 

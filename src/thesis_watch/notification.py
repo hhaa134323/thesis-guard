@@ -110,17 +110,25 @@ def _render_alert(ticker: str, alert_data: dict) -> tuple[str, str]:
     else:
         subject = f"Thesis Watch · {t} 破局条件命中"
         lines.append(f"■ {t} 破局条件命中")
+        lines.append("")
+        thesis = alert_data.get("thesis") or ""
+        if thesis:
+            lines.append(f"你的假设：{thesis[:120]}")
+            lines.append("")
         if cond:
-            lines.append(f"条件：{cond}")
-        val = alert_data.get("value") or alert_data.get("evidence_excerpt")
-        if val:
-            lines.append(f"值：{val}")
+            lines.append(f"触发条件：{cond}")
+        excerpt = alert_data.get("evidence_excerpt") or alert_data.get("value")
+        if excerpt:
+            lines.append(f"触发事件：{excerpt}")
+        reasoning = alert_data.get("reasoning")
+        if reasoning:
+            lines.append(f"agent 判断：{reasoning}")
         urls = alert_data.get("urls") or ([alert_data["evidence_url"]] if alert_data.get("evidence_url") else [])
         if urls:
             lines.append("证据：")
             for u in urls:
-                lines.append(f"  原文：{u}")
-        lines += ["", "判断权归你。确认破了 / 误报 / 忽略需你收尾。"]
+                lines.append(f"  {u}")
+        lines += ["", "收尾邮件已发，请查收并做判断。"]
     return subject, "\n".join(lines)
 
 
@@ -239,11 +247,18 @@ def _render_s4(ticker: str, triggered_data: dict) -> tuple[str, str]:
     urls = triggered_data.get("urls") or []
     subject = f"Thesis Watch · {t} 待收尾（确认 / 误报 / 忽略）"
     lines = [f"■ {t} 破局条件命中，需你收尾", ""]
+    thesis = triggered_data.get("thesis") or ""
+    if thesis:
+        lines.append(f"你当初的假设：{thesis[:150]}")
+        lines.append("")
     if cond:
-        lines.append(f"条件：{cond}")
-    val = triggered_data.get("value") or triggered_data.get("evidence_excerpt")
-    if val:
-        lines.append(f"值：{val}")
+        lines.append(f"触发条件：{cond}")
+    excerpt = triggered_data.get("evidence_excerpt") or triggered_data.get("value")
+    if excerpt:
+        lines.append(f"触发事件：{excerpt}")
+    reasoning = triggered_data.get("reasoning")
+    if reasoning:
+        lines.append(f"agent 判断：{reasoning}")
     if urls:
         lines.append("证据：")
         for u in urls:

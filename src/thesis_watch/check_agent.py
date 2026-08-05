@@ -455,7 +455,13 @@ def run_check(card: ThesisCard, cfg: dict, store: ThesisStore, *,
         if not downgraded and v.change:
             changes[c.id] = {"change": v.change, "text": c.text}
         if status == CondStatus.TRIGGERED:
-            triggered_details.append({"cond": c.text, "urls": [e.url for e in evidence if e.url]})
+            triggered_details.append({
+                "cond": c.text,
+                "urls": [e.url for e in evidence if e.url],
+                "reasoning": v.reasoning,
+                "evidence_excerpt": v.evidence_excerpt,
+                "thesis": card.holding_reason_raw,
+            })
             n_t += 1
         elif status == CondStatus.WATCH:
             n_w += 1
