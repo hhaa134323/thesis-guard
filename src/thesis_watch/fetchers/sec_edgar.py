@@ -8,6 +8,7 @@ SEC fair-access：User-Agent 走 env THESIS_SEC_USER_AGENT（须含真实联系�
 """
 from __future__ import annotations
 
+import json
 import os
 import time
 from dataclasses import dataclass
@@ -86,18 +87,36 @@ def _load_ticker_map(user_agent: str) -> dict[str, str]:
             pass  # lookup 损坏 → 空映射（所有 ticker 跳过）
 
     # Fallback: SEC 官方全量 ticker→CIK（company_tickers.json）
-    # YAML 缺某 ticker 时用全量表补齐（一次 fetch，进程内缓存；fetch 失败 → 只用 YAML，当前行为）
-    try:
-        time.sleep(REQUEST_DELAY_SEC)
-        resp = requests.get(COMPANY_TICKERS_URL, headers={"User-Agent": user_agent}, timeout=15)
-        resp.raise_for_status()
-        for _, info in (resp.json() or {}).items():
+    # 落盘缓存到 data/company_tickers.json，30 天过期，避免每进程重拉撞 GFW
+    company_data = None
+    cache_path = os.path.join("data", "company_tickers.json")
+    _need_fetch = True
+    if os.path.exists(cache_path):
+        age = time.time() - os.path.getmtime(cache_path)
+        if age < 30 * 86400:  # 30 天内有效
+            try:
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    company_data = json.load(f)
+                _need_fetch = False
+            except Exception:
+                pass  # 文件坏了 → 重新拉
+    if _need_fetch:
+        try:
+            time.sleep(REQUEST_DELAY_SEC)
+            resp = requests.get(COMPANY_TICKERS_URL, headers={"User-Agent": user_agent}, timeout=30)
+            resp.raise_for_status()
+            company_data = resp.json()
+            os.makedirs("data", exist_ok=True)
+            with open(cache_path, "w", encoding="utf-8") as f:
+                json.dump(company_data, f)
+        except Exception:
+            pass  # fetch 失败 → 只用 YAML（当前行为）
+    if company_data:
+        for _, info in company_data.items():
             t = (info.get("ticker") or "").upper()
             c = str(info.get("cik_str", "")).zfill(10)
             if t and c and t not in mapping:
                 mapping[t] = c
-    except Exception:
-        pass  # fallback fetch 失败 → 只用 YAML（当前行为）
     _ticker_to_cik_cache = mapping
     return mapping
 
