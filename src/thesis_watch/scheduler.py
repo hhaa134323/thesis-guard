@@ -4,8 +4,8 @@
 自身输出（较上次 change，读 previous_verdicts），不再走独立 watch_state 模块/SQLite 表
 （旧 C-2 代码方案两个死结：无新 filing 假解除 / 无数值无法判恶化——改 agent 自判）。
 run_daily_check() 流程：price alerts → check_agent（遍历预置用户，结果含 changes）→
-通知编排（alert / digest / S4；digest 读 check_results 的 changes）→ 季频复盘（查
-check_results 最近 N 次 watch → 提醒，stateless，无 watch_states 表）。
+通知编排（破局 triggered 单独 alert + S4；价格提醒并入 digest；digest 读 check_results
+的 changes）→ 季频复盘（查 check_results 最近 N 次 watch → 提醒，stateless，无 watch_states 表）。
 
 调度：APScheduler AsyncIOScheduler，每日定时（默认美东 16:00 收盘后）。时间走 env
 （THESIS_CHECK_TIME=HH:MM / THESIS_TZ，PRD §9 部署中立）。THESIS_SCHEDULER=1 时 serve.py
@@ -140,13 +140,9 @@ async def run_daily_check(*, store: ThesisStore | None = None,
             errors.append(f"check_agent:{uid}: {type(e).__name__}: {e}")
 
     # 3. notification
-    # 3a. price alerts → send_alert
-    for pa in price_alerts:
-        try:
-            notification.send_alert(pa.get("ticker", ""), pa, NOTIFY_TO)
-        except Exception as e:  # noqa: BLE001
-            errors.append(f"send_alert(price {pa.get('ticker', '')}): {type(e).__name__}: {e}")
-
+    # 价格提醒不再单独发邮件（2026-08-06 设计调整，PM 决策 08-05 18:28 看板）：
+    # price alerts 并入 3c send_digest 的「价格提醒」段渲染（到价 hit + 接近 approaching）。
+    # 破局条件 triggered 的 alert 逻辑不变：下面 3b 仍单独发 send_alert + request_s4_action。
     # 3b. triggered check results → send_alert + request_s4_action
     for cr in check_results:
         if cr.get("n_triggered"):

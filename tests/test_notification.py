@@ -97,18 +97,48 @@ def test_send_digest_zero_triggered_s3_line(monkeypatch):
     assert "观察项：今日无 watch 变化" in body  # watch 占位已落地，无变化时如实说
 
 
-# --- send_digest: 含 price_alerts → digest 列价格到价 ---
+# --- send_digest: 含 price_alerts → digest 列价格提醒（到价计入触发数）---
 def test_send_digest_with_price_alerts(monkeypatch):
     fake = _patch_email(monkeypatch)
     crs = [{"ticker": "MCO", "n_triggered": 0, "n_watch": 0, "n_untriggered": 1}]
-    pa = {"ticker": "MCO", "alert_type": "safety_margin", "current_price": 394.50,
-          "threshold": 380.00, "triggered": True, "condition_text": "加仓价 380",
-          "position_type": "长线", "timestamp": "2026-08-04T16:00:00Z"}
+    pa = {"ticker": "MCO", "alert_type": "safety_margin", "current_price": 370.0,
+          "threshold": 380.0, "triggered": True, "level": "hit",
+          "condition_text": "加仓价 380", "position_type": "长线",
+          "timestamp": "2026-08-04T16:00:00Z"}
     send_digest(crs, [pa], [], "a@b.com")
     _to, _subject, body = fake.sent[0]
-    assert "价格到价" in body
-    assert "394.5" in body and "380" in body
-    assert "已检查 1 只 / 1 触发" in body   # price alert 计入触发数
+    assert "价格提醒" in body
+    assert "到价" in body                 # hit 文案
+    assert "370.0" in body and "380.0" in body
+    assert "已检查 1 只 / 1 触发" in body   # 到价(price hit)计入触发数
+
+
+# --- send_digest: 接近档文案与到价区分；接近不计入「触发」数 ---
+def test_send_digest_approaching_distinct_and_not_counted(monkeypatch):
+    fake = _patch_email(monkeypatch)
+    crs = [{"ticker": "MCO", "n_triggered": 0, "n_watch": 0, "n_untriggered": 1}]
+    pa = {"ticker": "MCO", "alert_type": "safety_margin", "current_price": 400.0,
+          "threshold": 380.0, "triggered": False, "level": "approaching",
+          "condition_text": "加仓价 380", "position_type": "长线",
+          "timestamp": "2026-08-04T16:00:00Z"}
+    send_digest(crs, [pa], [], "a@b.com")
+    _to, _subject, body = fake.sent[0]
+    assert "价格提醒" in body
+    assert "接近阈值" in body and "400.0" in body
+    assert "到价" not in body              # 接近档不混入到价文案
+    assert "已检查 1 只 / 0 触发" in body   # 接近档未真正到价，不计触发
+
+
+# --- send_digest: skip dict 过滤（8c65773 不回归）：不渲染、不计触发 ---
+def test_send_digest_skipped_price_filtered_out(monkeypatch):
+    fake = _patch_email(monkeypatch)
+    crs = [{"ticker": "MCO", "n_triggered": 0, "n_watch": 0, "n_untriggered": 1}]
+    skip_pa = {"ticker": "MCO", "skipped": True, "reason": "price unavailable"}
+    send_digest(crs, [skip_pa], [], "a@b.com")
+    _to, _subject, body = fake.sent[0]
+    assert "价格提醒" not in body           # skip 不渲染价格段
+    assert "price unavailable" not in body
+    assert "已检查 1 只 / 0 触发" in body    # skip 不计触发
 
 
 # --- send_digest: manual_items → 「需你自查」清单（S5）---

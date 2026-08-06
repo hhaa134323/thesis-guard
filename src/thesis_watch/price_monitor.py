@@ -10,8 +10,14 @@ v1 只做简单价格比较（current_price <= threshold）：
   倍数本身不是价格，比了会误报）。
 - Yahoo fetch 返空 / yfinance 未装 → skip（R5 不编造价格）。
 
-alert dict 8 键严格一致（notification 接口）：ticker / alert_type / current_price /
-threshold / triggered / condition_text / position_type / timestamp。
+两档（2026-08-06 设计调整，PM 决策 08-05 18:28 看板）：
+- 到价（hit）：current_price <= threshold → level="hit"、triggered=True；safety_margin 与
+  stop_loss（trade 仓）都产。
+- 接近（approaching）：threshold < current_price <= threshold * 1.1 → level="approaching"、
+  triggered=False；**仅 safety_margin 方向**（非 trade 仓），stop_loss v1 不做接近档。
+
+alert dict 9 键严格一致（notification 接口）：ticker / alert_type / current_price /
+threshold / triggered / level / condition_text / position_type / timestamp。
 skip dict：{ticker, skipped: True, reason}（内部记录，非 alert 接口）。
 
 红线 R1-R9 不变；guardrail 层零改动；不碰 orchestrator / serve / entry_loop /
@@ -118,10 +124,11 @@ def run_price_check(
 ) -> list[dict]:
     """遍历所有 thesis card，检查安全边际，返回 alert + skip 列表。
 
-    - 有安全边际 + 价格 <= 阈值 → alert dict（8 键，notification 接口）
+    - 有安全边际 + 价格 <= 阈值 → 到价 alert（hit，9 键，notification 接口）
+    - 有安全边际 + 非trade + 阈值 < 价格 <= 阈值*1.1 → 接近 alert（approaching，9 键）
     - 有安全边际 + 复杂估值 / 无可提取价格 → skip dict（reason=complex valuation not supported in v1）
     - 有安全边际 + Yahoo fetch 返空 → skip dict（reason=price unavailable，R5 不编造）
-    - 有安全边际 + 价格 > 阈值 → 无产出（未触发）
+    - 有安全边际 + 价格 > 阈值*1.1 → 无产出（未触发且未接近）
     - 无安全边际字段 → 过滤（无产出）
     无 card / 全未触发 → []。
     """
@@ -145,19 +152,36 @@ def run_price_check(
                         "reason": "price unavailable"})
             continue
         current_price = float(rows[0]["current_price"])
+        horizon = (card.holding_horizon or "").strip().lower()
+        is_trade = horizon == "trade"
+        alert_type = "stop_loss" if is_trade else "safety_margin"
         if current_price <= threshold:
-            horizon = (card.holding_horizon or "").strip().lower()
+            # 到价档（hit）：safety_margin 与 stop_loss 都产
             out.append({
                 "ticker": card.ticker,
-                "alert_type": "stop_loss" if horizon == "trade" else "safety_margin",
+                "alert_type": alert_type,
                 "current_price": current_price,
                 "threshold": threshold,
                 "triggered": True,
+                "level": "hit",
                 "condition_text": text,
                 "position_type": _horizon_label(card.holding_horizon),
                 "timestamp": timestamp,
             })
-        # else: 未触发 → 无产出
+        elif not is_trade and threshold < current_price <= threshold * 1.1:
+            # 接近档（approaching）：仅 safety_margin 方向（非 trade）；stop_loss v1 不做接近档
+            out.append({
+                "ticker": card.ticker,
+                "alert_type": "safety_margin",
+                "current_price": current_price,
+                "threshold": threshold,
+                "triggered": False,
+                "level": "approaching",
+                "condition_text": text,
+                "position_type": _horizon_label(card.holding_horizon),
+                "timestamp": timestamp,
+            })
+        # else: 未到价且未接近 → 无产出
     return out
 
 

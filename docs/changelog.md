@@ -2,6 +2,29 @@
 
 > 规则：每次迭代写清楚——依据哪条用户反馈、砍了什么、为什么砍。KILL 判据体检结果也记这里。
 
+## v0.0.24 — 2026-08-06 — 价格提醒并入 digest + 接近档（PM 决策 08-05 18:28 看板）
+
+**做了什么**
+- **价格提醒不再单独发邮件**：`scheduler.run_daily_check` 删 3a「price alerts → send_alert」循环；price alert（到价 hit + 接近 approaching）统一并入 `notification._render_digest` 的「价格提醒」段渲染。**破局条件 triggered 的 alert 逻辑不变**（3b 仍单独发 `send_alert` + `request_s4_action`）。
+- **新增「接近」档**（`price_monitor.run_price_check`）：`threshold < current_price <= threshold * 1.1` → `level="approaching"`、`triggered=False`；**仅 safety_margin 方向**（非 trade 仓），stop_loss（trade）v1 不做接近档。到价档 `current_price <= threshold` → `level="hit"`、`triggered=True`（safety_margin 与 stop_loss 都产）。边界：恰好 1.1 倍算接近（含上界），超出无关。
+- **alert 结构加 `level` 字段**（hit / approaching）：alert dict 8 键 → 9 键。`skip` 过滤逻辑（`8c65773`：scheduler line 124 + `_render_digest real_alerts`）不回归。
+- **digest「价格提醒」段**：hit 文案「当前 X ≤ 阈值 Y（到价 · cond）」、approaching 文案「当前 X，接近阈值 Y（cond）」区分。汇总行 `M 触发` 改只计破局 triggered 卡 + 到价（hit）price alert；接近档未真正到价，不计触发，仅在价格提醒段呈现。
+
+**依据**（PM 08-05 18:28 看板决策）
+- 价格到价非破局事件，单独发邮件打扰；并入 digest 让用户每日一次看完。
+- 「接近」档让用户在到价前预判（10% 内），但不替代到价（`triggered=False`，不计触发数）。
+- stop_loss（trade 仓）风险即执行，无需「接近」预判 → v1 不做。
+
+**砍了什么**
+- `scheduler` 3a price→send_alert 循环（价格提醒不再单独发邮件）。
+- `_render_digest` 旧「价格到价」段名（改「价格提醒」覆盖 hit + approaching）。
+- `total_triggers = n_triggered_cards + len(real_alerts)` → 只计 hit（approaching 不算触发）。
+
+**自测**：220 pytest 绿（212 基线 + 8 新：price_monitor 5 接近档/边界/stop_loss / notification 2 接近文案 + skip 过滤 / scheduler 2 价格不单发 + skip 过滤）。guardrail 层零改动（`redline`/`conditions`/`condition_classify`/`schema`/`models` 未碰）。
+
+**待 caca 定**
+- digest 汇总行 `M 触发` 排除接近档（只计 hit）——spec 未明说，取「未真正到价不计触发」语义；如需接近也计入请示。
+
 ## v0.0.23 — 2026-08-05 — watch 记忆：弃代码方案（C-2 watch_state），改 agent 自判 change
 
 **做了什么**

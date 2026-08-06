@@ -26,7 +26,7 @@ from thesis_watch.store import ThesisStore
 _UTC = datetime.timezone.utc
 _TS = datetime.datetime(2026, 8, 4, 16, 0, 0, tzinfo=_UTC)  # 固定时间戳断言
 
-_ALERT_KEYS = {"ticker", "alert_type", "current_price", "threshold", "triggered",
+_ALERT_KEYS = {"ticker", "alert_type", "current_price", "threshold", "triggered", "level",
                "condition_text", "position_type", "timestamp"}
 _SKIP_KEYS = {"ticker", "skipped", "reason"}
 
@@ -135,30 +135,33 @@ def test_price_below_threshold_produces_alert(monkeypatch):
     out = run_price_check(store, now=_TS)
     assert len(out) == 1
     a = out[0]
-    assert set(a.keys()) == _ALERT_KEYS           # 8 键严格一致（notification 接口）
+    assert set(a.keys()) == _ALERT_KEYS           # 9 键严格一致（notification 接口）
     assert a["ticker"] == "MCO"
     assert a["alert_type"] == "safety_margin"
     assert a["current_price"] == 370.0
     assert a["threshold"] == 380.0
     assert a["triggered"] is True
+    assert a["level"] == "hit"
     assert a["condition_text"] == "加仓价 380"
     assert a["position_type"] == "长线"
     assert a["timestamp"] == "2026-08-04T16:00:00Z"
 
 
 def test_price_equal_threshold_triggers(monkeypatch):
-    """<= 阈值：等于也触发（spec：current_price <= 380）。"""
+    """<= 阈值：等于也触发（spec：current_price <= 380）→ hit。"""
     store = _store_with(_card(note="加仓价 380"))
     _patch_price(monkeypatch, {"MCO": 380.0})
     out = run_price_check(store, now=_TS)
     assert len(out) == 1
     assert out[0]["triggered"] is True
+    assert out[0]["level"] == "hit"
 
 
-def test_price_above_threshold_no_alert(monkeypatch):
+def test_price_above_approaching_band_no_alert(monkeypatch):
+    """价格 > 阈值*1.1（超出接近档上界）→ 无产出（既不到价也不接近）。"""
     store = _store_with(_card(note="加仓价 380"))
-    _patch_price(monkeypatch, {"MCO": 394.5})
-    assert run_price_check(store, now=_TS) == []   # 未触发 → 无产出（无 alert 无 skip）
+    _patch_price(monkeypatch, {"MCO": 420.0})   # 380*1.1≈418 → 420 超出 → 无产出
+    assert run_price_check(store, now=_TS) == []
 
 
 def test_complex_valuation_skipped(monkeypatch):
@@ -277,3 +280,73 @@ def test_threshold_extraction_via_run_variants(monkeypatch):
         assert len(out) == 1, f"{note!r} 应触发"
         assert out[0]["threshold"] == expected
         assert out[0]["triggered"] is True
+
+
+# --------------------------------------------------------------------------- #
+# 接近档（approaching）——2026-08-06 设计调整：threshold < price <= threshold*1.1
+# 仅 safety_margin 方向（非 trade）；stop_loss v1 不做接近档
+# --------------------------------------------------------------------------- #
+
+def test_price_approaching_band_produces_approaching_alert(monkeypatch):
+    """safety_margin + 阈值 < 价格 <= 阈值*1.1 → 接近档 alert。"""
+    store = _store_with(_card(note="加仓价 380", horizon="long"))
+    _patch_price(monkeypatch, {"MCO": 400.0})   # 380 < 400 <= 418 → 接近
+    out = run_price_check(store, now=_TS)
+    assert len(out) == 1
+    a = out[0]
+    assert set(a.keys()) == _ALERT_KEYS
+    assert a["level"] == "approaching"
+    assert a["triggered"] is False
+    assert a["alert_type"] == "safety_margin"
+    assert a["current_price"] == 400.0
+    assert a["threshold"] == 380.0
+
+
+def test_price_just_above_threshold_is_approaching(monkeypatch):
+    """价格刚超阈值（阈值+1）但仍在 10% 内 → 接近（不是 hit）。"""
+    store = _store_with(_card(note="加仓价 380", horizon="long"))
+    _patch_price(monkeypatch, {"MCO": 381.0})   # 380 < 381 <= 418 → 接近
+    out = run_price_check(store, now=_TS)
+    assert len(out) == 1
+    assert out[0]["level"] == "approaching"
+    assert out[0]["triggered"] is False
+
+
+def test_price_approaching_boundary_exactly_1_1x(monkeypatch):
+    """恰好 1.1 倍算接近（边界含上界）；超出 1.1 倍无关（无产出）。"""
+    store = _store_with(_card(note="加仓价 100", horizon="long", anchor_type="other"))
+
+    # 恰好 1.1 倍（100 → 110）→ 接近
+    _patch_price(monkeypatch, {"MCO": 110.0})
+    out = run_price_check(store, now=_TS)
+    assert len(out) == 1 and out[0]["level"] == "approaching"
+
+    # 超出 1.1 倍（111 > 110）→ 无产出
+    _patch_price(monkeypatch, {"MCO": 111.0})
+    assert run_price_check(store, now=_TS) == []
+
+
+def test_price_approaching_boundary_exactly_threshold_is_hit(monkeypatch):
+    """价格 == 阈值 → hit（接近档下界严格大于阈值）。"""
+    store = _store_with(_card(note="加仓价 100", horizon="long", anchor_type="other"))
+    _patch_price(monkeypatch, {"MCO": 100.0})
+    out = run_price_check(store, now=_TS)
+    assert len(out) == 1
+    assert out[0]["level"] == "hit"
+    assert out[0]["triggered"] is True
+
+
+def test_price_approaching_not_for_stop_loss_trade(monkeypatch):
+    """stop_loss（trade 仓）v1 不做接近档：价格在接近带内也不产 approaching。"""
+    store = _store_with(_card(note="止损 100", horizon="trade"))
+    # 100 < 105 <= 110 → 接近带内，但 trade 仓不做接近档 → 无产出
+    _patch_price(monkeypatch, {"MCO": 105.0})
+    assert run_price_check(store, now=_TS) == []
+
+    # trade 仓价格 <= 阈值仍产 hit（stop_loss）
+    _patch_price(monkeypatch, {"MCO": 95.0})
+    out = run_price_check(store, now=_TS)
+    assert len(out) == 1
+    assert out[0]["level"] == "hit"
+    assert out[0]["alert_type"] == "stop_loss"
+    assert out[0]["triggered"] is True

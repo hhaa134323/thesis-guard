@@ -163,7 +163,9 @@ def _render_digest(check_results: list[dict], price_alerts: list[dict],
     real_alerts = [pa for pa in price_alerts if not pa.get("skipped")]
     n_tickers = len(check_results)
     n_triggered_cards = sum(1 for r in check_results if r.get("n_triggered"))
-    total_triggers = n_triggered_cards + len(real_alerts)
+    # 价格提醒只计「到价」(hit, triggered=True) 进触发数；接近档(approaching)未真正到价，不计数
+    n_price_hits = sum(1 for pa in real_alerts if pa.get("triggered"))
+    total_triggers = n_triggered_cards + n_price_hits
     nearest = _nearest_verdict_day(check_results)
 
     lines = ["Thesis Watch · 每日简报", ""]
@@ -185,10 +187,17 @@ def _render_digest(check_results: list[dict], price_alerts: list[dict],
         lines.append("")
 
     if real_alerts:
-        lines.append("价格到价：")
+        lines.append("价格提醒：")
         for pa in real_alerts:
-            lines.append(f"  · {pa.get('ticker', '')} 当前 {pa.get('current_price')} ≤ 阈值 "
-                         f"{pa.get('threshold')}（{pa.get('condition_text', '')}）")
+            ticker = pa.get("ticker", "")
+            cur = pa.get("current_price")
+            thr = pa.get("threshold")
+            cond = pa.get("condition_text", "")
+            if pa.get("level") == "approaching":
+                # 接近档：文案与「到价」区分（未到价，仅接近阈值 10% 内）
+                lines.append(f"  · {ticker} 当前 {cur}，接近阈值 {thr}（{cond}）")
+            else:
+                lines.append(f"  · {ticker} 当前 {cur} ≤ 阈值 {thr}（到价 · {cond}）")
         lines.append("")
 
     # 观察项：watch 较上次变化（读 check_results 每条的 changes；agent 自判，Task 5 已落地）

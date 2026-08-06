@@ -82,8 +82,8 @@ def _names(fake: _Fake):
     return [c[0] for c in fake.calls]
 
 
-_PRICE_ALERT = {"ticker": "MCO", "current_price": 394.5, "threshold": 380,
-                "triggered": True, "condition_text": "加仓价 380",
+_PRICE_ALERT = {"ticker": "MCO", "current_price": 370.0, "threshold": 380,
+                "triggered": True, "level": "hit", "condition_text": "加仓价 380",
                 "position_type": "长线", "alert_type": "safety_margin",
                 "timestamp": "2026-08-04T16:00:00Z"}
 _TRIGGERED_CR = {"ticker": "NVDA", "n_triggered": 1, "n_watch": 0, "n_untriggered": 0,
@@ -103,14 +103,34 @@ def test_flow_order(monkeypatch):
     assert names.index("check_agent.run_all") < names.index("notification.send_digest")
 
 
-# --- price alert → send_alert ---
-def test_price_alert_sends_alert(monkeypatch):
+# --- price alert 不再单独发邮件（2026-08-06 设计调整：并入 digest）---
+def test_price_alert_only_in_digest_not_separately_sent(monkeypatch):
+    """价格提醒不再调 send_alert：只进 digest（破局 triggered 的 send_alert 逻辑不变，
+    见 test_triggered_sends_alert_and_s4）。"""
     fake = _Fake()
     fake.price_alerts = [_PRICE_ALERT]
     _patch(monkeypatch, fake)
     _run(fake)
     alert_calls = [c for c in fake.calls if c[0] == "notification.send_alert"]
-    assert any(c[1][0] == "MCO" for c in alert_calls)
+    # 价格 alert 不再单独发邮件 → 无以 MCO 为 ticker 的 send_alert 调用
+    assert not any(c[1][0] == "MCO" for c in alert_calls)
+    # 价格 alert 进了 digest（send_digest 收到 price_alerts）
+    digest_calls = [c for c in fake.calls if c[0] == "notification.send_digest"]
+    assert len(digest_calls) == 1
+    _crs, pas, _mis, _to = digest_calls[0][1]
+    assert len(pas) == 1 and pas[0]["ticker"] == "MCO"
+
+
+# --- skip dict 在 scheduler 层过滤（8c65773 不回归）：不进 digest、不计 price_alerts ---
+def test_price_skip_filtered_before_digest(monkeypatch):
+    fake = _Fake()
+    fake.price_alerts = [{"ticker": "MCO", "skipped": True, "reason": "price unavailable"}]
+    _patch(monkeypatch, fake)
+    result = _run(fake)
+    digest_calls = [c for c in fake.calls if c[0] == "notification.send_digest"]
+    _crs, pas, _mis, _to = digest_calls[0][1]
+    assert pas == []                         # skip 被过滤掉，不进 digest
+    assert result["price_alerts"] == 0       # 计数也排除了 skip
 
 
 # --- triggered → send_alert + request_s4_action ---
